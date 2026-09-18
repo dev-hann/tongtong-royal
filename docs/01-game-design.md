@@ -33,15 +33,23 @@ If two or more players tie on cumulative points:
 1. Compare their **round placements from the last round backwards** (lexicographic, better placement wins): the player with better placement in Round 5 wins; if equal there, compare Round 4, then 3, 2, 1.
 2. If placements were identical in every round, players **share the rank**. Shared rank consumes the next rank slot (two players sharing 1st → next player is 3rd).
 
-## 3. Controls (identical in every minigame)
+## 3. Controls (one button, fully automatic movement)
 
-| Input | Action |
-|-------|--------|
-| Virtual joystick (left) | Move |
-| Jump button (right) | Jump |
-| Dash button (right) | Dash/shove — short burst in movement direction; applies impulse to hit players |
+Every minigame is **one-button with automatic movement** (hyper-casual standard). The single button's verb differs per game:
 
-Three buttons, zero tutorials. Dash is 80% of the fun; every minigame is designed around movement + collision + shove.
+| Minigame | Button | Automatic behavior |
+|----------|--------|--------------------|
+| Trap Race | Jump | Auto-run: constant rightward movement |
+| Hammer Dodge | Jump | Auto-center: drift back toward the arena center |
+| King of the Hill | Dash/shove | Auto-approach: walk toward the crown, auto-jump ramps to climb |
+
+Rules:
+
+- **One button per game.** No joystick, no d-pad, no second button.
+- Movement is **fully automatic** — the player only times the single action.
+- Internal representation is unchanged: clients translate (auto-steering + button edges) into the same `PlayerInputState` vector used since M1. Protocol, server, netcode, and bots are unaffected.
+- Bot opponents (§ 9) are unaffected: they already produce input vectors directly.
+- Dash impulse direction in King of the Hill: toward the nearest contested occupant (the shove target); with no target nearby, toward the crown center.
 
 ## 4. MVP Minigames
 
@@ -64,7 +72,7 @@ Three archetypes; one engine each, maps are data. Each minigame implements the s
 ### 4.3 King of the Hill (archetype: occupancy)
 
 - **Goal**: accumulate hold-time on the crown zone.
-- **Arena**: one elevated crown platform (climbable), open floor around it.
+- **Arena**: one elevated crown platform (auto-climbed via ramp jumps), open floor around it.
 - **Scoring in-round**: holding = 1 point/second while solely on the crown zone. If two or more players stand on it simultaneously, nobody scores (contested). Hold time is **cumulative — falling off does not reset accumulated time**.
 - **Placement**: hold-time ranking at timeout (75s). The crown zone is the only place time counts.
 

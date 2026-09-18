@@ -99,6 +99,7 @@ Client A (HOST)   Server (relay)   Client B/C/D
 
 ```
 app/
+├── design/        # Design system: tokens, theme, shared widgets, game HUD
 ├── game/          # Flame+Forge2D: components, bodies, cameras, effects
 ├── presentation/  # Flutter widgets: menus, lobby, HUD, results, podium
 └── infra/         # WS client, lifecycle handling, prefs, ads
@@ -107,6 +108,7 @@ app/
 - `presentation` renders state from domain/view models; contains no game rules.
 - `game` renders the simulated world and forwards raw input/events; contains no rules.
 - `infra` moves bytes; contains no rules, no UI.
+- `design` holds **all visual tokens** (colors, typography, spacing, radii, motion) and shared UI components (screen widgets' building blocks + in-game HUD incl. the action button). Both `presentation` and `game/view` consume it; it depends on nothing app-specific. **Rule: no inline `Color(0x...)`, no hand-rolled text styles outside `design/`** — tokens only. Game renderers (painters) take player/arena colors from `design` tokens.
 - Both `presentation` and `game` may depend on `shared/domain` and `shared/physics`. Neither depends on the other for logic; overlays communicate through explicit state objects.
 
 ## 7. Protocol Versioning

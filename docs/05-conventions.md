@@ -18,6 +18,8 @@
 
 Naming: Dart style (`lowerCamelCase`, `UpperCamelCase`, `snake_case.dart`). Domain types use game vocabulary from the GDD (`RoundResult`, `Placement`) — one concept, one name, everywhere.
 
+**Design tokens (mandatory)**: all colors, text styles, spacing, radii, and motion durations come from `app/lib/design/tokens.dart`. Inline `Color(0x...)`, raw `TextStyle(...)` in screens, and ad-hoc paddings outside the token scale are review-blockers. Shared UI building blocks live in `app/lib/design/widgets/`; the in-game HUD (incl. the one-button action control) lives in `app/lib/design/game_hud/`.
+
 ## 3. Error Handling & Logging
 
 - **No empty catch.** No swallowed futures (`unawaited` is acceptable only with a comment explaining why the result is irrelevant).
