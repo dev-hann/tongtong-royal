@@ -49,11 +49,13 @@ Every minigame implements the domain-level interface (defined in `shared/domain`
 abstract class MiniGame {
   MiniGameId get id;
   // Domain-side: given ordered events for one round, produce placements.
-  RoundResult resolve(RoundEvents events);
+  RoundResult resolve(RoundEvents events); // events carry roundIndex
   // Metadata for UI (names, rule one-liner, timeout duration).
   MiniGameSpec get spec;
 }
 ```
+
+The round state machine exposes transition helpers: `beginRound` (LOBBY → ROUND_INTRO), `startPlay` (ROUND_INTRO → ROUND_PLAY), `endRound` (ROUND_PLAY → ROUND_RESULTS), `toPodium`, `toLobby`. Invalid transitions throw `InvalidTransitionException`; `canTransition(to)` queries legality.
 
 - Rules live in `shared/domain` (resolving placements from events).
 - Physics construction (bodies, obstacles, map layout) lives in `app/game`, driven by **map data (JSON)** + the round seed.

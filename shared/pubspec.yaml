@@ -1,0 +1,16 @@
+name: tongtong_shared
+description: Pure Dart domain rules, protocol models and physics constants for TongTong Royal.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  meta: ^1.15.0
+  vector_math: ^2.1.4
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^6.0.0

@@ -1,0 +1,21 @@
+name: app
+description: TongTong Royal Flutter client (Flame + Forge2D).
+publish_to: none
+resolution: workspace
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flame: ^1.18.0
+  flutter:
+    sdk: flutter
+  forge2d: ^0.13.0
+  tongtong_shared:
+    path: ../shared
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^6.0.0

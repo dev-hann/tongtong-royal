@@ -1,0 +1,16 @@
+name: tongtong_server
+description: WebSocket relay server (rooms, invite codes) for TongTong Royal.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  tongtong_shared:
+    path: ../shared
+
+dev_dependencies:
+  test: ^1.25.0
+  very_good_analysis: ^6.0.0
