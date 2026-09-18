@@ -19,7 +19,9 @@ Sequencing: **inputs and snapshots carry independent `seq`/`tick` counters.** On
 
 1. Client connects, sends `Hello { protocolVersion, playerId (client-generated UUID), nickname }`.
 2. Server accepts N or N-1 (architecture doc § 7). Older → `VersionMismatch` and close. Newer (server outdated) → same message with "update server" note.
-3. Join room: `JoinRoom { code }` or `CreateRoom`. Server replies full room snapshot (players, ready state, match state, current protocol seed if mid-match).
+3. **Implicit accept**: a valid `Hello` with no `VersionMismatch` reply means accepted. There is no dedicated OK message; the next server traffic (e.g. `RoomSnapshot`) confirms liveness.
+4. Join room: `JoinRoom { code }` or `CreateRoom`. Server replies `RoomSnapshot` on success, or `JoinFailed { reason: notFound | roomFull }` on failure.
+5. **Rejoin-ack timeout**: `RejoinRoom` without a `RoomSnapshot` reply within 5 s → client treats the rejoin as failed (terminal `needsManualRejoin`); no infinite parking.
 
 ## 3. Trust Model (explicit scope)
 
@@ -91,7 +93,9 @@ Sequencing: **inputs and snapshots carry independent `seq`/`tick` counters.** On
 | Round-in-progress join | `JoinRoom` mid-round succeeds only as **spectator for the current round**; joins play from next `ROUND_INTRO` (GDD § 7.10) |
 | Server shutdown | Drain: no new rooms; existing rooms get `RoomClosed { reason: serverShutdown }` |
 
-Rate-limit precision (§ 5.4): limits count **failed attempts too** (notFound/roomFull rejections consume budget); an attempt's budget expires exactly 60 s after it was counted.
+Rate-limit precision (§ 5.4): limits count **failed attempts too** (notFound/roomFull rejections consume budget); an attempt's budget expires exactly 60 s after it was counted. Because `shelf_web_socket` does not expose the remote IP, the per-IP limit degrades to **per-playerId identity** — accepted deviation, documented here.
+
+Wire round model: the server is round-opaque (relay only). `RoomSnapshot.phase` reuses the domain `RoundPhase` vocabulary as an approximation — the authoritative round flow travels in `RoundStarting`/`RoundResultsMessage`/`RoomClosed`, not in room phase. `RoomSnapshot`'s `PlayerInfo` carries `connected` and `isSpectator` flags so clients can render reserved seats and spectators. The host ends a match over the wire with the client→server `EndMatch` message (host-only; server returns room to lobby per § 8 "Match end").
 
 ## 9. Netcode Anti-Patterns (bad → good)
 
