@@ -77,11 +77,13 @@ final class BoxSpec {
 /// no tuning constant leaks into engine code.
 @immutable
 final class HammerSpec {
-  /// Creates a hammer anchored at [pivot].
+  /// Creates a hammer anchored at [pivot], arm starting at
+  /// [initialAngle] radians from the +x axis.
   const HammerSpec({
     required this.pivot,
     required this.radius,
     required this.angularSpeed,
+    this.initialAngle = defaultInitialAngle,
     this.armThickness = defaultArmThickness,
     this.maxMotorTorque = defaultMaxMotorTorque,
   });
@@ -103,6 +105,7 @@ final class HammerSpec {
       ),
       radius: _asDouble(json['radius'], 'radius'),
       angularSpeed: angularSpeed.toDouble(),
+      initialAngle: _asDouble(json['initialAngle'], 'initialAngle'),
       armThickness: _asDouble(json['armThickness'], 'armThickness'),
       maxMotorTorque: _asDouble(json['maxMotorTorque'], 'maxMotorTorque'),
     );
@@ -115,6 +118,9 @@ final class HammerSpec {
   /// stalls against player bodies.
   static const double defaultMaxMotorTorque = 100000;
 
+  /// Default arm start angle, radians from the +x axis.
+  static const double defaultInitialAngle = 0;
+
   /// Pivot (rotation center), world coordinates.
   final Vector2 pivot;
 
@@ -124,17 +130,21 @@ final class HammerSpec {
   /// Rotation speed, radians per second.
   final double angularSpeed;
 
+  /// Arm start angle, radians from the +x axis.
+  final double initialAngle;
+
   /// Arm cross-section thickness, meters.
   final double armThickness;
 
   /// Motor torque of the revolute joint, newton-meters.
   final double maxMotorTorque;
 
-  /// JSON: all fields, with the two defaulted ones included.
+  /// JSON: all fields, with the defaulted ones included.
   Map<String, Object?> toJson() => <String, Object?>{
     'pivot': [pivot.x, pivot.y],
     'radius': radius,
     'angularSpeed': angularSpeed,
+    'initialAngle': initialAngle,
     'armThickness': armThickness,
     'maxMotorTorque': maxMotorTorque,
   };
@@ -153,11 +163,13 @@ final class HammerSpec {
       other.pivot.y == pivot.y &&
       other.radius == radius &&
       other.angularSpeed == angularSpeed &&
+      other.initialAngle == initialAngle &&
       other.armThickness == armThickness &&
       other.maxMotorTorque == maxMotorTorque;
 
   @override
-  int get hashCode => Object.hash(pivot.x, pivot.y, radius, angularSpeed);
+  int get hashCode =>
+      Object.hash(pivot.x, pivot.y, radius, angularSpeed, initialAngle);
 
   @override
   String toString() =>

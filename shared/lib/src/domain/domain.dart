@@ -1,3 +1,5 @@
+export 'game/hammer_dodge.dart';
+export 'game/king_of_the_hill.dart';
 export 'game/registry.dart';
 export 'game/trap_race.dart';
 export 'match_rules.dart';

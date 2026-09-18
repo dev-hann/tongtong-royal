@@ -1,3 +1,5 @@
+import 'package:tongtong_shared/src/domain/game/hammer_dodge.dart';
+import 'package:tongtong_shared/src/domain/game/king_of_the_hill.dart';
 import 'package:tongtong_shared/src/domain/game/trap_race.dart';
 import 'package:tongtong_shared/src/domain/minigame.dart';
 import 'package:tongtong_shared/src/domain/models.dart';
@@ -7,10 +9,11 @@ import 'package:tongtong_shared/src/domain/models.dart';
 /// Holds no rules: selection belongs to `MinigameSelector`, judging to
 /// each [MiniGame]. `pool` feeds `MinigameSelector.planMatch`.
 final class MinigameRegistry {
-  /// Creates the registry over [games], which defaults to every built-in
-  /// minigame.
-  const MinigameRegistry([List<MiniGame> games = const [TrapRace()]])
-    : _games = games;
+  /// Creates the registry over [games], which defaults to every
+  /// built-in minigame.
+  const MinigameRegistry([
+    List<MiniGame> games = const [TrapRace(), HammerDodge(), KingOfTheHill()],
+  ]) : _games = games;
 
   final List<MiniGame> _games;
 
