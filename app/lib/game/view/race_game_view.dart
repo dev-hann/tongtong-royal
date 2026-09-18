@@ -5,6 +5,7 @@ import 'dart:ui' show Canvas, Color, Offset, Paint, Rect, Size;
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/player_character.dart';
+import 'package:app/net/remote/render_feed.dart';
 import 'package:flame/game.dart' show Game;
 import 'package:flutter/foundation.dart';
 import 'package:forge2d/forge2d.dart' show Vector2;
@@ -138,32 +139,67 @@ final class CourseCameraBounds {
   final double maxY;
 }
 
-/// Flame view over a running [RaceSimulation].
+/// Flame view over a [RaceSimulation] and/or a remote snapshot
+/// stream.
 ///
-/// Pure renderer/loop (architecture doc § 6): steps the simulation
-/// at [PhysicsConsts.fixedDt] with a clamped accumulator, reads local
-/// input from an injected [InputSource] (remote players idle — M1 is
-/// single-player), follows the local player with a bounds-clamped
-/// camera and draws every course body as a colored rectangle. No
-/// rules, no judging — raw [RoundEvent]s pass straight through.
+/// Pure renderer/loop (architecture doc § 6). The view samples a
+/// [RenderFeed] once per frame and draws what it gets. Two modes:
+///
+/// - **Local** (default): a [RaceSimulation] is injected and wrapped
+///   in a [LocalRenderFeed]. The loop steps the simulation at
+///   [PhysicsConsts.fixedDt] with a clamped accumulator, feeding it
+///   the injected [InputSource] (remote players idle — M1 is
+///   single-player).
+/// - **Remote**: a prebuilt [RenderFeed] (see
+///   `net/remote/RemoteRenderFeed`) is injected instead. No
+///   simulation exists locally; the loop never steps anything, it
+///   only samples interpolated snapshots plus local-player
+///   prediction (architecture doc § 9).
+///
+/// Follows the local player with a bounds-clamped camera and draws
+/// every course body as a colored rectangle. No rules, no judging —
+/// raw [RoundEvent]s pass straight through.
 final class RaceGameView extends Game {
-  /// Creates the view over [simulation] for [localPlayerId].
+  /// Creates a local view over [simulation] for [localPlayerId].
   ///
   /// [playerIds] lists the bodies to render; empty means only the
   /// local player (M1 single-player default). Subscribes to
   /// [RaceSimulation.events] until [onRemove].
+  ///
+  /// Alternatively, pass [renderFeed] to run in remote mode: the
+  /// view then draws purely from that feed and never steps a
+  /// simulation ([simulation] may be null). Exactly one of
+  /// [simulation] and [renderFeed] must be provided.
   RaceGameView({
-    required this.simulation,
     required this.localPlayerId,
     required this.map,
+    this.simulation,
     InputSource? inputSource,
     this.playerIds = const [],
-  }) : inputSource = inputSource ?? IdleInputSource() {
-    _eventSubscription = simulation.events.listen(_onEvent);
+    RenderFeed? renderFeed,
+  }) : assert(
+         simulation != null || renderFeed != null,
+         'either simulation or renderFeed must be provided',
+       ),
+       inputSource = inputSource ?? IdleInputSource(),
+       renderFeed =
+           renderFeed ??
+           LocalRenderFeed(
+             simulation: simulation!,
+             map: map,
+             localPlayerId: localPlayerId,
+             playerIds: playerIds,
+           ) {
+    _eventSubscription = simulation?.events.listen(_onEvent);
   }
 
-  /// The simulation stepped and rendered by this view.
-  final RaceSimulation simulation;
+  /// The simulation stepped by this view in local mode; `null` in
+  /// remote mode (nothing is simulated locally, architecture
+  /// doc § 9).
+  final RaceSimulation? simulation;
+
+  /// Source of per-frame render state (local or remote).
+  final RenderFeed renderFeed;
 
   /// Player followed by the camera and fed by [inputSource].
   final PlayerId localPlayerId;
@@ -171,7 +207,7 @@ final class RaceGameView extends Game {
   /// Course data used for camera bounds and static geometry.
   final CourseMap map;
 
-  /// Where the per-tick local input comes from.
+  /// Where the per-tick local input comes from (local mode only).
   final InputSource inputSource;
 
   /// Rendered players; empty renders only [localPlayerId].
@@ -198,8 +234,10 @@ final class RaceGameView extends Game {
   bool get finished => _finished;
 
   /// Passthrough of the simulation's raw events (architecture
-  /// doc § 2: emit, don't judge).
-  Stream<RoundEvent> get events => simulation.events;
+  /// doc § 2: emit, don't judge). Empty in remote mode (judged
+  /// events travel over the wire, not through a local simulation).
+  Stream<RoundEvent> get events =>
+      simulation?.events ?? const Stream<RoundEvent>.empty();
 
   /// Players drawn each frame (render order).
   List<PlayerId> get renderedPlayers =>
@@ -207,6 +245,11 @@ final class RaceGameView extends Game {
 
   @override
   void update(double dt) {
+    // Remote mode: no local simulation to step — rendering samples
+    // the feed (architecture doc § 9).
+    if (simulation == null) {
+      return;
+    }
     if (!dt.isFinite || dt <= 0) {
       return;
     }
@@ -226,9 +269,13 @@ final class RaceGameView extends Game {
   }
 
   void _stepSimulation() {
+    final sim = simulation;
+    if (sim == null) {
+      return;
+    }
     // Remote players get no entry, which idles them (M1: only the
     // local player exists anyway).
-    simulation.tickInputs({localPlayerId: inputSource.sample()});
+    sim.tickInputs({localPlayerId: inputSource.sample()});
     _stepCount++;
   }
 
@@ -260,7 +307,18 @@ final class RaceGameView extends Game {
       size.x / renderPixelsPerMeter,
       size.y / renderPixelsPerMeter,
     );
-    final focus = simulation.bodyOf(localPlayerId).position;
+    // Sample the feed once; everything below draws from this state.
+    final state = renderFeed.sample();
+    final localPose = state.players[localPlayerId];
+    final bounds = courseBounds;
+    final focus = localPose == null
+        // No pose yet (e.g. remote before the first snapshot): park
+        // the camera at the course center.
+        ? Vector2(
+            (bounds.minX + bounds.maxX) / 2,
+            (bounds.minY + bounds.maxY) / 2,
+          )
+        : Vector2(localPose.x, localPose.y);
     final camera = cameraTargetFor(focus, viewSizeMeters);
 
     canvas
@@ -290,11 +348,9 @@ final class RaceGameView extends Game {
     }
     _drawBox(canvas, map.finishLine, _finishPaint);
     for (final hammer in map.hammers) {
-      _drawHammer(canvas, hammer);
+      _drawHammer(canvas, hammer, state.worldTick);
     }
-    for (final playerId in renderedPlayers) {
-      _drawPlayer(canvas, playerId);
-    }
+    state.players.forEach((id, pose) => _drawPlayer(canvas, id, pose));
 
     canvas.restore();
   }
@@ -310,12 +366,13 @@ final class RaceGameView extends Game {
     );
   }
 
-  void _drawHammer(Canvas canvas, HammerSpec hammer) {
+  void _drawHammer(Canvas canvas, HammerSpec hammer, int worldTick) {
     // Kinematic arms rotate at constant angular speed from angle 0,
     // so the world angle is speed * elapsed ticks * fixed dt; the
-    // bodies themselves are not exposed by RaceSimulation.
-    final angle =
-        hammer.angularSpeed * simulation.currentTick * PhysicsConsts.fixedDt;
+    // bodies themselves are not exposed by RaceSimulation. Works for
+    // remote feeds too: their tick comes from the interpolated
+    // snapshot.
+    final angle = hammer.angularSpeed * worldTick * PhysicsConsts.fixedDt;
     canvas
       ..save()
       ..translate(hammer.pivot.x, hammer.pivot.y)
@@ -336,14 +393,13 @@ final class RaceGameView extends Game {
       );
   }
 
-  void _drawPlayer(Canvas canvas, PlayerId playerId) {
-    final body = simulation.bodyOf(playerId);
+  void _drawPlayer(Canvas canvas, PlayerId playerId, PlayerRenderPose pose) {
     final paint = playerId == localPlayerId
         ? _localPlayerPaint
         : _remotePlayerPaint;
     canvas.drawRect(
       Rect.fromCenter(
-        center: Offset(body.position.x, body.position.y),
+        center: Offset(pose.x, pose.y),
         width: PlayerCharacter.widthMeters,
         height: PlayerCharacter.heightMeters,
       ),

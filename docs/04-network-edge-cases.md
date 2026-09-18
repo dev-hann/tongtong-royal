@@ -15,6 +15,8 @@ This document is the complete policy for everything that crosses the wire. When 
 
 Sequencing: **inputs and snapshots carry independent `seq`/`tick` counters.** On each channel, later wins: a snapshot with tick ≤ last-applied tick is dropped; an input with seq ≤ last-applied is dropped. WebSocket preserves per-connection order — no reordering handling beyond this.
 
+**Input attribution**: the server stamps the sending connection's `playerId` onto every `PlayerInputMessage` before relaying it to the host (clients do not self-attest; the connection registry is the source of truth per the trust model § 3).
+
 ## 2. Handshake & Versioning
 
 1. Client connects, sends `Hello { protocolVersion, playerId (client-generated UUID), nickname }`.

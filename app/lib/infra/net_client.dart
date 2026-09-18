@@ -74,6 +74,8 @@ final class NetClient {
       StreamController<RoundResultsMessage>.broadcast();
   final StreamController<RoomClosed> _roomClosedController =
       StreamController<RoomClosed>.broadcast();
+  final StreamController<PlayerInputMessage> _memberInputsController =
+      StreamController<PlayerInputMessage>.broadcast();
   final StreamController<WireMessage> _noticesController =
       StreamController<WireMessage>.broadcast();
 
@@ -125,6 +127,15 @@ final class NetClient {
 
   /// In-match 20 Hz host snapshots (already filtered for stale ticks).
   Stream<Snapshot> get gameSnapshots => _gameSnapshotsController.stream;
+
+  /// Member input samples relayed by the server while this client
+  /// hosts a match (network doc § 1: 30 Hz each).
+  ///
+  /// The wire format carries no sender identity — the server relays
+  /// the raw frame — so attributing a sample to a `PlayerId` is the
+  /// consumer's concern (protocol gap, see the task report).
+  Stream<PlayerInputMessage> get memberInputs =>
+      _memberInputsController.stream;
 
   /// Round announcements (`ROUND_INTRO`, network doc § 4).
   Stream<RoundStarting> get roundStarting => _roundStartingController.stream;
@@ -230,6 +241,17 @@ final class NetClient {
     );
   }
 
+  /// Sends a host-authored message verbatim over the current
+  /// connection (typed transport only — `RoundStarting`, `Snapshot`,
+  /// `RoundResultsMessage`). The server enforces host-only relay
+  /// (network doc § 3); this layer adds no rules.
+  void sendHost(WireMessage message) {
+    if (!_requireRoom('sendHost')) {
+      return;
+    }
+    _send(message);
+  }
+
   /// Sends a keepalive ping; the next `Pong` updates `status.ping`.
   void ping() {
     _lastPingSentAt = _clock();
@@ -329,6 +351,7 @@ final class NetClient {
     await _resultsController.close();
     await _roomClosedController.close();
     await _noticesController.close();
+    await _memberInputsController.close();
   }
 
   /// Opens the next connection, sends `Hello` (and `RejoinRoom` when
@@ -458,6 +481,8 @@ final class NetClient {
           _pingRtt = _clock() - _lastPingSentAt!;
           _emitStatus();
         }
+      case final PlayerInputMessage input:
+        _memberInputsController.add(input);
       case RateLimited() ||
             AlreadyConnected() ||
             ServerFull():
