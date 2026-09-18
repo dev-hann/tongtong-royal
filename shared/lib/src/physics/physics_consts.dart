@@ -7,6 +7,13 @@ abstract final class PhysicsConsts {
   /// Simulation tick rate in hertz (ticks per second).
   static const int tickRate = 60;
 
+  /// Host snapshot broadcast rate in hertz (network doc § 1).
+  static const int snapshotRateHz = 20;
+
+  /// Forward-progress sampling cadence: one sample per player every
+  /// Nth round tick, fed into the domain resolver (GDD § 7.4).
+  static const int progressSampleIntervalTicks = 10;
+
   /// Fixed simulation timestep in seconds, the inverse of [tickRate].
   static const double fixedDt = 1 / tickRate;
 

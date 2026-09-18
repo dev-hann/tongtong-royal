@@ -56,4 +56,26 @@ void main() {
       );
     });
   });
+
+  group('PhysicsConsts network cadence', () {
+    test('snapshot rate is 20 Hz (network doc § 1)', () {
+      expect(PhysicsConsts.snapshotRateHz, 20);
+    });
+
+    test('snapshot rate is positive', () {
+      expect(PhysicsConsts.snapshotRateHz, greaterThan(0));
+    });
+
+    test('tick rate is an exact multiple of the snapshot rate', () {
+      expect(PhysicsConsts.tickRate % PhysicsConsts.snapshotRateHz, 0);
+    });
+
+    test('progress samples land every 10 ticks (GDD § 7.4)', () {
+      expect(PhysicsConsts.progressSampleIntervalTicks, 10);
+    });
+
+    test('progress sample interval is positive', () {
+      expect(PhysicsConsts.progressSampleIntervalTicks, greaterThan(0));
+    });
+  });
 }

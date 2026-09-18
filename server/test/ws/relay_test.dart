@@ -34,11 +34,52 @@ void main() {
     dash: false,
   );
 
-  test('relays member input to the host only', () async {
-    final sample = input(7);
-    member.send(sample);
-    expect(await host.next(), equals(sample));
+  test('relays member input to the host stamped with the sender id', () async {
+    member.send(input(7));
+    final relayed = await host.next() as PlayerInputMessage;
+    expect(relayed.seq, 7);
+    expect(relayed.moveX, 0.5);
+    expect(relayed.moveY, -0.5);
+    expect(relayed.playerId, 'member',
+        reason: 'network doc § 1: server stamps the sending connection');
     await member.expectSilence();
+  });
+
+  test('overwrites a client-supplied playerId, never trusting it', () async {
+    member.send(
+      PlayerInputMessage(
+        seq: 1,
+        moveX: 0.5,
+        moveY: -0.5,
+        jump: false,
+        dash: false,
+        playerId: 'someone-else',
+      ),
+    );
+    final relayed = await host.next() as PlayerInputMessage;
+    expect(relayed.playerId, 'member',
+        reason: 'trust model § 3: connection registry is the source of truth');
+  });
+
+  test('interleaved members keep per-connection attribution', () async {
+    final memberB = await harness.connectAndHello('memberB');
+    await (memberB..send(JoinRoom(code: roomCode))).next();
+    await host.next(); // updated snapshot for B's join
+
+    memberB.send(input(1));
+    member.send(input(2));
+    final first = await host.next() as PlayerInputMessage;
+    final second = await host.next() as PlayerInputMessage;
+
+    expect({first.playerId, second.playerId}, {'member', 'memberB'});
+    // Order within a burst is per-connection only; ids pair with seqs.
+    expect(
+      {
+        '${first.playerId}:${first.seq}',
+        '${second.playerId}:${second.seq}',
+      },
+      {'member:2', 'memberB:1'},
+    );
   });
 
   test('drops input from a connection that is in no room', () async {

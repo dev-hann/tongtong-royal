@@ -204,6 +204,80 @@ void main() {
     });
   });
 
+  group('HostRuntime member-input bridge', () {
+    /// Delivers a server-stamped input frame over the fake wire and
+    /// lets the client fan-out run before the host ticks.
+    Future<void> wireInput(HostHarness h, PlayerInputMessage input) async {
+      h.fake.serverSends(encode(input));
+      await pumpEventQueue();
+    }
+
+    test('attributed input drives the named player body only', () async {
+      final h = HostHarness(
+        roster: const {p1, p2},
+        mapBuilder: (seed) => flatCourse(seed, finishX: 1000),
+      );
+      addTearDown(h.client.dispose);
+      await h.boot();
+      h.runtime.startRound(0, 'trap_race', 7);
+
+      var seq = 0;
+      for (var i = 0; i < 90 && h.runtime.isRoundActive; i++) {
+        if (i.isEven) {
+          seq++;
+          await wireInput(
+            h,
+            inputSample(seq: seq, moveX: 1, playerId: p2),
+          );
+        }
+        h.tick();
+      }
+
+      final last = h.snapshotsSent.last;
+      final x1 = last.players.firstWhere((p) => p.playerId == p1).x;
+      final x2 = last.players.firstWhere((p) => p.playerId == p2).x;
+      expect(x2, greaterThan(x1 + 0.5),
+          reason: 'attributed sample must drive p2, not p1');
+      expect(h.runtime.isRoundActive, isTrue);
+    });
+
+    test('unattributed input is dropped and logged', () async {
+      final log = RecordingNetLog();
+      final h = HostHarness(
+        roster: const {p1, p2},
+        mapBuilder: (seed) => flatCourse(seed, finishX: 1000),
+        log: log,
+      );
+      addTearDown(h.client.dispose);
+      await h.boot();
+      h.runtime.startRound(0, 'trap_race', 7);
+
+      // Settle spawn overlap first so idle means "does not move".
+      for (var i = 0; i < 240; i++) {
+        h.tick();
+      }
+      final settled = h.snapshotsSent.last;
+      double xOf(PlayerId id, Snapshot s) =>
+          s.players.firstWhere((p) => p.playerId == id).x;
+
+      var seq = 100;
+      for (var i = 0; i < 60; i++) {
+        seq++;
+        await wireInput(h, inputSample(seq: seq, moveX: 1));
+      }
+      for (var i = 0; i < 60; i++) {
+        h.tick();
+      }
+
+      final after = h.snapshotsSent.last;
+      expect(xOf(p1, after), closeTo(xOf(p1, settled), 0.05));
+      expect(xOf(p2, after), closeTo(xOf(p2, settled), 0.05));
+      expect(log.warnings, isNotEmpty,
+          reason: 'unattributed inputs must be logged, never silent');
+      expect(h.runtime.isRoundActive, isTrue);
+    });
+  });
+
   group('HostRuntime guards', () {
     test('empty roster is rejected', () {
       expect(

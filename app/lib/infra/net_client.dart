@@ -131,9 +131,10 @@ final class NetClient {
   /// Member input samples relayed by the server while this client
   /// hosts a match (network doc § 1: 30 Hz each).
   ///
-  /// The wire format carries no sender identity — the server relays
-  /// the raw frame — so attributing a sample to a `PlayerId` is the
-  /// consumer's concern (protocol gap, see the task report).
+  /// Attribution: the server stamps the sending connection's
+  /// `playerId` before relaying (network doc § 1 "Input attribution");
+  /// a null playerId means unattributed and must be dropped by the
+  /// consumer.
   Stream<PlayerInputMessage> get memberInputs =>
       _memberInputsController.stream;
 

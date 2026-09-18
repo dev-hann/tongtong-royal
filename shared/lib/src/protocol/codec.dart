@@ -203,6 +203,15 @@ bool _optBool(Map<String, dynamic> v, String field, bool fallback) {
   return _reqBool(v, field);
 }
 
+/// Optional string; absent key → `null`. Used for wire-compatible
+/// additions whose old payloads lack the key.
+String? _optString(Map<String, dynamic> v, String field) {
+  if (!v.containsKey(field)) {
+    return null;
+  }
+  return _reqString(v, field);
+}
+
 List<dynamic> _reqList(Map<String, dynamic> v, String field) {
   final value = v[field];
   if (value is! List) {
@@ -254,6 +263,7 @@ WireMessage _decodeInput(Map<String, dynamic> v) => PlayerInputMessage(
   moveY: _reqDouble(v, 'moveY'),
   jump: _reqBool(v, 'jump'),
   dash: _reqBool(v, 'dash'),
+  playerId: _optString(v, 'playerId'),
 );
 
 WireMessage _decodeVersionMismatch(Map<String, dynamic> v) =>

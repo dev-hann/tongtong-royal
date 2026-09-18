@@ -303,7 +303,24 @@ final class GameServer {
       log('input from $id dropped: over $inputRateLimit msgs/s');
       return;
     }
-    hub.send(room.hostConnectionId, input);
+    final connection = hub.connection(id);
+    if (connection == null) {
+      log('input from $id dropped: no registered connection');
+      return;
+    }
+    // Stamp the sending connection's identity — client-supplied
+    // playerId is overwritten, never trusted (network doc § 1, § 3).
+    hub.send(
+      room.hostConnectionId,
+      PlayerInputMessage(
+        seq: input.seq,
+        moveX: input.moveX,
+        moveY: input.moveY,
+        jump: input.jump,
+        dash: input.dash,
+        playerId: connection.playerId,
+      ),
+    );
   }
 
   void _relayFromHost(ConnectionId id, WireMessage message) {

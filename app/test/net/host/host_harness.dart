@@ -2,6 +2,7 @@ import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/player_character.dart';
 import 'package:app/infra/net_client.dart';
+import 'package:app/infra/net_log.dart';
 import 'package:app/net/host/host_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forge2d/forge2d.dart';
@@ -39,13 +40,29 @@ PlayerInputMessage inputSample({
   double moveY = 0,
   bool jump = false,
   bool dash = false,
+  PlayerId? playerId,
 }) => PlayerInputMessage(
   seq: seq,
   moveX: moveX,
   moveY: moveY,
   jump: jump,
   dash: dash,
+  playerId: playerId,
 );
+
+/// In-memory [NetLog] recording warnings for drop assertions.
+final class RecordingNetLog implements NetLog {
+  final List<String> warnings = <String>[];
+
+  @override
+  void info(String message) {}
+
+  @override
+  void warn(String message) => warnings.add(message);
+
+  @override
+  void error(String message, [Object? error, StackTrace? stackTrace]) {}
+}
 
 /// Real [NetClient] over a [FakeConnection] plus a [HostRuntime] on
 /// an injectable simulation factory (testing doc § 4: headless,
@@ -54,6 +71,7 @@ final class HostHarness {
   HostHarness({
     Set<PlayerId> roster = const {p1},
     CourseMap Function(int mapSeed)? mapBuilder,
+    NetLog? log,
   }) : fake = FakeConnection() {
     client = NetClient(
       connectionFactory: (_) async => fake,
@@ -64,6 +82,7 @@ final class HostHarness {
       client: client,
       game: const TrapRace(),
       roster: roster,
+      log: log,
       simulationFactory: (minigameId, mapSeed, players) =>
           RaceSimulation.forTesting(
             map: mapBuilder?.call(mapSeed) ?? flatCourse(mapSeed),

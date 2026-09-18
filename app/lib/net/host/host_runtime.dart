@@ -3,21 +3,15 @@ import 'dart:async';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/infra/net_client.dart';
+import 'package:app/infra/net_log.dart';
 import 'package:forge2d/forge2d.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
-/// Host snapshot broadcast rate in hertz (network doc § 1).
-const int snapshotRateHz = 20;
-
 /// One snapshot every Nth simulation tick:
-/// `PhysicsConsts.tickRate ~/ snapshotRateHz` — 60 Hz sim → 20 Hz
-/// snapshots → every 3rd tick (network doc § 1).
-const int snapshotEveryTicks = PhysicsConsts.tickRate ~/ snapshotRateHz;
-
-/// Forward-progress sampling cadence: one [ProgressSample] per player
-/// every Nth round tick, fed into the domain resolver (GDD § 7.4;
-/// last sample per player wins).
-const int progressSampleEveryTicks = 10;
+/// `PhysicsConsts.tickRate ~/ PhysicsConsts.snapshotRateHz` — 60 Hz sim
+/// → 20 Hz snapshots → every 3rd tick (network doc § 1).
+const int snapshotEveryTicks =
+    PhysicsConsts.tickRate ~/ PhysicsConsts.snapshotRateHz;
 
 /// Builds the round simulation for a minigame/seed pair. The default
 /// builds the Trap Race course from the seed (architecture doc § 3:
@@ -54,15 +48,21 @@ final class HostRuntime {
     required this.game,
     required Set<PlayerId> roster,
     RaceSimulationFactory? simulationFactory,
+    NetLog? log,
   }) : roster = Set.unmodifiable(roster),
-       simulationFactory = simulationFactory ?? defaultRaceSimulationFactory {
+        simulationFactory = simulationFactory ?? defaultRaceSimulationFactory,
+        _log = log ?? const SilentNetLog() {
     if (roster.isEmpty) {
       throw ArgumentError.value(roster, 'roster', 'must not be empty');
     }
+    _memberInputsSubscription = client.memberInputs.listen(_onMemberInput);
   }
 
   /// Transport used for every host broadcast.
   final NetClient client;
+
+  /// Diagnostic sink for dropped (unattributed) member inputs.
+  final NetLog _log;
 
   /// Domain rules; the runtime itself judges nothing.
   final TrapRace game;
@@ -78,6 +78,7 @@ final class HostRuntime {
 
   RaceSimulation? _simulation;
   StreamSubscription<RoundEvent>? _eventsSubscription;
+  StreamSubscription<PlayerInputMessage>? _memberInputsSubscription;
   final List<RoundEvent> _roundEvents = <RoundEvent>[];
   final List<ProgressSample> _samples = <ProgressSample>[];
   final Map<PlayerId, PlayerInputMessage> _latestInput = {};
@@ -135,8 +136,10 @@ final class HostRuntime {
   /// player; stale `seq` and samples from outside the roster or
   /// outside a running round are dropped (network doc § 1, § 6).
   ///
-  /// Attribution is the caller's concern: the wire carries no sender
-  /// identity yet (protocol gap, see the task report).
+  /// The [playerId] comes from the server stamp on
+  /// [PlayerInputMessage.playerId] (network doc § 1 "Input
+  /// attribution") — the bridge [_onMemberInput] feeds this buffer
+  /// from `NetClient.memberInputs` keyed by that identity.
   void submitMemberInput(PlayerId playerId, PlayerInputMessage input) {
     if (!_roundActive || !roster.contains(playerId)) {
       return;
@@ -147,6 +150,22 @@ final class HostRuntime {
     }
     _lastInputSeq[playerId] = input.seq;
     _latestInput[playerId] = input;
+  }
+
+  /// Routes server-relayed member samples into the input buffer. The
+  /// stamped [PlayerInputMessage.playerId] is authoritative; samples
+  /// without one (unattributed) are dropped and logged — never fed to
+  /// a guessed body.
+  void _onMemberInput(PlayerInputMessage input) {
+    final playerId = input.playerId;
+    if (playerId == null) {
+      _log.warn(
+        'dropped unattributed member input seq ${input.seq} '
+        '(network doc § 1: server must stamp the sending connection)',
+      );
+      return;
+    }
+    submitMemberInput(playerId, input);
   }
 
   /// Advances host time by [dtSeconds] on a fixed-dt accumulator:
@@ -171,11 +190,13 @@ final class HostRuntime {
     }
   }
 
-  /// Releases the runtime: event subscription, simulation and the
-  /// completion stream.
+  /// Releases the runtime: event subscription, member-input bridge,
+  /// simulation and the completion stream.
   Future<void> dispose() async {
     await _eventsSubscription?.cancel();
     _eventsSubscription = null;
+    await _memberInputsSubscription?.cancel();
+    _memberInputsSubscription = null;
     _simulation?.dispose();
     _simulation = null;
     _roundActive = false;
@@ -192,7 +213,8 @@ final class HostRuntime {
     if (_tick % snapshotEveryTicks == 0) {
       _broadcastSnapshot(simulation);
     }
-    if ((_tick - _roundStartTick) % progressSampleEveryTicks == 0) {
+    if ((_tick - _roundStartTick) % PhysicsConsts.progressSampleIntervalTicks
+        == 0) {
       _sampleProgress(simulation);
     }
     _maybeEndRound();

@@ -165,21 +165,31 @@ final class EndMatch extends WireMessage {
 /// `PhysicsGuards.sanitizeJoystick` on the sending side; the constructor
 /// clamps defensively again so no out-of-range or non-finite value can
 /// exist in an instance.
+///
+/// [PlayerInputMessage.playerId] is stamped by the server from the
+/// sending connection before relay (network doc § 1 "Input
+/// attribution"); clients send samples without it.
 @immutable
 final class PlayerInputMessage extends WireMessage {
   /// Creates an input sample. [moveX]/[moveY] are clamped to [-1, 1];
-  /// NaN collapses to 0.
+  /// NaN collapses to 0. [playerId] is the server-stamped sender
+  /// identity, absent on the client → server leg of the wire.
   PlayerInputMessage({
     required this.seq,
     required double moveX,
     required double moveY,
     required this.jump,
     required this.dash,
+    this.playerId,
   }) : moveX = _sanitize(moveX),
        moveY = _sanitize(moveY);
 
   /// Monotonic per-connection input counter; later wins.
   final int seq;
+
+  /// Server-stamped sender identity (network doc § 1). `null` means
+  /// unattributed — the original client-to-server form.
+  final PlayerId? playerId;
 
   /// Joystick X in [-1, 1].
   final double moveX;
@@ -207,12 +217,14 @@ final class PlayerInputMessage extends WireMessage {
     'moveY': moveY,
     'jump': jump,
     'dash': dash,
+    if (playerId != null) 'playerId': playerId,
   };
 
   @override
   bool operator ==(Object other) =>
       other is PlayerInputMessage &&
       other.seq == seq &&
+      other.playerId == playerId &&
       other.moveX == moveX &&
       other.moveY == moveY &&
       other.jump == jump &&
@@ -220,5 +232,5 @@ final class PlayerInputMessage extends WireMessage {
 
   @override
   int get hashCode =>
-      Object.hash(PlayerInputMessage, seq, moveX, moveY, jump, dash);
+      Object.hash(PlayerInputMessage, seq, playerId, moveX, moveY, jump, dash);
 }
