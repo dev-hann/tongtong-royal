@@ -159,6 +159,16 @@ void main() {
       }
     });
 
+    test('endMatch resets roundIndex for the next match', () {
+      final m = makeManager();
+      final code = activeMatchRoom(m.manager);
+      m.manager.roomByCode(code)!.roundIndex = 4;
+
+      expect(m.manager.endMatch('host-conn'), EndMatchStatus.ok);
+
+      expect(m.manager.roomByCode(code)!.roundIndex, 0);
+    });
+
     test('endMatch by non-host rejected', () {
       final m = makeManager();
       activeMatchRoom(m.manager);

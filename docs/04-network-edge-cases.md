@@ -87,7 +87,7 @@ Sequencing: **inputs and snapshots carry independent `seq`/`tick` counters.** On
 | Empty room TTL | 5 minutes after last human leaves → room deleted, invite code recycled |
 | Room capacity | 4 seats total. Join beyond capacity → `roomFull` rejection |
 | Host voluntary leave | Room closes immediately (`RoomClosed { hostLeft }`) if other players remain; if host is the last human, the empty-room TTL row applies |
-| Match end | Host-only `endMatch` returns the room to lobby: spectators become players, ready states reset. (Client-side, the podium → lobby transition triggers this) |
+| Match end | Host-only `endMatch` returns the room to lobby: spectators become players, ready states reset, round index resets to 0. (Client-side, the podium → lobby transition triggers this) |
 | Reserved seat join | Joining with a playerId that holds a reserved (disconnected) seat → `AlreadyConnected`; the client must use `RejoinRoom` instead |
 | Stale reserved seat | If grace expired without a `sweep` having run, the stale seat is resolved lazily at rejoin time: deterministic forfeit, same as swept removal |
 | Invite code | 6-char uppercase alphanumeric (no 0/O/1/I). Collision → regenerate server-side. Codes recycle only after room deletion |

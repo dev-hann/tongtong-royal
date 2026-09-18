@@ -430,6 +430,7 @@ final class RoomManager {
     if (room.hostConnectionId != connectionId) return EndMatchStatus.notHost;
     if (room.phase != RoomPhase.inMatch) return EndMatchStatus.notInMatch;
     room.phase = RoomPhase.lobby;
+    room.roundIndex = 0;
     for (final seat in room.players.values) {
       seat
         ..isSpectator = false
