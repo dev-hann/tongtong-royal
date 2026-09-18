@@ -10,6 +10,7 @@ void main() {
     test('all double tuning constants are positive', () {
       const values = <double>[
         PhysicsConsts.fixedDt,
+        PhysicsConsts.gravityMagnitude,
         PhysicsConsts.maxLinearVelocity,
         PhysicsConsts.maxAngularVelocity,
         PhysicsConsts.jumpImpulse,

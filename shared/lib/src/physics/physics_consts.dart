@@ -10,6 +10,11 @@ abstract final class PhysicsConsts {
   /// Fixed simulation timestep in seconds, the inverse of [tickRate].
   static const double fixedDt = 1 / tickRate;
 
+  /// Gravity magnitude, meters per second squared (positive value;
+  /// worlds apply it downward). Combined with [jumpImpulse] on a ~65 kg
+  /// player this yields ~4.9 m/s takeoff, about 1.2 m of jump height.
+  static const double gravityMagnitude = 10;
+
   /// Hard cap on player linear speed, meters per second. The host
   /// clamps every player body to this each tick.
   static const double maxLinearVelocity = 20;
