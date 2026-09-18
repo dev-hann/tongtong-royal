@@ -69,14 +69,48 @@ final class ServerFull extends WireMessage {
   int get hashCode => runtimeType.hashCode;
 }
 
+/// Why a join/rejoin request was rejected (network doc § 2).
+enum JoinFailReason {
+  /// No live room with that invite code.
+  notFound,
+
+  /// Room already holds the maximum number of seats (network § 8).
+  roomFull,
+}
+
+/// Rejects a `JoinRoom`/`RejoinRoom` request (network doc § 2). The
+/// connection stays open; the client may retry with another code.
+@immutable
+final class JoinFailed extends WireMessage {
+  /// Creates the rejection.
+  const JoinFailed({required this.reason});
+
+  /// Why the request was rejected.
+  final JoinFailReason reason;
+
+  @override
+  Map<String, Object?> toJson() => <String, Object?>{'reason': reason.name};
+
+  @override
+  bool operator ==(Object other) =>
+      other is JoinFailed && other.reason == reason;
+
+  @override
+  int get hashCode => Object.hash(JoinFailed, reason);
+}
+
 /// Lobby entry of one player inside a [RoomSnapshot].
 @immutable
 final class PlayerInfo {
-  /// Creates the entry.
+  /// Creates the entry. [connected] defaults to `true` and
+  /// [isSpectator] to `false` so pre-flag payloads stay decodable
+  /// (wire-compatible addition, network doc § 8).
   const PlayerInfo({
     required this.playerId,
     required this.nickname,
     required this.ready,
+    this.connected = true,
+    this.isSpectator = false,
   });
 
   /// Identity of the player.
@@ -88,11 +122,21 @@ final class PlayerInfo {
   /// Lobby ready flag.
   final bool ready;
 
+  /// Whether the player's socket is currently open. Reserved
+  /// (disconnected) grace seats are listed with `false` (network § 5).
+  final bool connected;
+
+  /// Whether this seat is a spectator of the running match
+  /// (network doc § 8).
+  final bool isSpectator;
+
   /// Wire form of this entry.
   Map<String, Object?> toJson() => <String, Object?>{
     'playerId': playerId,
     'nickname': nickname,
     'ready': ready,
+    'connected': connected,
+    'isSpectator': isSpectator,
   };
 
   @override
@@ -100,10 +144,19 @@ final class PlayerInfo {
       other is PlayerInfo &&
       other.playerId == playerId &&
       other.nickname == nickname &&
-      other.ready == ready;
+      other.ready == ready &&
+      other.connected == connected &&
+      other.isSpectator == isSpectator;
 
   @override
-  int get hashCode => Object.hash(PlayerInfo, playerId, nickname, ready);
+  int get hashCode => Object.hash(
+    PlayerInfo,
+    playerId,
+    nickname,
+    ready,
+    connected,
+    isSpectator,
+  );
 }
 
 /// Full room state reply sent after join/create/rejoin and on changes
@@ -191,13 +244,8 @@ final class RoundStarting extends WireMessage {
       other.timeoutMs == timeoutMs;
 
   @override
-  int get hashCode => Object.hash(
-        RoundStarting,
-        roundIndex,
-        minigameId,
-        mapSeed,
-        timeoutMs,
-      );
+  int get hashCode =>
+      Object.hash(RoundStarting, roundIndex, minigameId, mapSeed, timeoutMs);
 }
 
 /// Per-player simulation state inside a 20 Hz host [Snapshot]
@@ -268,8 +316,7 @@ final class PlayerState {
       other.vy == vy;
 
   @override
-  int get hashCode =>
-      Object.hash(PlayerState, playerId, x, y, angle, vx, vy);
+  int get hashCode => Object.hash(PlayerState, playerId, x, y, angle, vx, vy);
 }
 
 /// Host-authoritative world state broadcast at 20 Hz (network doc § 1).
@@ -335,8 +382,7 @@ final class RoundResultsMessage extends WireMessage {
       _listEquals(other.roundResult.placements, roundResult.placements);
 
   @override
-  int get hashCode =>
-      Object.hash(RoundResultsMessage, roundResult.roundIndex);
+  int get hashCode => Object.hash(RoundResultsMessage, roundResult.roundIndex);
 }
 
 /// Why a room ended (network doc § 5.1, § 8).

@@ -12,8 +12,8 @@ void main() {
   setUp(() async {
     harness = await startHarness();
     host = await harness.connectAndHello('host', nickname: 'Host');
-    final created = await (host..send(const CreateRoom())).next()
-        as RoomSnapshot;
+    final created =
+        await (host..send(const CreateRoom())).next() as RoomSnapshot;
     roomCode = created.code;
     guest = await harness.connectAndHello('guest', nickname: 'Guest');
     await (guest..send(JoinRoom(code: roomCode))).next();
@@ -24,8 +24,7 @@ void main() {
     await harness.close();
   });
 
-  test('create then join broadcasts snapshots with both players',
-      () async {
+  test('create then join broadcasts snapshots with both players', () async {
     final guestView = await harness.connectAndHello('late');
     guestView.send(JoinRoom(code: roomCode));
     final snapshot = await guestView.next() as RoomSnapshot;

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:app/game/player_input.dart';
 import 'package:app/infra/connection.dart';
 import 'package:app/infra/net_log.dart';
 import 'package:app/infra/net_status.dart';

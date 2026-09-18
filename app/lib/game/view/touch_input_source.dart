@@ -1,7 +1,7 @@
-import 'package:app/game/player_input.dart';
 import 'package:app/game/view/race_game_view.dart';
 import 'package:flutter/material.dart';
 import 'package:forge2d/forge2d.dart' show Vector2;
+import 'package:tongtong_shared/tongtong_shared.dart';
 
 /// UI geometry constant: joystick drag distance (logical px) at which
 /// the movement vector saturates at magnitude 1. Display-only; the

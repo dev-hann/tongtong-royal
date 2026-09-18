@@ -11,8 +11,9 @@ void main() {
     final http = await server.startServer('localhost', 0);
     addTearDown(() => http.close(force: true));
 
-    final channel =
-        WebSocketChannel.connect(Uri.parse('ws://localhost:${http.port}'));
+    final channel = WebSocketChannel.connect(
+      Uri.parse('ws://localhost:${http.port}'),
+    );
     await channel.ready;
     final client = TestClient(channel);
     addTearDown(client.close);

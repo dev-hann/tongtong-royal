@@ -13,12 +13,10 @@ void main() {
 
   setUp(() async {
     clock = ManualClock(startMs: 1000);
-    harness = await startHarness(
-      manager: RoomManager(clock: clock.call),
-    );
+    harness = await startHarness(manager: RoomManager(clock: clock.call));
     host = await harness.connectAndHello('host', nickname: 'Host');
-    final created = await (host..send(const CreateRoom())).next()
-        as RoomSnapshot;
+    final created =
+        await (host..send(const CreateRoom())).next() as RoomSnapshot;
     roomCode = created.code;
     member = await harness.connectAndHello('member', nickname: 'Member');
     await (member..send(JoinRoom(code: roomCode))).next();
@@ -32,14 +30,27 @@ void main() {
   test('member socket close broadcasts an updated snapshot', () async {
     await member.close();
     final snapshot = await host.next() as RoomSnapshot;
-    expect(snapshot.players, hasLength(1));
-    expect(snapshot.players.single.playerId, 'host');
+    // Reserved grace seat stays listed as disconnected (network § 8).
+    expect(snapshot.players, hasLength(2));
+    final reserved = snapshot.players.singleWhere(
+      (p) => p.playerId == 'member',
+    );
+    expect(reserved.connected, isFalse);
+    expect(
+      snapshot.players.singleWhere((p) => p.playerId == 'host').connected,
+      isTrue,
+    );
   });
 
   test('host grace expiry closes the room for everyone', () async {
     await host.close();
     final snapshot = await member.next() as RoomSnapshot;
-    expect(snapshot.players, hasLength(1)); // host went reserved
+    // Host went reserved: still listed, flagged disconnected.
+    expect(snapshot.players, hasLength(2));
+    expect(
+      snapshot.players.singleWhere((p) => p.playerId == 'host').connected,
+      isFalse,
+    );
     await Future<void>.delayed(const Duration(milliseconds: 200));
 
     clock.advanceMs(graceWindowMs + 1);
@@ -61,8 +72,7 @@ void main() {
     await member.expectClosed();
   });
 
-  test('sweep past the empty-room TTL deletes an abandoned room',
-      () async {
+  test('sweep past the empty-room TTL deletes an abandoned room', () async {
     final solo = await harness.connectAndHello('solo');
     solo.send(const CreateRoom());
     await solo.next(); // creation snapshot

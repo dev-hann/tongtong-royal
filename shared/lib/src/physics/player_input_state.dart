@@ -1,5 +1,5 @@
-import 'package:forge2d/forge2d.dart';
-import 'package:tongtong_shared/tongtong_shared.dart';
+import 'package:tongtong_shared/src/physics/physics_guards.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 /// A single tick of player input, already sanitized.
 ///

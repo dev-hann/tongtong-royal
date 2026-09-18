@@ -32,7 +32,7 @@ final class GameServer {
   /// Creates a server around [manager] (default: a manager on the
   /// wall clock). [log] receives operational noise; default drops it.
   GameServer({RoomManager? manager, this.log = noopLog})
-      : manager = manager ?? RoomManager(clock: _wallClockMs);
+    : manager = manager ?? RoomManager(clock: _wallClockMs);
 
   static int _wallClockMs() => DateTime.now().millisecondsSinceEpoch;
 
@@ -46,17 +46,18 @@ final class GameServer {
   late final ConnectionHub hub = ConnectionHub(logger: log);
 
   /// Input rate caps keyed by connection.
-  late final _InputRateLimiter _inputRate =
-      _InputRateLimiter(clock: manager.clock);
+  late final _InputRateLimiter _inputRate = _InputRateLimiter(
+    clock: manager.clock,
+  );
 
   /// Number of live rooms.
   int get roomCount => manager.roomCount;
 
   /// Shelf handler upgrading requests to WebSocket connections.
   Handler handler() => webSocketHandler(
-        (WebSocketChannel channel, String? _) =>
-            unawaited(ConnectionSession(server: this, channel: channel).run()),
-      );
+    (WebSocketChannel channel, String? _) =>
+        unawaited(ConnectionSession(server: this, channel: channel).run()),
+  );
 
   /// Bootstrap helper: binds [handler] with shelf's IO server on
   /// [address]:[port] (port 0 picks an ephemeral port).
@@ -68,11 +69,7 @@ final class GameServer {
     WebSocketChannel channel, {
     required Hello hello,
   }) =>
-      hub.register(
-        channel,
-        playerId: hello.playerId,
-        nickname: hello.nickname,
-      );
+      hub.register(channel, playerId: hello.playerId, nickname: hello.nickname);
 
   /// Routes one decoded command from [id] (network doc § 6: messages
   /// invalid for the current state are dropped and logged, never
@@ -93,10 +90,14 @@ final class GameServer {
         _setReady(id, ready);
       case StartMatch():
         _startMatch(id);
+      case EndMatch():
+        _endMatch(id);
       case PlayerInputMessage():
         _relayInput(id, message);
-      case Snapshot() || RoundStarting() || RoundResultsMessage() ||
-            RoomClosed():
+      case Snapshot() ||
+          RoundStarting() ||
+          RoundResultsMessage() ||
+          RoomClosed():
         _relayFromHost(id, message);
       default:
         log('dropping ${message.runtimeType} from $id: not valid here');
@@ -180,11 +181,9 @@ final class GameServer {
         hub.joinRoom(id, code);
         _broadcastSnapshot(code);
       case JoinRoomStatus.notFound:
-        // Protocol gap: no wire tag for `notFound` rejections.
-        log('join of $code by $id rejected: not found (no wire tag)');
+        hub.send(id, const JoinFailed(reason: JoinFailReason.notFound));
       case JoinRoomStatus.roomFull:
-        // Protocol gap: no wire tag for `roomFull` rejections.
-        log('join of $code by $id rejected: room full (no wire tag)');
+        hub.send(id, const JoinFailed(reason: JoinFailReason.roomFull));
       case JoinRoomStatus.alreadyConnected:
         hub.send(id, const AlreadyConnected());
       case JoinRoomStatus.rateLimited:
@@ -210,11 +209,9 @@ final class GameServer {
         hub.joinRoom(id, code);
         _broadcastSnapshot(code);
       case RejoinRoomStatus.notFound:
-        // Protocol gap: no wire tag for `notFound` rejections.
-        log('rejoin of $code by $id rejected: not found (no wire tag)');
+        hub.send(id, const JoinFailed(reason: JoinFailReason.notFound));
       case RejoinRoomStatus.roomFull:
-        // Protocol gap: no wire tag for `roomFull` rejections.
-        log('rejoin of $code by $id rejected: room full (no wire tag)');
+        hub.send(id, const JoinFailed(reason: JoinFailReason.roomFull));
       case RejoinRoomStatus.alreadyConnected:
         hub.send(id, const AlreadyConnected());
       case RejoinRoomStatus.rateLimited:
@@ -269,6 +266,22 @@ final class GameServer {
         log('startMatch from $id dropped: players not ready');
       case StartMatchStatus.tooFewPlayers:
         log('startMatch from $id dropped: too few players');
+    }
+  }
+
+  void _endMatch(ConnectionId id) {
+    switch (manager.endMatch(id)) {
+      case EndMatchStatus.ok:
+        final roomCode = hub.roomOf(id);
+        if (roomCode != null) {
+          _broadcastSnapshot(roomCode);
+        }
+      case EndMatchStatus.notInRoom:
+        log('endMatch from $id dropped: not in a room');
+      case EndMatchStatus.notHost:
+        log('endMatch from $id dropped: sender is not the host');
+      case EndMatchStatus.notInMatch:
+        log('endMatch from $id dropped: no match is running');
     }
   }
 
@@ -335,22 +348,27 @@ final class GameServer {
   }
 
   RoomSnapshot _snapshotOf(Room room) => RoomSnapshot(
-        code: room.code,
-        players: [
-          for (final seat in room.players.values.where((s) => s.connected))
-            PlayerInfo(
-              playerId: seat.playerId,
-              nickname: seat.nickname,
-              ready: seat.ready,
-            ),
-        ],
-        // The server only knows lobby/inMatch; a running match is
-        // reported as roundPlay (protocol approximation, see report).
-        phase: room.phase == RoomPhase.inMatch
-            ? RoundPhase.roundPlay
-            : RoundPhase.lobby,
-        roundIndex: room.roundIndex,
-      );
+    code: room.code,
+    players: [
+      // Reserved (disconnected) grace seats stay listed with
+      // connected:false so clients can render them (network § 5,
+      // § 8); spectators carry isSpectator:true.
+      for (final seat in room.players.values)
+        PlayerInfo(
+          playerId: seat.playerId,
+          nickname: seat.nickname,
+          ready: seat.ready,
+          connected: seat.connected,
+          isSpectator: seat.isSpectator,
+        ),
+    ],
+    // The server only knows lobby/inMatch; a running match is
+    // reported as roundPlay (protocol approximation, see report).
+    phase: room.phase == RoomPhase.inMatch
+        ? RoundPhase.roundPlay
+        : RoundPhase.lobby,
+    roundIndex: room.roundIndex,
+  );
 
   void _closeRoom(String roomCode, RoomCloseReason reason) {
     for (final id in hub.members(roomCode)) {

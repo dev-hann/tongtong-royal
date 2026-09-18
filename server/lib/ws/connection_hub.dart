@@ -141,11 +141,7 @@ final class ConnectionHub {
   }
 
   /// Sends [message] to every member of a room except [except].
-  void broadcast(
-    String roomCode,
-    WireMessage message, {
-    ConnectionId? except,
-  }) {
+  void broadcast(String roomCode, WireMessage message, {ConnectionId? except}) {
     for (final id in members(roomCode)) {
       if (id == except) {
         continue;

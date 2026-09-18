@@ -26,14 +26,29 @@ List<WireMessage> _allMessages() {
     const VersionMismatch(status: VersionStatus.ok),
     const VersionMismatch(status: VersionStatus.clientTooOld),
     const VersionMismatch(status: VersionStatus.serverTooOld),
+    const EndMatch(),
     const RateLimited(),
     const AlreadyConnected(),
     const ServerFull(),
+    const JoinFailed(reason: JoinFailReason.notFound),
+    const JoinFailed(reason: JoinFailReason.roomFull),
     RoomSnapshot(
       code: 'ABC234',
       players: List<PlayerInfo>.unmodifiable(const [
         PlayerInfo(playerId: 'p1', nickname: 'host', ready: true),
         PlayerInfo(playerId: 'p2', nickname: 'guest', ready: false),
+        PlayerInfo(
+          playerId: 'p3',
+          nickname: 'reserved',
+          ready: false,
+          connected: false,
+        ),
+        PlayerInfo(
+          playerId: 'p4',
+          nickname: 'watcher',
+          ready: false,
+          isSpectator: true,
+        ),
       ]),
       phase: RoundPhase.roundPlay,
       roundIndex: 3,
@@ -55,14 +70,7 @@ List<WireMessage> _allMessages() {
           vx: -0.11,
           vy: 1,
         ),
-        const PlayerState(
-          playerId: 'p2',
-          x: 0,
-          y: 0,
-          angle: 0,
-          vx: 0,
-          vy: 0,
-        ),
+        const PlayerState(playerId: 'p2', x: 0, y: 0, angle: 0, vx: 0, vy: 0),
       ]),
     ),
     const RoundResultsMessage(
@@ -124,8 +132,8 @@ void main() {
         vx: 1.23456789,
         vy: 1.23456789,
       );
-      final decoded = decode(encode(const Snapshot(tick: 1, players: [state])))
-          as Snapshot;
+      final decoded =
+          decode(encode(const Snapshot(tick: 1, players: [state]))) as Snapshot;
       final p = decoded.players.single;
       expect(p.x, 1.23);
       expect(p.y, 1.23);
@@ -144,8 +152,7 @@ void main() {
         vy: 0,
       );
       final decoded =
-          decode(encode(const Snapshot(tick: 1, players: [state])))
-              as Snapshot;
+          decode(encode(const Snapshot(tick: 1, players: [state]))) as Snapshot;
       final p = decoded.players.single;
       expect(p.x, 0.0);
       expect(p.y, 0.0);
@@ -185,6 +192,28 @@ void main() {
     test('message exactly at cap passes assertSize', () {
       expect(() => assertSize('a' * maxMessageBytes), returnsNormally);
     });
+
+    test('maximal RoomSnapshot with seat flags stays under the cap', () {
+      final snapshot = RoomSnapshot(
+        code: 'ABC234',
+        players: List<PlayerInfo>.unmodifiable(
+          List.generate(
+            4,
+            (i) => PlayerInfo(
+              playerId: '00000000-0000-4000-8000-00000000000$i',
+              nickname: 'nickname-$i',
+              ready: true,
+              connected: i.isEven,
+              isSpectator: i.isOdd,
+            ),
+          ),
+        ),
+        phase: RoundPhase.roundPlay,
+        roundIndex: 2147483647,
+      );
+      final encoded = encode(snapshot);
+      expect(encoded.length, lessThan(maxMessageBytes), reason: encoded);
+    });
   });
 
   group('decode rejection', () {
@@ -196,40 +225,30 @@ void main() {
     });
 
     test('malformed JSON throws ProtocolException', () {
-      expect(
-        () => decode('{"t":'),
-        throwsA(isA<ProtocolException>()),
-      );
+      expect(() => decode('{"t":'), throwsA(isA<ProtocolException>()));
     });
 
     test('non-object envelope throws ProtocolException', () {
-      expect(
-        () => decode('[1,2,3]'),
-        throwsA(isA<ProtocolException>()),
-      );
+      expect(() => decode('[1,2,3]'), throwsA(isA<ProtocolException>()));
     });
 
     test('missing tag field throws ProtocolException', () {
-      expect(
-        () => decode('{"v":{}}'),
-        throwsA(isA<ProtocolException>()),
-      );
+      expect(() => decode('{"v":{}}'), throwsA(isA<ProtocolException>()));
     });
 
     test('missing payload field throws ProtocolException', () {
-      expect(
-        () => decode('{"t":"ping"}'),
-        throwsA(isA<ProtocolException>()),
-      );
+      expect(() => decode('{"t":"ping"}'), throwsA(isA<ProtocolException>()));
     });
 
-    test('missing payload field throws ProtocolException for typed messages',
-        () {
-      expect(
-        () => decode('{"t":"join_room","v":{}}'),
-        throwsA(isA<ProtocolException>()),
-      );
-    });
+    test(
+      'missing payload field throws ProtocolException for typed messages',
+      () {
+        expect(
+          () => decode('{"t":"join_room","v":{}}'),
+          throwsA(isA<ProtocolException>()),
+        );
+      },
+    );
 
     test('wrong field type throws ProtocolException', () {
       expect(
@@ -247,8 +266,10 @@ void main() {
 
     test('wrong int type throws ProtocolException', () {
       expect(
-        () => decode('{"t":"hello","v":{"protocolVersion":"1",'
-            '"playerId":"p","nickname":"n"}}'),
+        () => decode(
+          '{"t":"hello","v":{"protocolVersion":"1",'
+          '"playerId":"p","nickname":"n"}}',
+        ),
         throwsA(isA<ProtocolException>()),
       );
     });
@@ -286,11 +307,74 @@ void main() {
     });
   });
 
+  group('PlayerInfo seat-flag back-compat', () {
+    test('payload without the new keys decodes with defaults', () {
+      final decoded = decode(
+        '{"t":"room_snapshot","v":{"code":"ABC234","players":['
+        '{"playerId":"p1","nickname":"host","ready":true}],'
+        '"phase":"lobby","roundIndex":0}}',
+      ) as RoomSnapshot;
+      final player = decoded.players.single;
+      expect(
+        player.connected,
+        isTrue,
+        reason: 'absent connected must default to true',
+      );
+      expect(
+        player.isSpectator,
+        isFalse,
+        reason: 'absent isSpectator must default to false',
+      );
+    });
+
+    test('payload with the new keys roundtrips them', () {
+      final decoded = decode(
+        '{"t":"room_snapshot","v":{"code":"ABC234","players":['
+        '{"playerId":"p1","nickname":"host","ready":true,'
+        '"connected":false,"isSpectator":true}],'
+        '"phase":"lobby","roundIndex":0}}',
+      ) as RoomSnapshot;
+      final player = decoded.players.single;
+      expect(player.connected, isFalse);
+      expect(player.isSpectator, isTrue);
+    });
+
+    test('wrong type for the new keys throws ProtocolException', () {
+      expect(
+        () => decode(
+          '{"t":"room_snapshot","v":{"code":"ABC234","players":['
+          '{"playerId":"p1","nickname":"host","ready":true,'
+          '"connected":"yes"}],"phase":"lobby","roundIndex":0}}',
+        ),
+        throwsA(isA<ProtocolException>()),
+      );
+    });
+  });
+
+  group('JoinFailed', () {
+    test('unknown reason throws ProtocolException', () {
+      expect(
+        () => decode('{"t":"join_failed","v":{"reason":"alienInvasion"}}'),
+        throwsA(isA<ProtocolException>()),
+      );
+    });
+
+    test('missing reason throws ProtocolException', () {
+      expect(
+        () => decode('{"t":"join_failed","v":{}}'),
+        throwsA(isA<ProtocolException>()),
+      );
+    });
+  });
+
   group('tag table', () {
     test('every WireMessage subtype has a registered tag', () {
       for (final msg in _allMessages()) {
-        expect(messageTags[msg.runtimeType], isNotNull,
-            reason: '${msg.runtimeType} has no tag');
+        expect(
+          messageTags[msg.runtimeType],
+          isNotNull,
+          reason: '${msg.runtimeType} has no tag',
+        );
       }
     });
 
@@ -301,20 +385,17 @@ void main() {
 
     test('every tag has a decoder', () {
       for (final tag in messageTags.values) {
-        expect(messageDecoders.containsKey(tag), isTrue,
-            reason: 'tag "$tag" has no decoder');
+        expect(
+          messageDecoders.containsKey(tag),
+          isTrue,
+          reason: 'tag "$tag" has no decoder',
+        );
       }
     });
 
     test('decoder tags and tag table agree', () {
-      expect(
-        {...messageTags.values}.containsAll(messageDecoders.keys),
-        isTrue,
-      );
-      expect(
-        {...messageDecoders.keys}.containsAll(messageTags.values),
-        isTrue,
-      );
+      expect({...messageTags.values}.containsAll(messageDecoders.keys), isTrue);
+      expect({...messageDecoders.keys}.containsAll(messageTags.values), isTrue);
     });
   });
 }

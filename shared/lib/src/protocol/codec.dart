@@ -36,11 +36,13 @@ final class ProtocolException implements Exception {
 /// | `leave_room`      | [LeaveRoom]          | C → S     |
 /// | `set_ready`       | [SetReady]           | C → S     |
 /// | `start_match`     | [StartMatch]         | C → S     |
+/// | `end_match`       | [EndMatch]           | C → S     |
 /// | `input`           | [PlayerInputMessage] | C → S     |
 /// | `version_mismatch`| [VersionMismatch]    | S → C     |
 /// | `rate_limited`    | [RateLimited]        | S → C     |
 /// | `already_connected`| [AlreadyConnected]  | S → C     |
 /// | `server_full`     | [ServerFull]         | S → C     |
+/// | `join_failed`     | [JoinFailed]         | S → C     |
 /// | `room_snapshot`   | [RoomSnapshot]       | S → C     |
 /// | `round_starting`  | [RoundStarting]      | S → C     |
 /// | `snapshot`        | [Snapshot]           | S → C     |
@@ -56,11 +58,13 @@ const Map<Type, String> messageTags = <Type, String>{
   LeaveRoom: 'leave_room',
   SetReady: 'set_ready',
   StartMatch: 'start_match',
+  EndMatch: 'end_match',
   PlayerInputMessage: 'input',
   VersionMismatch: 'version_mismatch',
   RateLimited: 'rate_limited',
   AlreadyConnected: 'already_connected',
   ServerFull: 'server_full',
+  JoinFailed: 'join_failed',
   RoomSnapshot: 'room_snapshot',
   RoundStarting: 'round_starting',
   Snapshot: 'snapshot',
@@ -72,28 +76,30 @@ const Map<Type, String> messageTags = <Type, String>{
 
 /// Tag → payload decoder. Exposed so tests can assert the tag table is
 /// complete and consistent.
-const Map<String, WireMessage Function(Map<String, dynamic>)>
-    messageDecoders = <String, WireMessage Function(Map<String, dynamic>)>{
-  'hello': _decodeHello,
-  'create_room': _decodeCreateRoom,
-  'join_room': _decodeJoinRoom,
-  'rejoin_room': _decodeRejoinRoom,
-  'leave_room': _decodeLeaveRoom,
-  'set_ready': _decodeSetReady,
-  'start_match': _decodeStartMatch,
-  'input': _decodeInput,
-  'version_mismatch': _decodeVersionMismatch,
-  'rate_limited': _decodeRateLimited,
-  'already_connected': _decodeAlreadyConnected,
-  'server_full': _decodeServerFull,
-  'room_snapshot': _decodeRoomSnapshot,
-  'round_starting': _decodeRoundStarting,
-  'snapshot': _decodeSnapshot,
-  'round_results': _decodeRoundResults,
-  'room_closed': _decodeRoomClosed,
-  'ping': _decodePing,
-  'pong': _decodePong,
-};
+const Map<String, WireMessage Function(Map<String, dynamic>)> messageDecoders =
+    <String, WireMessage Function(Map<String, dynamic>)>{
+      'hello': _decodeHello,
+      'create_room': _decodeCreateRoom,
+      'join_room': _decodeJoinRoom,
+      'rejoin_room': _decodeRejoinRoom,
+      'leave_room': _decodeLeaveRoom,
+      'set_ready': _decodeSetReady,
+      'start_match': _decodeStartMatch,
+      'end_match': _decodeEndMatch,
+      'input': _decodeInput,
+      'version_mismatch': _decodeVersionMismatch,
+      'rate_limited': _decodeRateLimited,
+      'already_connected': _decodeAlreadyConnected,
+      'server_full': _decodeServerFull,
+      'join_failed': _decodeJoinFailed,
+      'room_snapshot': _decodeRoomSnapshot,
+      'round_starting': _decodeRoundStarting,
+      'snapshot': _decodeSnapshot,
+      'round_results': _decodeRoundResults,
+      'room_closed': _decodeRoomClosed,
+      'ping': _decodePing,
+      'pong': _decodePong,
+    };
 
 /// Encodes [msg] into the envelope `{"t": <tag>, "v": <payload>}`.
 ///
@@ -102,9 +108,7 @@ const Map<String, WireMessage Function(Map<String, dynamic>)>
 String encode(WireMessage msg) {
   final tag = messageTags[msg.runtimeType];
   if (tag == null) {
-    throw ProtocolException(
-      'no wire tag registered for ${msg.runtimeType}',
-    );
+    throw ProtocolException('no wire tag registered for ${msg.runtimeType}');
   }
   final String json;
   try {
@@ -190,6 +194,15 @@ bool _reqBool(Map<String, dynamic> v, String field) {
   return value;
 }
 
+/// Optional boolean with a default; absent key → [fallback]. Used for
+/// wire-compatible additions whose old payloads lack the key.
+bool _optBool(Map<String, dynamic> v, String field, bool fallback) {
+  if (!v.containsKey(field)) {
+    return fallback;
+  }
+  return _reqBool(v, field);
+}
+
 List<dynamic> _reqList(Map<String, dynamic> v, String field) {
   final value = v[field];
   if (value is! List) {
@@ -221,10 +234,10 @@ T _reqEnum<T extends Enum>(
 }
 
 WireMessage _decodeHello(Map<String, dynamic> v) => Hello(
-      protocolVersion: _reqInt(v, 'protocolVersion'),
-      playerId: _reqString(v, 'playerId'),
-      nickname: _reqString(v, 'nickname'),
-    );
+  protocolVersion: _reqInt(v, 'protocolVersion'),
+  playerId: _reqString(v, 'playerId'),
+  nickname: _reqString(v, 'nickname'),
+);
 
 WireMessage _decodeJoinRoom(Map<String, dynamic> v) =>
     JoinRoom(code: _reqString(v, 'code'));
@@ -236,55 +249,57 @@ WireMessage _decodeSetReady(Map<String, dynamic> v) =>
     SetReady(ready: _reqBool(v, 'ready'));
 
 WireMessage _decodeInput(Map<String, dynamic> v) => PlayerInputMessage(
-      seq: _reqInt(v, 'seq'),
-      moveX: _reqDouble(v, 'moveX'),
-      moveY: _reqDouble(v, 'moveY'),
-      jump: _reqBool(v, 'jump'),
-      dash: _reqBool(v, 'dash'),
-    );
+  seq: _reqInt(v, 'seq'),
+  moveX: _reqDouble(v, 'moveX'),
+  moveY: _reqDouble(v, 'moveY'),
+  jump: _reqBool(v, 'jump'),
+  dash: _reqBool(v, 'dash'),
+);
 
 WireMessage _decodeVersionMismatch(Map<String, dynamic> v) =>
-    VersionMismatch(
-      status: _reqEnum(v, 'status', VersionStatus.values),
-    );
+    VersionMismatch(status: _reqEnum(v, 'status', VersionStatus.values));
 
 WireMessage _decodeRoomSnapshot(Map<String, dynamic> v) => RoomSnapshot(
-      code: _reqString(v, 'code'),
-      players: _reqList(v, 'players')
-          .map((e) => _decodePlayerInfo(_asMap(e, 'players')))
-          .toList(),
-      phase: _reqEnum(v, 'phase', RoundPhase.values),
-      roundIndex: _reqInt(v, 'roundIndex'),
-    );
+  code: _reqString(v, 'code'),
+  players: _reqList(
+    v,
+    'players',
+  ).map((e) => _decodePlayerInfo(_asMap(e, 'players'))).toList(),
+  phase: _reqEnum(v, 'phase', RoundPhase.values),
+  roundIndex: _reqInt(v, 'roundIndex'),
+);
 
 PlayerInfo _decodePlayerInfo(Map<String, dynamic> v) => PlayerInfo(
-      playerId: _reqString(v, 'playerId'),
-      nickname: _reqString(v, 'nickname'),
-      ready: _reqBool(v, 'ready'),
-    );
+  playerId: _reqString(v, 'playerId'),
+  nickname: _reqString(v, 'nickname'),
+  ready: _reqBool(v, 'ready'),
+  connected: _optBool(v, 'connected', true),
+  isSpectator: _optBool(v, 'isSpectator', false),
+);
 
 WireMessage _decodeRoundStarting(Map<String, dynamic> v) => RoundStarting(
-      roundIndex: _reqInt(v, 'roundIndex'),
-      minigameId: _reqString(v, 'minigameId'),
-      mapSeed: _reqInt(v, 'mapSeed'),
-      timeoutMs: _reqInt(v, 'timeoutMs'),
-    );
+  roundIndex: _reqInt(v, 'roundIndex'),
+  minigameId: _reqString(v, 'minigameId'),
+  mapSeed: _reqInt(v, 'mapSeed'),
+  timeoutMs: _reqInt(v, 'timeoutMs'),
+);
 
 WireMessage _decodeSnapshot(Map<String, dynamic> v) => Snapshot(
-      tick: _reqInt(v, 'tick'),
-      players: _reqList(v, 'players')
-          .map((e) => _decodePlayerState(_asMap(e, 'players')))
-          .toList(),
-    );
+  tick: _reqInt(v, 'tick'),
+  players: _reqList(
+    v,
+    'players',
+  ).map((e) => _decodePlayerState(_asMap(e, 'players'))).toList(),
+);
 
 PlayerState _decodePlayerState(Map<String, dynamic> v) => PlayerState(
-      playerId: _reqString(v, 'playerId'),
-      x: _reqDouble(v, 'x'),
-      y: _reqDouble(v, 'y'),
-      angle: _reqDouble(v, 'angle'),
-      vx: _reqDouble(v, 'vx'),
-      vy: _reqDouble(v, 'vy'),
-    );
+  playerId: _reqString(v, 'playerId'),
+  x: _reqDouble(v, 'x'),
+  y: _reqDouble(v, 'y'),
+  angle: _reqDouble(v, 'angle'),
+  vx: _reqDouble(v, 'vx'),
+  vy: _reqDouble(v, 'vy'),
+);
 
 WireMessage _decodeRoundResults(Map<String, dynamic> v) {
   final r = _reqMap(v, 'roundResult');
@@ -292,22 +307,25 @@ WireMessage _decodeRoundResults(Map<String, dynamic> v) {
     roundResult: RoundResult(
       roundIndex: _reqInt(r, 'roundIndex'),
       minigameId: _reqString(r, 'minigameId'),
-      placements: _reqList(r, 'placements')
-          .map((e) => _decodePlacement(_asMap(e, 'placements')))
-          .toList(),
+      placements: _reqList(
+        r,
+        'placements',
+      ).map((e) => _decodePlacement(_asMap(e, 'placements'))).toList(),
     ),
   );
 }
 
 Placement _decodePlacement(Map<String, dynamic> v) => Placement(
-      playerId: _reqString(v, 'playerId'),
-      rank: _reqInt(v, 'rank'),
-      points: _reqInt(v, 'points'),
-    );
+  playerId: _reqString(v, 'playerId'),
+  rank: _reqInt(v, 'rank'),
+  points: _reqInt(v, 'points'),
+);
 
-WireMessage _decodeRoomClosed(Map<String, dynamic> v) => RoomClosed(
-      reason: _reqEnum(v, 'reason', RoomCloseReason.values),
-    );
+WireMessage _decodeRoomClosed(Map<String, dynamic> v) =>
+    RoomClosed(reason: _reqEnum(v, 'reason', RoomCloseReason.values));
+
+WireMessage _decodeJoinFailed(Map<String, dynamic> v) =>
+    JoinFailed(reason: _reqEnum(v, 'reason', JoinFailReason.values));
 
 Map<String, dynamic> _asMap(Object? e, String field) {
   if (e is! Map) {
@@ -324,6 +342,9 @@ WireMessage _decodeLeaveRoom(Map<String, dynamic> v) =>
 
 WireMessage _decodeStartMatch(Map<String, dynamic> v) =>
     _decodeEmptyPayload(v, 'start_match', const StartMatch());
+
+WireMessage _decodeEndMatch(Map<String, dynamic> v) =>
+    _decodeEmptyPayload(v, 'end_match', const EndMatch());
 
 WireMessage _decodeRateLimited(Map<String, dynamic> v) =>
     _decodeEmptyPayload(v, 'rate_limited', const RateLimited());

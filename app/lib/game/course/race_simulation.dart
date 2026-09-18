@@ -4,7 +4,6 @@ import 'package:app/game/character_world.dart';
 import 'package:app/game/course/course_builder.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/player_character.dart';
-import 'package:app/game/player_input.dart';
 import 'package:flutter/foundation.dart';
 import 'package:forge2d/forge2d.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';

@@ -20,7 +20,7 @@ Sequencing: **inputs and snapshots carry independent `seq`/`tick` counters.** On
 1. Client connects, sends `Hello { protocolVersion, playerId (client-generated UUID), nickname }`.
 2. Server accepts N or N-1 (architecture doc § 7). Older → `VersionMismatch` and close. Newer (server outdated) → same message with "update server" note.
 3. **Implicit accept**: a valid `Hello` with no `VersionMismatch` reply means accepted. There is no dedicated OK message; the next server traffic (e.g. `RoomSnapshot`) confirms liveness.
-4. Join room: `JoinRoom { code }` or `CreateRoom`. Server replies `RoomSnapshot` on success, or `JoinFailed { reason: notFound | roomFull }` on failure.
+4. Join room: `JoinRoom { code }` or `CreateRoom`. Server replies `RoomSnapshot` on success, or `JoinFailed { reason: notFound | roomFull }` on failure (join and rejoin alike).
 5. **Rejoin-ack timeout**: `RejoinRoom` without a `RoomSnapshot` reply within 5 s → client treats the rejoin as failed (terminal `needsManualRejoin`); no infinite parking.
 
 ## 3. Trust Model (explicit scope)

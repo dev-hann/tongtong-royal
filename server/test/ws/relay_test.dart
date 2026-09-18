@@ -14,8 +14,8 @@ void main() {
   setUp(() async {
     harness = await startHarness();
     host = await harness.connectAndHello('host');
-    final created = await (host..send(const CreateRoom())).next()
-        as RoomSnapshot;
+    final created =
+        await (host..send(const CreateRoom())).next() as RoomSnapshot;
     roomCode = created.code;
     member = await harness.connectAndHello('member');
     await (member..send(JoinRoom(code: roomCode))).next();
@@ -27,12 +27,12 @@ void main() {
   });
 
   PlayerInputMessage input(int seq) => PlayerInputMessage(
-        seq: seq,
-        moveX: 0.5,
-        moveY: -0.5,
-        jump: false,
-        dash: false,
-      );
+    seq: seq,
+    moveX: 0.5,
+    moveY: -0.5,
+    jump: false,
+    dash: false,
+  );
 
   test('relays member input to the host only', () async {
     final sample = input(7);
@@ -72,19 +72,11 @@ void main() {
     expect(relayed, lessThanOrEqualTo(120));
   });
 
-  test('relays host snapshots to members but not back to the host',
-      () async {
+  test('relays host snapshots to members but not back to the host', () async {
     const snapshot = Snapshot(
       tick: 42,
       players: [
-        PlayerState(
-          playerId: 'host',
-          x: 1.25,
-          y: 0,
-          angle: 0,
-          vx: 0,
-          vy: 0,
-        ),
+        PlayerState(playerId: 'host', x: 1.25, y: 0, angle: 0, vx: 0, vy: 0),
       ],
     );
     host.send(snapshot);

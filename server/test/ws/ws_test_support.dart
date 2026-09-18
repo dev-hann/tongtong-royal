@@ -41,11 +41,7 @@ final class WsHarness {
   }) async {
     final client = await connect();
     client.send(
-      Hello(
-        protocolVersion: version,
-        playerId: playerId,
-        nickname: nickname,
-      ),
+      Hello(protocolVersion: version, playerId: playerId, nickname: nickname),
     );
     return client;
   }

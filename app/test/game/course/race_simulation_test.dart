@@ -1,6 +1,5 @@
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
-import 'package:app/game/player_input.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forge2d/forge2d.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';

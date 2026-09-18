@@ -143,6 +143,24 @@ final class StartMatch extends WireMessage {
   int get hashCode => runtimeType.hashCode;
 }
 
+/// Host-only request to end the running match and return the room to
+/// the lobby (network doc § 8 "Match end"). Spectators become players
+/// and ready states reset.
+@immutable
+final class EndMatch extends WireMessage {
+  /// Creates the request.
+  const EndMatch();
+
+  @override
+  Map<String, Object?> toJson() => const <String, Object?>{};
+
+  @override
+  bool operator ==(Object other) => other is EndMatch;
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+}
+
 /// One 30 Hz input sample (network doc § 1). Values are pre-sanitized by
 /// `PhysicsGuards.sanitizeJoystick` on the sending side; the constructor
 /// clamps defensively again so no out-of-range or non-finite value can
@@ -157,8 +175,8 @@ final class PlayerInputMessage extends WireMessage {
     required double moveY,
     required this.jump,
     required this.dash,
-  })  : moveX = _sanitize(moveX),
-        moveY = _sanitize(moveY);
+  }) : moveX = _sanitize(moveX),
+       moveY = _sanitize(moveY);
 
   /// Monotonic per-connection input counter; later wins.
   final int seq;
@@ -201,12 +219,6 @@ final class PlayerInputMessage extends WireMessage {
       other.dash == dash;
 
   @override
-  int get hashCode => Object.hash(
-        PlayerInputMessage,
-        seq,
-        moveX,
-        moveY,
-        jump,
-        dash,
-      );
+  int get hashCode =>
+      Object.hash(PlayerInputMessage, seq, moveX, moveY, jump, dash);
 }

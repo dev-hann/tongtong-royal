@@ -14,43 +14,43 @@ void main() {
     await harness.close();
   });
 
-  test('rejects too-old protocol version with VersionMismatch and closes',
-      () async {
-    final client = await harness.connect();
-    client.send(
-      const Hello(
-        protocolVersion: protocolVersion - 2,
-        playerId: 'p1',
-        nickname: 'old',
-      ),
-    );
-    expect(
-      await client.next(),
-      equals(
-        const VersionMismatch(status: VersionStatus.clientTooOld),
-      ),
-    );
-    await client.expectClosed();
-  });
+  test(
+    'rejects too-old protocol version with VersionMismatch and closes',
+    () async {
+      final client = await harness.connect();
+      client.send(
+        const Hello(
+          protocolVersion: protocolVersion - 2,
+          playerId: 'p1',
+          nickname: 'old',
+        ),
+      );
+      expect(
+        await client.next(),
+        equals(const VersionMismatch(status: VersionStatus.clientTooOld)),
+      );
+      await client.expectClosed();
+    },
+  );
 
-  test('rejects newer client version with VersionMismatch and closes',
-      () async {
-    final client = await harness.connect();
-    client.send(
-      const Hello(
-        protocolVersion: protocolVersion + 1,
-        playerId: 'p1',
-        nickname: 'new',
-      ),
-    );
-    expect(
-      await client.next(),
-      equals(
-        const VersionMismatch(status: VersionStatus.serverTooOld),
-      ),
-    );
-    await client.expectClosed();
-  });
+  test(
+    'rejects newer client version with VersionMismatch and closes',
+    () async {
+      final client = await harness.connect();
+      client.send(
+        const Hello(
+          protocolVersion: protocolVersion + 1,
+          playerId: 'p1',
+          nickname: 'new',
+        ),
+      );
+      expect(
+        await client.next(),
+        equals(const VersionMismatch(status: VersionStatus.serverTooOld)),
+      );
+      await client.expectClosed();
+    },
+  );
 
   test('closes the socket when the first message is not Hello', () async {
     final client = await harness.connect();
@@ -58,8 +58,7 @@ void main() {
     await client.expectClosed();
   });
 
-  test('rejects duplicate playerId with AlreadyConnected and closes',
-      () async {
+  test('rejects duplicate playerId with AlreadyConnected and closes', () async {
     await harness.connectAndHello('dup');
 
     final second = await harness.connect();
