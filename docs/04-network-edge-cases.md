@@ -81,10 +81,17 @@ Sequencing: **inputs and snapshots carry independent `seq`/`tick` counters.** On
 | Case | Policy |
 |------|--------|
 | Empty room TTL | 5 minutes after last human leaves → room deleted, invite code recycled |
+| Room capacity | 4 seats total. Join beyond capacity → `roomFull` rejection |
+| Host voluntary leave | Room closes immediately (`RoomClosed { hostLeft }`) if other players remain; if host is the last human, the empty-room TTL row applies |
+| Match end | Host-only `endMatch` returns the room to lobby: spectators become players, ready states reset. (Client-side, the podium → lobby transition triggers this) |
+| Reserved seat join | Joining with a playerId that holds a reserved (disconnected) seat → `AlreadyConnected`; the client must use `RejoinRoom` instead |
+| Stale reserved seat | If grace expired without a `sweep` having run, the stale seat is resolved lazily at rejoin time: deterministic forfeit, same as swept removal |
 | Invite code | 6-char uppercase alphanumeric (no 0/O/1/I). Collision → regenerate server-side. Codes recycle only after room deletion |
 | Max concurrent rooms | Server config (default 200). Over limit → `ServerFull` |
 | Round-in-progress join | `JoinRoom` mid-round succeeds only as **spectator for the current round**; joins play from next `ROUND_INTRO` (GDD § 7.10) |
 | Server shutdown | Drain: no new rooms; existing rooms get `RoomClosed { reason: serverShutdown }` |
+
+Rate-limit precision (§ 5.4): limits count **failed attempts too** (notFound/roomFull rejections consume budget); an attempt's budget expires exactly 60 s after it was counted.
 
 ## 9. Netcode Anti-Patterns (bad → good)
 
