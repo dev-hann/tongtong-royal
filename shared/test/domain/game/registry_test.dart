@@ -13,7 +13,11 @@ void main() {
   });
 
   test('by_id_throws_argument_error_for_unknown_id', () {
-    expect(() => registry.byId('hammer_dodge'), throwsArgumentError);
+    expect(() => registry.byId('no_such_game'), throwsArgumentError);
+  });
+
+  test('pool_contains_every_builtin_game', () {
+    expect(registry.pool, containsAll(<String>['trap_race', 'hammer_dodge']));
   });
 
   test('registry_looks_up_injected_games', () {

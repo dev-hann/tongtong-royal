@@ -65,7 +65,7 @@ Three archetypes; one engine each, maps are data. Each minigame implements the s
 
 - **Goal**: accumulate hold-time on the crown zone.
 - **Arena**: one elevated crown platform (climbable), open floor around it.
-- **Scoring in-round**: holding = 1 point/second while solely on the crown zone. If two or more players stand on it simultaneously, nobody scores (contested).
+- **Scoring in-round**: holding = 1 point/second while solely on the crown zone. If two or more players stand on it simultaneously, nobody scores (contested). Hold time is **cumulative — falling off does not reset accumulated time**.
 - **Placement**: hold-time ranking at timeout (75s). The crown zone is the only place time counts.
 
 ## 5. Round Flow States
