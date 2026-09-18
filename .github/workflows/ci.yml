@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Resolve dependencies (workspace root)
+        run: |
+          if [ -f pubspec.yaml ]; then
+            dart pub get
+          fi
+
+      - name: Run gates per package
+        run: |
+          set -e
+          found=0
+          for pkg in shared server app; do
+            if [ -f "$pkg/pubspec.yaml" ]; then
+              found=1
+              echo "=== $pkg: analyze ==="
+              if grep -q "sdk: flutter" "$pkg/pubspec.yaml"; then
+                (cd "$pkg" && flutter analyze --fatal-infos)
+              else
+                (cd "$pkg" && dart analyze --fatal-infos)
+              fi
+              echo "=== $pkg: test ==="
+              if grep -q "sdk: flutter" "$pkg/pubspec.yaml"; then
+                (cd "$pkg" && flutter test --coverage)
+              else
+                (cd "$pkg" && dart test --coverage=coverage)
+              fi
+            fi
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "No packages yet (docs phase). Gates pass trivially."
+          fi
+
+      - name: Coverage floor (shared)
+        if: hashFiles('shared/coverage/lcov.info') != ''
+        run: |
+          dart pub global activate coverage
+          # Line coverage floor: shared >= 90%
+          TOTAL=$(dart pub global run coverage:format_coverage \
+            --lcov --in=shared/coverage/lcov.info --report-on=shared/lib \
+            --zeros-to-isolate | grep -oP 'LF:\K\d+' | head -1 || echo 0)
+          HIT=$(dart pub global run coverage:format_coverage \
+            --lcov --in=shared/coverage/lcov.info --report-on=shared/lib \
+            --zeros-to-isolate | grep -oP 'LH:\K\d+' | head -1 || echo 0)
+          if [ "$TOTAL" -gt 0 ]; then
+            PCT=$(( HIT * 100 / TOTAL ))
+            echo "shared line coverage: ${PCT}%"
+            if [ "$PCT" -lt 90 ]; then
+              echo "::error::shared coverage ${PCT}% < 90% floor"
+              exit 1
+            fi
+          fi
+
+      - name: No print in committed code
+        run: |
+          # App code may not use print (allow tool/ and generated)
+          BAD=$(grep -rn --include='*.dart' -E '^\s*print\(' app/lib server/lib shared/lib 2>/dev/null || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::print() found:"
+            echo "$BAD"
+            exit 1
+          fi
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            */coverage/lcov.info
+          if-no-files-found: ignore
