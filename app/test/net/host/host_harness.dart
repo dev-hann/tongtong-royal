@@ -1,9 +1,11 @@
+import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/player_character.dart';
 import 'package:app/infra/net_client.dart';
 import 'package:app/infra/net_log.dart';
 import 'package:app/net/host/host_runtime.dart';
+import 'package:app/net/host/round_simulation_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forge2d/forge2d.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
@@ -18,21 +20,32 @@ const PlayerId p2 = 'p2';
 /// Map data, not physics tuning (architecture doc § 3).
 CourseMap flatCourse(int mapSeed, {double finishX = 2}) => CourseMap(
   mapSeed: mapSeed,
-  spawnPoint: Vector2(
-    0,
-    PlayerCharacter.heightMeters / 2 + _spawnClearance,
-  ),
+  spawnPoint: Vector2(0, PlayerCharacter.heightMeters / 2 + _spawnClearance),
   checkpoints: const [],
   finishLine: BoxSpec(center: Vector2(finishX, 1), width: 0.6, height: 3),
   killY: -6,
-  platforms: [
-    BoxSpec(center: Vector2(10, -0.5), width: 60, height: 1),
-  ],
+  platforms: [BoxSpec(center: Vector2(10, -0.5), width: 60, height: 1)],
   walls: const [],
   hammers: const [],
 );
 
 const double _spawnClearance = 0.01;
+
+/// Deterministic Hammer Dodge arena: the factory variant without
+/// hammer arms, so eliminations are input-driven only (fixture
+/// parity with the HammerSimulation suite).
+HammerArenaMap hammerlessArena(int mapSeed) {
+  final base = HammerArenaMap.hammerArena(mapSeed);
+  return HammerArenaMap(
+    mapSeed: base.mapSeed,
+    platformRadius: base.platformRadius,
+    platformSegmentCount: base.platformSegmentCount,
+    platformThickness: base.platformThickness,
+    killRadius: base.killRadius,
+    spawnPoints: base.spawnPoints,
+    hammers: const [],
+  );
+}
 
 PlayerInputMessage inputSample({
   required int seq,
@@ -71,6 +84,7 @@ final class HostHarness {
   HostHarness({
     Set<PlayerId> roster = const {p1},
     CourseMap Function(int mapSeed)? mapBuilder,
+    RoundSimulationFactory? simulationFactory,
     NetLog? log,
   }) : fake = FakeConnection() {
     client = NetClient(
@@ -80,11 +94,11 @@ final class HostHarness {
     );
     runtime = HostRuntime(
       client: client,
-      game: const TrapRace(),
       roster: roster,
       log: log,
-      simulationFactory: (minigameId, mapSeed, players) =>
-          RaceSimulation.forTesting(
+      simulationFactory:
+          simulationFactory ??
+          (minigameId, mapSeed, players) => RaceSimulation.forTesting(
             map: mapBuilder?.call(mapSeed) ?? flatCourse(mapSeed),
             playerIds: players,
             stuckThresholdSeconds: 5,

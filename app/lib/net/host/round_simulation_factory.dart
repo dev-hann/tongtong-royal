@@ -1,0 +1,44 @@
+import 'package:app/game/arenas/hammer/hammer_map.dart';
+import 'package:app/game/arenas/hammer/hammer_simulation.dart';
+import 'package:app/game/arenas/hill/hill_arena_map.dart';
+import 'package:app/game/arenas/hill/hill_simulation.dart';
+import 'package:app/game/course/course_map.dart';
+import 'package:app/game/course/race_simulation.dart';
+import 'package:app/game/round_simulation.dart';
+import 'package:tongtong_shared/tongtong_shared.dart';
+
+/// Builds the round simulation for a minigame/seed pair (architecture
+/// doc § 3: physics construction lives in `app/game`, driven by map
+/// data + the round seed).
+typedef RoundSimulationFactory = RoundSimulation Function(
+  MiniGameId minigameId,
+  int mapSeed,
+  Iterable<PlayerId> roster,
+);
+
+/// Default factory: dispatches each registered minigame id to its
+/// built-in map variant for [mapSeed]. Unknown ids are rejected —
+/// a new course variant is map data, a new archetype adds one case.
+RoundSimulation defaultRoundSimulationFactory(
+  MiniGameId minigameId,
+  int mapSeed,
+  Iterable<PlayerId> roster,
+) => switch (minigameId) {
+  'trap_race' => RaceSimulation(
+    map: CourseMap.trapRace(mapSeed),
+    playerIds: roster,
+  ),
+  'hammer_dodge' => HammerSimulation(
+    map: HammerArenaMap.hammerArena(mapSeed),
+    playerIds: roster,
+  ),
+  'king_of_the_hill' => HillSimulation(
+    map: HillArenaMap.kingOfTheHill(mapSeed),
+    playerIds: roster,
+  ),
+  _ => throw ArgumentError.value(
+    minigameId,
+    'minigameId',
+    'no simulation binding',
+  ),
+};

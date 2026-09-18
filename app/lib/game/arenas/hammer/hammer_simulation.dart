@@ -4,6 +4,7 @@ import 'package:app/game/arenas/hammer/hammer_builder.dart';
 import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/character_world.dart';
 import 'package:app/game/player_character.dart';
+import 'package:app/game/round_simulation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:forge2d/forge2d.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
@@ -33,7 +34,7 @@ final class _ArenaPlayer {
 /// checkpoints and no respawns into play (survival archetype). The
 /// explosion guard still silently recovers a corrupted body back to
 /// its spawn anchor (architecture doc § 5, no domain event).
-final class HammerSimulation {
+final class HammerSimulation implements RoundSimulation {
   /// Creates the simulation for [map], spawning every player on the
   /// map's spawn arc, with the GDD timeout (60 s).
   HammerSimulation({
@@ -53,11 +54,8 @@ final class HammerSimulation {
     required Iterable<PlayerId> playerIds,
     required this.timeoutTicks,
   }) {
-    _arena = HammerArenaBuilder(onPlayerEliminated: _onKillRingHit).build(
-      _world,
-      map,
-      resolvePlayer: (body) => _bodyToPlayer[body],
-    );
+    _arena = HammerArenaBuilder(onPlayerEliminated: _onKillRingHit)
+        .build(_world, map, resolvePlayer: (body) => _bodyToPlayer[body]);
     var slot = 0;
     for (final id in playerIds) {
       final spawn = map.spawnPoints[slot % map.spawnPoints.length];
@@ -98,6 +96,7 @@ final class HammerSimulation {
 
   /// Raw round events in emission order (synchronous broadcast:
   /// listeners observe each tick's events before the next one).
+  @override
   Stream<RoundEvent> get events => _eventSink.stream;
 
   /// Current simulation tick (one per world step).
@@ -105,6 +104,7 @@ final class HammerSimulation {
 
   /// Whether the round ended: one player remains (or none), or the
   /// timeout was reached with the survivors still standing.
+  @override
   bool get isComplete => _complete;
 
   /// Players still in the arena, spawn order.
@@ -137,7 +137,30 @@ final class HammerSimulation {
     return player.character.body;
   }
 
+  /// Arena archetype: no course anchor, no progress sampling.
+  @override
+  double? get progressAnchorX => null;
+
+  /// Snapshot pose of [playerId]; null once eliminated (body
+  /// destroyed — the player leaves the snapshots).
+  @override
+  PlayerPose? poseOf(PlayerId playerId) {
+    final player = _player(playerId);
+    if (!player.alive) {
+      return null;
+    }
+    final body = player.character.body;
+    return (
+      x: body.position.x,
+      y: body.position.y,
+      angle: body.angle,
+      vx: body.linearVelocity.x,
+      vy: body.linearVelocity.y,
+    );
+  }
+
   /// Releases the event stream.
+  @override
   void dispose() => _eventSink.close();
 
   /// Applies [input] for [playerId] and advances the whole world one
@@ -150,6 +173,7 @@ final class HammerSimulation {
   /// fixed dt — the host's batched per-tick entry point. Players
   /// without an entry this tick idle (no input). Once the round is
   /// complete the simulation is frozen.
+  @override
   void tickInputs(Map<PlayerId, PlayerInputState> inputs) {
     if (_complete) {
       return;

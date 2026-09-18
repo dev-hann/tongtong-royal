@@ -281,11 +281,7 @@ void main() {
   group('HostRuntime guards', () {
     test('empty roster is rejected', () {
       expect(
-        () => HostRuntime(
-          client: _disposedClient(),
-          game: const TrapRace(),
-          roster: const {},
-        ),
+        () => HostRuntime(client: _disposedClient(), roster: const {}),
         throwsArgumentError,
       );
     });
@@ -304,10 +300,14 @@ void main() {
       );
     });
 
-    test('round timeout ticks derive from the minigame spec', () {
+    test("round timeout ticks derive from the started round's spec",
+        () async {
       final h = HostHarness();
       addTearDown(h.client.dispose);
+      await h.boot();
 
+      expect(() => h.runtime.roundTimeoutTicks, throwsStateError);
+      h.runtime.startRound(0, 'trap_race', 7);
       expect(h.runtime.roundTimeoutTicks, 90 * PhysicsConsts.tickRate);
     });
   });

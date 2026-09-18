@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:app/game/course/course_map.dart';
-import 'package:app/game/course/race_simulation.dart';
+import 'package:app/game/round_simulation.dart';
 import 'package:app/infra/net_client.dart';
 import 'package:app/infra/net_log.dart';
+import 'package:app/net/host/round_resolver.dart';
+import 'package:app/net/host/round_simulation_factory.dart';
 import 'package:forge2d/forge2d.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
@@ -13,45 +14,25 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 const int snapshotEveryTicks =
     PhysicsConsts.tickRate ~/ PhysicsConsts.snapshotRateHz;
 
-/// Builds the round simulation for a minigame/seed pair. The default
-/// builds the Trap Race course from the seed (architecture doc § 3:
-/// layout lives in the app package, selected by `mapSeed`).
-typedef RaceSimulationFactory = RaceSimulation Function(
-  MiniGameId minigameId,
-  int mapSeed,
-  Iterable<PlayerId> roster,
-);
-
-/// Default factory: the built-in Trap Race course variant for [mapSeed].
-RaceSimulation defaultRaceSimulationFactory(
-  MiniGameId minigameId,
-  int mapSeed,
-  Iterable<PlayerId> roster,
-) => RaceSimulation(map: CourseMap.trapRace(mapSeed), playerIds: roster);
-
 /// Host-authoritative round runtime: binds a [NetClient] transport to
-/// a [RaceSimulation] (architecture doc § 4).
-///
-/// Owns the fixed-dt tick loop (driven manually via [advance] — no
-/// real timers), the latest-input-per-player buffer (later `seq`
-/// wins, network doc § 1), the 20 Hz snapshot broadcast, progress
-/// sampling and the round lifecycle. Judges nothing: placements come
-/// from the domain [game]'s `resolve` only.
-///
-/// Currently bound to [TrapRace], the only race-archetype minigame;
-/// widen the seam inside `shared/domain` when a second one lands.
+/// any minigame's [RoundSimulation] (architecture doc § 4). Owns the
+/// fixed-dt tick loop (driven manually via [advance] — no real
+/// timers), the latest-input-per-player buffer (later `seq` wins,
+/// network doc § 1), the 20 Hz snapshot broadcast, progress sampling
+/// and the round lifecycle. Judges nothing: placements come from the
+/// domain game's `resolve` only, reached through [resolveRound].
 final class HostRuntime {
   /// Creates a runtime for [roster] (every seat, including idle and
   /// disconnected bodies — network doc § 5.2).
   HostRuntime({
     required this.client,
-    required this.game,
     required Set<PlayerId> roster,
-    RaceSimulationFactory? simulationFactory,
+    this.registry = const MinigameRegistry(),
+    RoundSimulationFactory? simulationFactory,
     NetLog? log,
   }) : roster = Set.unmodifiable(roster),
-        simulationFactory = simulationFactory ?? defaultRaceSimulationFactory,
-        _log = log ?? const SilentNetLog() {
+       simulationFactory = simulationFactory ?? defaultRoundSimulationFactory,
+       _log = log ?? const SilentNetLog() {
     if (roster.isEmpty) {
       throw ArgumentError.value(roster, 'roster', 'must not be empty');
     }
@@ -64,19 +45,21 @@ final class HostRuntime {
   /// Diagnostic sink for dropped (unattributed) member inputs.
   final NetLog _log;
 
-  /// Domain rules; the runtime itself judges nothing.
-  final TrapRace game;
+  /// Registered minigames; each round's game is looked up by id.
+  final MinigameRegistry registry;
 
   /// Every seat for the round, including idle/disconnected bodies.
   final Set<PlayerId> roster;
 
   /// Builds each round's simulation from the minigame/seed pair.
-  final RaceSimulationFactory simulationFactory;
+  final RoundSimulationFactory simulationFactory;
   final PlayerInputState _idleInput = PlayerInputState();
   final StreamController<RoundResult> _roundCompleteController =
       StreamController<RoundResult>.broadcast(sync: true);
 
-  RaceSimulation? _simulation;
+  RoundSimulation? _simulation;
+  MiniGame? _game;
+  int _timeoutTicks = 0;
   StreamSubscription<RoundEvent>? _eventsSubscription;
   StreamSubscription<PlayerInputMessage>? _memberInputsSubscription;
   final List<RoundEvent> _roundEvents = <RoundEvent>[];
@@ -99,18 +82,29 @@ final class HostRuntime {
   /// Host global tick; never resets mid-match (network doc § 1).
   int get currentTick => _tick;
 
-  /// Round timeout expressed in simulation ticks, derived from the
-  /// minigame spec's `timeoutMs` and the fixed tick rate.
-  int get roundTimeoutTicks =>
+  /// Round timeout in ticks for the started (or last) round's
+  /// minigame spec. Throws [StateError] before any round started.
+  int get roundTimeoutTicks {
+    final game = _game;
+    if (game == null) {
+      throw StateError('no round started yet');
+    }
+    return timeoutTicksFor(game);
+  }
+
+  /// Ticks equivalent of a spec's `timeoutMs` at the fixed rate.
+  static int timeoutTicksFor(MiniGame game) =>
       (game.spec.timeoutMs * PhysicsConsts.tickRate / 1000).round();
 
-  /// Starts a round: builds the simulation, then broadcasts
+  /// Starts a round: resolves the domain game from [minigameId] via
+  /// [registry], builds the simulation, then broadcasts
   /// `RoundStarting` (network doc § 4). Throws [StateError] when a
-  /// round is already running.
+  /// round is already running, [ArgumentError] for an unknown id.
   void startRound(int roundIndex, MiniGameId minigameId, int mapSeed) {
     if (_roundActive) {
       throw StateError('a round is already running');
     }
+    final game = registry.byId(minigameId);
     final simulation = simulationFactory(minigameId, mapSeed, roster);
     _roundEvents.clear();
     _samples.clear();
@@ -119,6 +113,8 @@ final class HostRuntime {
     _accumulator = 0;
     _eventsSubscription = simulation.events.listen(_roundEvents.add);
     _simulation = simulation;
+    _game = game;
+    _timeoutTicks = timeoutTicksFor(game);
     _roundIndex = roundIndex;
     _roundStartTick = _tick;
     _roundActive = true;
@@ -134,12 +130,9 @@ final class HostRuntime {
 
   /// Offers one attributed member input sample. Later `seq` wins per
   /// player; stale `seq` and samples from outside the roster or
-  /// outside a running round are dropped (network doc § 1, § 6).
-  ///
-  /// The [playerId] comes from the server stamp on
-  /// [PlayerInputMessage.playerId] (network doc § 1 "Input
-  /// attribution") — the bridge [_onMemberInput] feeds this buffer
-  /// from `NetClient.memberInputs` keyed by that identity.
+  /// outside a running round are dropped (network doc § 1, § 6). The
+  /// [playerId] is the server stamp on [PlayerInputMessage.playerId];
+  /// the bridge [_onMemberInput] feeds this buffer.
   void submitMemberInput(PlayerId playerId, PlayerInputMessage input) {
     if (!_roundActive || !roster.contains(playerId)) {
       return;
@@ -213,8 +206,8 @@ final class HostRuntime {
     if (_tick % snapshotEveryTicks == 0) {
       _broadcastSnapshot(simulation);
     }
-    if ((_tick - _roundStartTick) % PhysicsConsts.progressSampleIntervalTicks
-        == 0) {
+    if ((_tick - _roundStartTick) % PhysicsConsts.progressSampleIntervalTicks ==
+        0) {
       _sampleProgress(simulation);
     }
     _maybeEndRound();
@@ -232,48 +225,52 @@ final class HostRuntime {
     );
   }
 
-  void _broadcastSnapshot(RaceSimulation simulation) {
+  void _broadcastSnapshot(RoundSimulation simulation) {
     final players = <PlayerState>[];
     for (final id in roster) {
-      final body = simulation.bodyOf(id);
+      final pose = simulation.poseOf(id);
+      if (pose == null) {
+        continue; // eliminated (survival archetype): body is gone
+      }
       players.add(
         PlayerState(
           playerId: id,
-          x: body.position.x,
-          y: body.position.y,
-          angle: body.angle,
-          vx: body.linearVelocity.x,
-          vy: body.linearVelocity.y,
+          x: pose.x,
+          y: pose.y,
+          angle: pose.angle,
+          vx: pose.vx,
+          vy: pose.vy,
         ),
       );
     }
     client.sendHost(Snapshot(tick: _tick, players: players));
   }
 
-  void _sampleProgress(RaceSimulation simulation) {
-    final spawnX = simulation.map.spawnPoint.x;
+  /// Progress sampling is race-archetype only: sims without a course
+  /// anchor (arenas) report none (hold time travels as events).
+  void _sampleProgress(RoundSimulation simulation) {
+    final anchorX = simulation.progressAnchorX;
+    if (anchorX == null) {
+      return;
+    }
     for (final id in roster) {
+      final x = simulation.poseOf(id)?.x;
+      if (x == null) {
+        continue;
+      }
       _samples.add(
-        ProgressSample(
-          tick: _tick,
-          playerId: id,
-          distance: simulation.bodyOf(id).position.x - spawnX,
-        ),
+        ProgressSample(tick: _tick, playerId: id, distance: x - anchorX),
       );
     }
   }
 
+  /// Round ends when the simulation declares itself complete (all
+  /// finished / last standing / internal timeout) or on timeout.
   void _maybeEndRound() {
-    if (!_roundActive) {
-      return;
-    }
-    final finishers = <PlayerId>{
-      for (final event in _roundEvents.whereType<PlayerFinished>())
-        event.playerId,
-    };
-    final allFinished = roster.every(finishers.contains);
+    if (!_roundActive) return;
+    final simulation = _simulation!;
     final roundTicks = _tick - _roundStartTick;
-    if (!allFinished && roundTicks < roundTimeoutTicks) {
+    if (!simulation.isComplete && roundTicks < _timeoutTicks) {
       return;
     }
     _endRound();
@@ -281,9 +278,11 @@ final class HostRuntime {
 
   void _endRound() {
     final simulation = _simulation!;
-    final result = game.resolve(
+    final game = _game!;
+    final result = resolveRound(
+      game,
       RoundEvents(roundIndex: _roundIndex, events: _roundEvents.toList()),
-      TrapRaceInput(roster: roster, samples: _samples.toList()),
+      RoundData(roster: roster, progressSamples: _samples.toList()),
     );
     _roundActive = false;
     _simulation = null;

@@ -61,7 +61,8 @@ The round state machine exposes transition helpers: `beginRound` (LOBBY → ROUN
 
 - Rules live in `shared/domain` (resolving placements from events).
 - Physics construction (bodies, obstacles, map layout) lives in `app/game`, driven by **map data (JSON)** + the round seed.
-- Adding a new minigame = new `MiniGame` implementation + map data + renderer. No engine changes.
+- The host runtime is minigame-agnostic: it drives any arena/course simulation through the `RoundSimulation` seam (`app/game/round_simulation.dart`) and dispatches per-minigame glue in `app/net/host/` (simulation factory + resolve-input packing).
+- Adding a new course variant of an existing archetype = new map data + renderer. No engine change. A new archetype additionally adds one case to each glue switch (`defaultRoundSimulationFactory`, `resolveRound`).
 
 ## 4. Host-Authoritative Netcode (summary)
 

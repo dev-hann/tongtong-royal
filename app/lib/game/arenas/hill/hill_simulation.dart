@@ -6,12 +6,9 @@ import 'package:app/game/character_world.dart';
 import 'package:app/game/course/race_simulation.dart'
     show stuckDisplacementEpsilonMeters;
 import 'package:app/game/player_character.dart';
+import 'package:app/game/round_simulation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:forge2d/forge2d.dart';
-// KingOfTheHill is not exported from the shared barrel yet (registry
-// wiring is a separate concern); the arena needs the GDD § 4.3
-// timeout from the domain spec.
-//
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 /// Bottom-of-player settle tolerance for the crown occupancy test,
@@ -53,18 +50,18 @@ final class _HillPlayer {
 /// its box bottom at the platform's top surface (± settle epsilon).
 /// Deterministic, and immune to floor-level players grazing a sensor
 /// volume beside the platform.
-final class HillSimulation {
+final class HillSimulation implements RoundSimulation {
   /// Creates the simulation for [map], spawning every player at the
   /// map's floor spawn points, with the GDD timeout (75 s).
   HillSimulation({
     required HillArenaMap map,
     required Iterable<PlayerId> playerIds,
   }) : this.forTesting(
-          map: map,
-          playerIds: playerIds,
-          stuckThresholdSeconds: PhysicsConsts.stuckThresholdSeconds,
-          timeoutTicks: defaultTimeoutTicks,
-        );
+         map: map,
+         playerIds: playerIds,
+         stuckThresholdSeconds: PhysicsConsts.stuckThresholdSeconds,
+         timeoutTicks: defaultTimeoutTicks,
+       );
 
   /// Same as the default constructor, with injectable stuck
   /// threshold and timeout (tests shrink them instead of waiting
@@ -117,21 +114,42 @@ final class HillSimulation {
 
   /// Raw round events in emission order (synchronous broadcast:
   /// listeners observe each tick's events before the next one).
+  @override
   Stream<RoundEvent> get events => _eventSink.stream;
 
   /// Current simulation tick (one per world step).
   int get currentTick => _tickCount;
 
   /// Whether the round timeout has been reached (complete signal).
+  @override
   bool get isComplete => _complete;
 
   /// The underlying Forge2D body of [playerId] (renderers, tests).
   Body bodyOf(PlayerId playerId) => _player(playerId).character.body;
 
+  /// Arena archetype: no course anchor, no progress sampling (hold
+  /// time travels as HoldTimeSample events instead).
+  @override
+  double? get progressAnchorX => null;
+
+  /// Snapshot pose of [playerId] (never eliminated mid-round).
+  @override
+  PlayerPose poseOf(PlayerId playerId) {
+    final body = bodyOf(playerId);
+    return (
+      x: body.position.x,
+      y: body.position.y,
+      angle: body.angle,
+      vx: body.linearVelocity.x,
+      vy: body.linearVelocity.y,
+    );
+  }
+
   /// Accumulated hold time of [playerId], seconds (test surface).
   double holdSecondsOf(PlayerId playerId) => _player(playerId).holdSeconds;
 
   /// Releases the event stream.
+  @override
   void dispose() => _eventSink.close();
 
   /// Applies [input] for [playerId] and advances the whole world one
@@ -143,6 +161,7 @@ final class HillSimulation {
   /// Applies one input per player and advances the world a single
   /// fixed dt — the host's batched per-tick entry point. Players
   /// without an entry this tick idle (no input).
+  @override
   void tickInputs(Map<PlayerId, PlayerInputState> inputs) {
     for (final player in _players.values) {
       final input = inputs[player.id];

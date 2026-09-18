@@ -4,6 +4,7 @@ import 'package:app/game/character_world.dart';
 import 'package:app/game/course/course_builder.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/player_character.dart';
+import 'package:app/game/round_simulation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:forge2d/forge2d.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
@@ -39,7 +40,7 @@ final class _Racer {
 /// built course and the players, advances the simulation one fixed
 /// dt per tick and emits raw domain [RoundEvent]s (finish/fall).
 /// No points, ranks, or judging here (architecture doc § 2).
-final class RaceSimulation implements CourseEvents {
+final class RaceSimulation implements CourseEvents, RoundSimulation {
   /// Creates the simulation for [map] and spawns every player in
   /// [playerIds] at the map's spawn point.
   RaceSimulation({
@@ -93,6 +94,7 @@ final class RaceSimulation implements CourseEvents {
 
   /// Raw round events in emission order (synchronous broadcast:
   /// listeners observe each tick's events before the next one).
+  @override
   Stream<RoundEvent> get events => _eventSink.stream;
 
   /// Current simulation tick (one per world step).
@@ -104,7 +106,30 @@ final class RaceSimulation implements CourseEvents {
   /// Whether [playerId] already crossed the finish.
   bool hasFinished(PlayerId playerId) => _racer(playerId).finished;
 
+  /// All racers finished — the race archetype's own completion
+  /// signal (timeout completion stays with the host runtime).
+  @override
+  bool get isComplete => _racers.values.every((racer) => racer.finished);
+
+  /// Race progress is measured from the spawn point's x.
+  @override
+  double? get progressAnchorX => map.spawnPoint.x;
+
+  /// Snapshot pose of [playerId] (never eliminated mid-round).
+  @override
+  PlayerPose poseOf(PlayerId playerId) {
+    final body = bodyOf(playerId);
+    return (
+      x: body.position.x,
+      y: body.position.y,
+      angle: body.angle,
+      vx: body.linearVelocity.x,
+      vy: body.linearVelocity.y,
+    );
+  }
+
   /// Releases the event stream.
+  @override
   void dispose() => _eventSink.close();
 
   /// Applies [input] for [playerId] and advances the whole world one
@@ -116,6 +141,7 @@ final class RaceSimulation implements CourseEvents {
   /// Applies one input per player and advances the world a single
   /// fixed dt — the host's batched per-tick entry point. Players
   /// without an entry this tick idle (no input).
+  @override
   void tickInputs(Map<PlayerId, PlayerInputState> inputs) {
     for (final racer in _racers.values) {
       final input = inputs[racer.id];
