@@ -14,6 +14,7 @@ dependencies:
   forge2d: ^0.13.0
   tongtong_shared:
     path: ../shared
+  web_socket_channel: ^3.0.0
 
 dev_dependencies:
   flutter_test:

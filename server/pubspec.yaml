@@ -8,8 +8,11 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
+  shelf: ^1.4.0
+  shelf_web_socket: ^2.0.0
   tongtong_shared:
     path: ../shared
+  web_socket_channel: ^3.0.0
 
 dev_dependencies:
   test: ^1.25.0
