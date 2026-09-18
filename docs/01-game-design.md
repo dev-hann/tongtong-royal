@@ -136,8 +136,28 @@ State machine is owned by `shared/domain` (see architecture doc). Server relays 
 ### 8.1 MVP (in)
 
 - 2-4 players, invite-code rooms, 5-round matches, 3 minigames, podium, rematch.
+- **Bot fill** (§ 9): host-side bot players fill empty seats.
 - Sound effects, best-score persistence (local), simple character customization (color).
 
 ### 8.2 Backlog (explicitly out — do not build)
 
-- Random matchmaking, AFK handling, spectator mode, cosmetics beyond color, bots, chat, seasons, ranked.
+- Random matchmaking, AFK handling, spectator mode, cosmetics beyond color, chat, seasons, ranked, bot difficulty tiers.
+
+## 9. Bot Players
+
+### 9.1 Fill policy
+
+- Host controls **bot fill** (toggle, default on in solo/early-service play). When enabled and humans < 4, bots fill seats to 4. Bots never displace humans.
+- A bot's identity: `playerId` = `bot-1`..`bot-3`, nickname = `BOT 1`..`BOT 3`.
+- Bots are auto-ready; they never block start conditions (§ 7.1 counts them as players — 1 human + bots satisfies the ≥ 2 minimum).
+- Bots participate fully: placements, points, podium, tie-breaks — identical to humans. Podium/results mark them via nickname.
+- Disconnect rules do not apply to bots (they cannot disconnect, idle, or AFK).
+- Bots run **host-side**: the host client generates their inputs each tick and feeds them into its own simulation. Nothing bot-related crosses the wire — remote clients just see ordinary players in snapshots.
+
+### 9.2 Behavior (difficulty: basic)
+
+- Heuristic, archetype-aware steering. No pathfinding, no learning — predictable, fair-ish, occasionally clumsy (they are beatable by an average human).
+- Common: bots act on their own pose + map data + tick only (no omniscience: they cannot read other players' future inputs; contact-level awareness of nearby bodies is allowed).
+- Race: run toward the finish, jump when obstructed or at gaps (map-data driven), occasional dash.
+- Survival: drift toward the arena center, jump/dash to avoid incoming hammers (contact-level detection of nearby hammer arms).
+- King of the Hill: move toward the crown, jump to climb, shove (dash) a contested occupant.

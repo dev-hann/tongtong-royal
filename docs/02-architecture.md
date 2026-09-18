@@ -38,6 +38,7 @@
 | Room lifecycle, invite codes, relay, validation | `server` | — |
 | Message format | `shared/protocol` | Only typed models, no hand-rolled JSON |
 | Gameplay tuning numbers | `shared/physics` (constants) | No magic numbers anywhere else |
+| Bot players (fill opponents) | `app/game/bots` + host/solo runtimes (host-side input sources, GDD § 9) | Server knows nothing about bots — they are ordinary snapshot entries |
 
 **Judging rule (critical):** Flame components, widgets, and server code must never compute points, placements, or winners. They feed raw events (`PlayerFinished(tick, playerId)`) into domain functions and display/relay the result.
 
