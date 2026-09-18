@@ -22,14 +22,14 @@ void main() {
   Widget host(ShellController controller) => MaterialApp(
     home: Scaffold(
       body: PhaseRouter(
-      controller: controller,
-      lobbyPlayers: const [LobbyPlayer(displayName: 'Host', isReady: true)],
-      canStart: true,
-      minigameName: 'Trap Race',
-      minigameRule: 'First to the finish line wins.',
-      countdownValue: 3,
-      scoreboard: const [ScoreEntry(playerId: 'p1', points: 4)],
-      timeRemaining: '42',
+        controller: controller,
+        lobbyPlayers: const [LobbyPlayer(displayName: 'Host', isReady: true)],
+        canStart: true,
+        minigameName: 'Trap Race',
+        minigameRule: 'First to the finish line wins.',
+        countdownValue: 3,
+        scoreboard: const [ScoreEntry(playerId: 'p1', points: 4)],
+        timeRemaining: '42',
       ),
     ),
   );
@@ -105,5 +105,30 @@ void main() {
     controller.startPlay();
     await tester.pump();
     expect(find.byType(GameScreen), findsOneWidget);
+  });
+
+  testWidgets('onSolo shows the lobby solo button and fires it', (
+    tester,
+  ) async {
+    var soloStarted = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PhaseRouter(
+            controller: controller,
+            lobbyPlayers: const [
+              LobbyPlayer(displayName: 'Host', isReady: true),
+            ],
+            canStart: true,
+            onSolo: () => soloStarted = true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(LobbyScreen.soloButtonKey), findsOneWidget);
+    await tester.tap(find.byKey(LobbyScreen.soloButtonKey));
+    await tester.pump();
+    expect(soloStarted, isTrue);
   });
 }

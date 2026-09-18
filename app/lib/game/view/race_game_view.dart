@@ -177,6 +177,8 @@ final class RaceGameView extends Game {
     InputSource? inputSource,
     this.playerIds = const [],
     RenderFeed? renderFeed,
+    this.tickInputsProvider,
+    this.tickEnabled,
   }) : assert(
          simulation != null || renderFeed != null,
          'either simulation or renderFeed must be provided',
@@ -212,6 +214,21 @@ final class RaceGameView extends Game {
 
   /// Rendered players; empty renders only [localPlayerId].
   final List<PlayerId> playerIds;
+
+  /// Full per-tick input map for multi-seat hosts (human + bots):
+  /// when provided, the loop feeds `tickInputs(provider())` instead
+  /// of sampling [inputSource] for the local player only. Null keeps
+  /// the single-player path default-identical.
+  final Map<PlayerId, PlayerInputState> Function()? tickInputsProvider;
+
+  /// Whether the loop may run another step. Checked before every
+  /// step (multi-seat hosts freeze the loop once their round ended);
+  /// null always allows.
+  final bool Function()? tickEnabled;
+
+  /// Invoked after each completed simulation step (multi-seat hosts
+  /// run their post-tick bookkeeping here).
+  void Function()? onStep;
 
   double _accumulatorSeconds = 0;
   int _stepCount = 0;
@@ -256,7 +273,8 @@ final class RaceGameView extends Game {
     _accumulatorSeconds += dt;
     var steps = 0;
     while (_accumulatorSeconds >= PhysicsConsts.fixedDt &&
-        steps < maxStepsPerFrame) {
+        steps < maxStepsPerFrame &&
+        (tickEnabled?.call() ?? true)) {
       _stepSimulation();
       _accumulatorSeconds -= PhysicsConsts.fixedDt;
       steps++;
@@ -273,10 +291,18 @@ final class RaceGameView extends Game {
     if (sim == null) {
       return;
     }
-    // Remote players get no entry, which idles them (M1: only the
-    // local player exists anyway).
-    sim.tickInputs({localPlayerId: inputSource.sample()});
+    final provider = tickInputsProvider;
+    if (provider == null) {
+      // Remote players get no entry, which idles them (M1: only the
+      // local player exists anyway).
+      sim.tickInputs({localPlayerId: inputSource.sample()});
+    } else {
+      // Multi-seat host path: the provider owns the full input map
+      // (human + bots); players without an entry idle.
+      sim.tickInputs(provider());
+    }
     _stepCount++;
+    onStep?.call();
   }
 
   void _onEvent(RoundEvent event) {

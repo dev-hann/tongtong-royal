@@ -1,7 +1,10 @@
-import 'package:app/game/view/dev_race_harness.dart';
 import 'package:app/presentation/game_screen.dart';
+import 'package:app/presentation/lobby_screen.dart';
 import 'package:app/presentation/phase_router.dart';
 import 'package:app/shell_controller.dart';
+import 'package:app/solo/solo_match_config.dart';
+import 'package:app/solo/solo_match_controller.dart';
+import 'package:app/solo/solo_play_view.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
@@ -38,10 +41,21 @@ class ShellScaffold extends StatefulWidget {
 
 class _ShellScaffoldState extends State<ShellScaffold> {
   final ShellController _controller = ShellController();
-  final int _mapSeed = DateTime.now().millisecondsSinceEpoch % 1000000;
+  final int _matchSeed = DateTime.now().millisecondsSinceEpoch % 1000000;
+  late final SoloMatchController _solo;
+
+  @override
+  void initState() {
+    super.initState();
+    _solo = SoloMatchController(
+      shell: _controller,
+      config: SoloMatchConfig(matchSeed: _matchSeed),
+    );
+  }
 
   @override
   void dispose() {
+    _solo.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -50,20 +64,38 @@ class _ShellScaffoldState extends State<ShellScaffold> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('TongTong Royal')),
-      // ROUND_PLAY mounts the dev Flame harness into the GameScreen
-      // viewport slot (M1 single-player stand-in); every other phase
-      // routes through PhaseRouter unchanged.
+      // ROUND_PLAY mounts the solo round (human + bots) into the
+      // GameScreen viewport slot; every other phase routes through
+      // PhaseRouter. The solo controller provides all injected view
+      // data (intro, countdown, lobby, rematch).
       body: ListenableBuilder(
-        listenable: _controller,
+        listenable: Listenable.merge([_controller, _solo]),
         builder: (context, _) {
           if (_controller.phase == RoundPhase.roundPlay) {
+            final session = _solo.currentRound;
             return GameScreen(
               scoreboard: const [],
               timeRemaining: '',
-              gameView: DevRaceHarness(mapSeed: _mapSeed),
+              gameView: session == null
+                  ? null
+                  : KeyedSubtree(
+                      key: ValueKey<SoloRoundSession>(session),
+                      child: SoloPlayView(session: session),
+                    ),
             );
           }
-          return PhaseRouter(controller: _controller);
+          return PhaseRouter(
+            controller: _controller,
+            lobbyPlayers: [
+              for (final seat in _solo.seats)
+                LobbyPlayer(displayName: seat.nickname, isReady: true),
+            ],
+            onSolo: _solo.startSolo,
+            minigameName: _solo.introName,
+            minigameRule: _solo.introRule,
+            countdownValue: _solo.countdownValue,
+            onRematch: _solo.rematch,
+          );
         },
       ),
     );

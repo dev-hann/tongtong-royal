@@ -8,8 +8,7 @@ void main() {
     LobbyPlayer(displayName: 'Bo', isReady: false),
   ];
 
-  Widget wrap(Widget child) =>
-      MaterialApp(home: Scaffold(body: child));
+  Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   testWidgets('renders player names and ready state', (tester) async {
     await tester.pumpWidget(
@@ -66,5 +65,30 @@ void main() {
     await tester.tap(find.byKey(LobbyScreen.startButtonKey));
     await tester.pump();
     expect(started, isTrue);
+  });
+
+  testWidgets('no solo button when onSolo is null (default)', (tester) async {
+    await tester.pumpWidget(
+      wrap(const LobbyScreen(players: players, canStart: false)),
+    );
+
+    expect(find.byKey(LobbyScreen.soloButtonKey), findsNothing);
+  });
+
+  testWidgets('solo button fires onSolo when provided', (tester) async {
+    var soloStarted = false;
+    await tester.pumpWidget(
+      wrap(
+        LobbyScreen(
+          players: players,
+          canStart: false,
+          onSolo: () => soloStarted = true,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(LobbyScreen.soloButtonKey));
+    await tester.pump();
+    expect(soloStarted, isTrue);
   });
 }

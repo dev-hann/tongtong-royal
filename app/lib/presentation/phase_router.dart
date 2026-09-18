@@ -20,6 +20,7 @@ class PhaseRouter extends StatelessWidget {
     this.lobbyPlayers = const [],
     this.canStart = false,
     this.onStart,
+    this.onSolo,
     this.minigameName = '',
     this.minigameRule = '',
     this.countdownValue = 0,
@@ -40,6 +41,10 @@ class PhaseRouter extends StatelessWidget {
 
   /// Invoked when the host presses Start in the lobby.
   final VoidCallback? onStart;
+
+  /// Invoked when the player starts a solo match vs bots; null shows
+  /// no solo button.
+  final VoidCallback? onSolo;
 
   /// Minigame display name for the intro screen.
   final String minigameName;
@@ -69,6 +74,7 @@ class PhaseRouter extends StatelessWidget {
             players: lobbyPlayers,
             canStart: canStart,
             onStart: onStart,
+            onSolo: onSolo,
           ),
           RoundPhase.roundIntro => RoundIntroScreen(
             minigameName: minigameName,

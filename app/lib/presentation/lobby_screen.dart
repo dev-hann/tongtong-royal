@@ -23,11 +23,15 @@ class LobbyScreen extends StatelessWidget {
     required this.players,
     required this.canStart,
     this.onStart,
+    this.onSolo,
     super.key,
   });
 
   /// Key of the Start button (for tests and integration finds).
   static const Key startButtonKey = Key('lobby_start_button');
+
+  /// Key of the Play Solo button (for tests and integration finds).
+  static const Key soloButtonKey = Key('lobby_solo_button');
 
   /// Players currently in the room.
   final List<LobbyPlayer> players;
@@ -37,6 +41,10 @@ class LobbyScreen extends StatelessWidget {
 
   /// Invoked when the host presses Start.
   final VoidCallback? onStart;
+
+  /// Invoked when the player starts a solo match vs bots; when null
+  /// (default) no solo button is shown.
+  final VoidCallback? onSolo;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +67,15 @@ class LobbyScreen extends StatelessWidget {
           onPressed: canStart ? onStart : null,
           child: const Text('Start'),
         ),
+        if (onSolo != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: ElevatedButton(
+              key: soloButtonKey,
+              onPressed: onSolo,
+              child: const Text('Play Solo (vs bots)'),
+            ),
+          ),
       ],
     );
   }

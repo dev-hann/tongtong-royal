@@ -127,4 +127,62 @@ void main() {
     expect(game.finished, isTrue);
     expect(events.whereType<PlayerFinished>(), isNotEmpty);
   });
+
+  group('multi-input extension', () {
+    test('tickInputsProvider feeds every player each step', () {
+      final twoPlayerSim = RaceSimulation(map: map, playerIds: ['p1', 'p2']);
+      addTearDown(twoPlayerSim.dispose);
+      final p1Start = twoPlayerSim.bodyOf('p1').position.x;
+      final p2Start = twoPlayerSim.bodyOf('p2').position.x;
+      final game = RaceGameView(
+        simulation: twoPlayerSim,
+        localPlayerId: 'p1',
+        map: map,
+        playerIds: const ['p1', 'p2'],
+        tickInputsProvider: () => {
+          'p1': PlayerInputState(moveDir: Vector2(1, 0)),
+          'p2': PlayerInputState(moveDir: Vector2(1, 0)),
+        },
+      );
+
+      for (var i = 0; i < 60; i++) {
+        game.update(PhysicsConsts.fixedDt);
+      }
+
+      expect(twoPlayerSim.bodyOf('p1').position.x, greaterThan(p1Start + 0.5));
+      expect(twoPlayerSim.bodyOf('p2').position.x, greaterThan(p2Start + 0.5));
+    });
+
+    test('onStep fires once per completed step', () {
+      var steps = 0;
+      final game = buildGame(
+        inputSource: _StaticInput(PlayerInputState(moveDir: Vector2(1, 0))),
+      )..onStep = () => steps++;
+      for (var i = 0; i < 10; i++) {
+        game.update(PhysicsConsts.fixedDt);
+      }
+      expect(steps, 10);
+      expect(game.stepCount, 10);
+    });
+
+    test('a tickEnabled veto stops stepping entirely', () {
+      final twoPlayerSim = RaceSimulation(map: map, playerIds: ['p1']);
+      addTearDown(twoPlayerSim.dispose);
+      var providerCalls = 0;
+      final game = RaceGameView(
+        simulation: twoPlayerSim,
+        localPlayerId: 'p1',
+        map: map,
+        tickInputsProvider: () {
+          providerCalls++;
+          return const {};
+        },
+        tickEnabled: () => false,
+      )..update(PhysicsConsts.fixedDt * 10);
+
+      expect(game.stepCount, 0);
+      expect(providerCalls, 0);
+      expect(twoPlayerSim.currentTick, 0);
+    });
+  });
 }
