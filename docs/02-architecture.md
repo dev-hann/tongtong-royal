@@ -57,6 +57,8 @@ abstract class MiniGame {
 
 The round state machine exposes transition helpers: `beginRound` (LOBBY → ROUND_INTRO), `startPlay` (ROUND_INTRO → ROUND_PLAY), `endRound` (ROUND_PLAY → ROUND_RESULTS), `toPodium`, `toLobby`. Invalid transitions throw `InvalidTransitionException`; `canTransition(to)` queries legality.
 
+**Event channels (concrete):** `RoundEvents` carries ordered discrete events (`PlayerFinished`, `PlayerFell`, ... — sealed set). Continuous data (e.g. race progress samples) and the **round roster** (present players incl. idle/disconnected bodies that emit no events, GDD § 7.2) travel via an optional per-minigame input parameter (e.g. `TrapRaceInput { roster, progressSamples }`). Last progress sample per player wins; players with no events rank last by zero progress.
+
 - Rules live in `shared/domain` (resolving placements from events).
 - Physics construction (bodies, obstacles, map layout) lives in `app/game`, driven by **map data (JSON)** + the round seed.
 - Adding a new minigame = new `MiniGame` implementation + map data + renderer. No engine changes.
@@ -86,7 +88,7 @@ Client A (HOST)   Server (relay)   Client B/C/D
 | Fixed timestep | Simulation steps at a fixed dt from `shared/physics`. No wall-clock physics. |
 | Tunneling prevention | Player bodies use `bullet: true` (CCD). Walls have a minimum thickness from `shared/physics.minWallThickness`. Dash applies an impulse **capped** by `maxSpeed` clamp. |
 | Velocity clamp | Every tick, host clamps all player linear/angular velocities to `maxLinearVelocity`/`maxAngularVelocity`. |
-| NaN/explosion guard | Every tick, host checks positions/velocities for NaN or values beyond `worldBounds`; violator is respawned at last checkpoint (and logged). |
+| NaN/explosion guard | Every tick, host checks positions/velocities for NaN or values beyond `worldBounds`; violator is respawned at last checkpoint (and logged). Explosion respawn emits **no domain event** (unlike fall-zone `PlayerFell`) — it is silent recovery. |
 | Stuck detection | Host-side: player with active input and near-zero displacement for `stuckThresholdSeconds` (5s) is respawned at last checkpoint. |
 | Contact parameters | Friction/restitution values for player/ground/player-player are constants in `shared/physics`. No inline tuning. |
 | Kill volumes | Fall zones are sensor bodies; host emits `PlayerFell` events; domain decides respawn (map data defines checkpoint). |

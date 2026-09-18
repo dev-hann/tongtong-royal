@@ -1,3 +1,5 @@
+export 'game/registry.dart';
+export 'game/trap_race.dart';
 export 'match_rules.dart';
 export 'minigame.dart';
 export 'minigame_selector.dart';
