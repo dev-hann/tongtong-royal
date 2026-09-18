@@ -9,6 +9,7 @@ import 'package:app/net/host/round_simulation_factory.dart';
 import 'package:app/solo/solo_match_controller.dart';
 import 'package:app/solo/solo_play_view.dart';
 import 'package:app/solo/solo_round_driver.dart';
+import 'package:flame/game.dart' show GameWidget;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
@@ -85,24 +86,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('arena session ticks headlessly via the frame ticker', (
-    tester,
-  ) async {
-    final session = buildSession(BotFactory.hammerDodgeId, 3);
-    addTearDown(session.driver.dispose);
+  for (final entry in {
+    'hammer': BotFactory.hammerDodgeId,
+    'hill': BotFactory.kingOfTheHillId,
+  }.entries) {
+    testWidgets('arena session (${entry.key}) mounts ArenaGameView', (
+      tester,
+    ) async {
+      final session = buildSession(entry.value, 3);
+      addTearDown(session.driver.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: SoloPlayView(session: session)),
-      ),
-    );
-    await tester.pump();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: SoloPlayView(session: session)),
+        ),
+      );
+      await tester.pump();
 
-    for (var i = 0; i < 10; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
 
-    expect(session.driver.tickCount, greaterThan(0));
-    expect(tester.takeException(), isNull);
-  });
+      // Arena rounds render through the real Flame loop too.
+      expect(find.byType(GameWidget), findsOneWidget);
+      expect(session.driver.tickCount, greaterThan(0));
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

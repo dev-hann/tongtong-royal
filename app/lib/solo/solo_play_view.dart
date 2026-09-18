@@ -1,22 +1,26 @@
+import 'package:app/game/arenas/hammer/hammer_map.dart';
+import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
+import 'package:app/game/view/arena/arena_game_view.dart';
 import 'package:app/game/view/race_game_view.dart';
 import 'package:app/game/view/touch_input_source.dart';
 import 'package:app/solo/solo_match_controller.dart';
-import 'package:flame/game.dart' show GameWidget;
+import 'package:flame/game.dart' show Game, GameWidget;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 /// ROUND_PLAY widget for a solo match: mounts the session's
 /// simulation with the human on the touch overlay and the session's
-/// bot brains feeding [RaceGameView.tickInputsProvider].
+/// bot brains feeding the game view's tick-inputs provider.
 ///
-/// Race rounds render through the real Flame loop; arena rounds
-/// (no arena renderer yet) run headlessly on a frame [Ticker] with a
-/// status pane. Wiring only — judging stays in the driver's domain
-/// resolve (architecture doc § 2), timers only here in the widget
-/// layer.
+/// Race rounds render through [RaceGameView], arena rounds (Hammer
+/// Dodge, King of the Hill) through [ArenaGameView]; unexpected
+/// sim/map combinations fall back to a headless status pane (same
+/// accumulator policy, driven by a frame `Ticker`). Wiring only —
+/// judging stays in the driver's domain resolve (architecture
+/// doc § 2), timers only here in the widget layer.
 final class SoloPlayView extends StatefulWidget {
   /// Creates the view over [session].
   const SoloPlayView({required this.session, super.key});
@@ -30,39 +34,70 @@ final class SoloPlayView extends StatefulWidget {
 
 final class _SoloPlayViewState extends State<SoloPlayView> {
   late final TouchInputController _touchController = TouchInputController();
-  RaceGameView? _raceGame;
+  Game? _game;
 
   @override
   void initState() {
     super.initState();
     final session = widget.session;
     session.driver.humanInput = _touchController;
+    _game = _buildGame(session);
+  }
+
+  Game? _buildGame(SoloRoundSession session) {
     final simulation = session.simulation;
-    if (simulation is RaceSimulation && session.map is CourseMap) {
-      _raceGame = RaceGameView(
+    final map = session.map;
+    if (simulation is RaceSimulation && map is CourseMap) {
+      return RaceGameView(
         simulation: simulation,
         localPlayerId: session.humanId,
-        map: session.map as CourseMap,
+        map: map,
         playerIds: session.rosterIds,
         tickInputsProvider: session.driver.buildInputs,
         tickEnabled: () => !session.isOver,
       )..onStep = session.driver.postTick;
     }
+    if (map is HammerArenaMap) {
+      return ArenaGameView.hammer(
+        simulation: simulation,
+        map: map,
+        localPlayerId: session.humanId,
+        playerIds: session.rosterIds,
+        tickInputsProvider: session.driver.buildInputs,
+        tickEnabled: () => !session.isOver,
+      )..onStep = session.driver.postTick;
+    }
+    if (map is HillArenaMap) {
+      return ArenaGameView.hill(
+        simulation: simulation,
+        map: map,
+        localPlayerId: session.humanId,
+        playerIds: session.rosterIds,
+        tickInputsProvider: session.driver.buildInputs,
+        tickEnabled: () => !session.isOver,
+      )..onStep = session.driver.postTick;
+    }
+    // Unexpected archetype pairing: run headlessly instead of
+    // crashing (defensive fallback, kept from the pre-renderer pane).
+    return null;
   }
 
   @override
   void dispose() {
-    _raceGame?.onRemove();
+    if (_game case final RaceGameView race) {
+      race.onRemove();
+    }
     widget.session.driver.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_raceGame != null) {
+    final game = _game;
+    if (game != null) {
       return Stack(
         children: [
-          Positioned.fill(child: GameWidget(game: _raceGame!)),
+          Positioned.fill(child: GameWidget(game: game)),
           Positioned.fill(
             child: TouchInputSource(controller: _touchController),
           ),
@@ -73,9 +108,9 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
   }
 }
 
-/// Arena rounds without a Flame renderer: a frame ticker drives the
-/// session's fixed-dt ticks headlessly (same accumulator policy as
-/// [RaceGameView.update]) and shows a status pane.
+/// Fallback for rounds whose sim/map types have no renderer yet: a
+/// frame ticker drives the session's fixed-dt ticks headlessly (same
+/// accumulator policy as the game views) and shows a status pane.
 final class _ArenaRoundPane extends StatefulWidget {
   const _ArenaRoundPane({required this.session});
 
