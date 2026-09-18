@@ -4,8 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 void main() {
-  Widget wrap(Widget child) =>
-      MaterialApp(home: Scaffold(body: child));
+  Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   testWidgets('shows 1st, 2nd, 3rd in order from rankings', (tester) async {
     await tester.pumpWidget(
@@ -59,9 +58,7 @@ void main() {
     await tester.pumpWidget(
       wrap(
         PodiumScreen(
-          rankings: const [
-            Placement(playerId: 'winner', rank: 1, points: 20),
-          ],
+          rankings: const [Placement(playerId: 'winner', rank: 1, points: 20)],
           onRematch: () => rematched = true,
         ),
       ),

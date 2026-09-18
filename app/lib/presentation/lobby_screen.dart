@@ -1,16 +1,30 @@
+import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_button.dart';
+import 'package:app/design/widgets/ttr_player_chip.dart';
 import 'package:flutter/material.dart';
 
 /// View model for one lobby row (dumb data; rules live in the domain).
 @immutable
 class LobbyPlayer {
   /// Creates a lobby row model.
-  const LobbyPlayer({required this.displayName, required this.isReady});
+  const LobbyPlayer({
+    required this.displayName,
+    required this.isReady,
+    this.isBot = false,
+    this.isDisconnected = false,
+  });
 
   /// Name shown in the lobby list.
   final String displayName;
 
   /// Whether this player pressed ready.
   final bool isReady;
+
+  /// Whether this seat is a bot (shows the BOT badge).
+  final bool isBot;
+
+  /// Whether this player is currently disconnected.
+  final bool isDisconnected;
 }
 
 /// LOBBY phase screen: player list, ready badges, Start button.
@@ -52,28 +66,39 @@ class LobbyScreen extends StatelessWidget {
       children: [
         Expanded(
           child: ListView(
+            padding: const EdgeInsets.all(SpacingScale.lg),
             children: [
-              for (final player in players)
-                ListTile(
+              for (final (index, player) in players.indexed)
+                Padding(
                   key: ValueKey(player.displayName),
-                  title: Text(player.displayName),
-                  trailing: Text(player.isReady ? 'Ready' : 'Not ready'),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: SpacingScale.xs,
+                  ),
+                  child: TtrPlayerChip(
+                    nickname: player.displayName,
+                    playerColor: PlayerPalette.forIndex(index),
+                    isReady: player.isReady,
+                    isBot: player.isBot,
+                    isDisconnected: player.isDisconnected,
+                  ),
                 ),
             ],
           ),
         ),
-        ElevatedButton(
+        TtrButton(
           key: startButtonKey,
+          label: 'Start',
+          size: TtrButtonSize.large,
           onPressed: canStart ? onStart : null,
-          child: const Text('Start'),
         ),
         if (onSolo != null)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: ElevatedButton(
+            padding: const EdgeInsets.only(top: SpacingScale.sm),
+            child: TtrButton(
               key: soloButtonKey,
+              label: 'Play Solo (vs bots)',
+              variant: TtrButtonVariant.secondary,
               onPressed: onSolo,
-              child: const Text('Play Solo (vs bots)'),
             ),
           ),
       ],

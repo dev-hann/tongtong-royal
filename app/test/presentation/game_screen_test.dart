@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget wrap(Widget child) =>
-      MaterialApp(home: Scaffold(body: child));
+  Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   testWidgets('HUD shows injected scores and timer verbatim', (tester) async {
     await tester.pumpWidget(
@@ -25,20 +24,14 @@ void main() {
     expect(find.text('42'), findsOneWidget);
   });
 
-  testWidgets('timer text changes when injected value changes', (
-    tester,
-  ) async {
+  testWidgets('timer text changes when injected value changes', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const GameScreen(scoreboard: [], timeRemaining: '60'),
-      ),
+      wrap(const GameScreen(scoreboard: [], timeRemaining: '60')),
     );
     expect(find.text('60'), findsOneWidget);
 
     await tester.pumpWidget(
-      wrap(
-        const GameScreen(scoreboard: [], timeRemaining: '59'),
-      ),
+      wrap(const GameScreen(scoreboard: [], timeRemaining: '59')),
     );
     expect(find.text('59'), findsOneWidget);
   });

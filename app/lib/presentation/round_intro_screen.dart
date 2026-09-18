@@ -1,3 +1,6 @@
+import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_countdown.dart';
+import 'package:app/design/widgets/ttr_round_banner.dart';
 import 'package:flutter/material.dart';
 
 /// ROUND_INTRO phase screen: minigame name, one-line rule, countdown.
@@ -30,15 +33,9 @@ class RoundIntroScreen extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(minigameName, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 8),
-        Text(ruleLine),
-        const SizedBox(height: 24),
-        Text(
-          '$countdownValue',
-          key: countdownKey,
-          style: Theme.of(context).textTheme.displayLarge,
-        ),
+        TtrRoundBanner(title: minigameName, ruleLine: ruleLine),
+        const SizedBox(height: SpacingScale.xl),
+        TtrCountdown(key: countdownKey, value: countdownValue),
       ],
     );
   }

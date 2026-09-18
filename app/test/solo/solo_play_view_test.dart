@@ -113,4 +113,82 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('race: one button labeled JUMP auto-runs the human', (
+    tester,
+  ) async {
+    final session = buildSession(BotFactory.trapRaceId, 1);
+    addTearDown(session.driver.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SoloPlayView(session: session)),
+      ),
+    );
+    await tester.pump();
+
+    final startX = session.simulation.poseOf(humanId)!.x;
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    // Auto-steering feeds the sim: constant rightward movement.
+    expect(
+      session.simulation.poseOf(humanId)!.x,
+      greaterThan(startX),
+    );
+    expect(find.text('JUMP'), findsOneWidget);
+    expect(find.byKey(SoloPlayView.actionButtonKey), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('race: tapping the button jumps the human', (tester) async {
+    final session = buildSession(BotFactory.trapRaceId, 1);
+    addTearDown(session.driver.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SoloPlayView(session: session)),
+      ),
+    );
+    await tester.pump();
+
+    // Let the loop run at least one step so the grounded flag is
+    // live before the tap (first-ever tick precedes any contact
+    // solve).
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final startY = session.simulation.poseOf(humanId)!.y;
+    var maxY = startY;
+    await tester.tap(find.byKey(SoloPlayView.actionButtonKey));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+      final y = session.simulation.poseOf(humanId)?.y;
+      if (y != null && y > maxY) {
+        maxY = y;
+      }
+    }
+
+    // The press edge reached the simulation as a grounded jump.
+    expect(maxY, greaterThan(startY + 0.1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('hill: one button labeled DASH', (tester) async {
+    final session = buildSession(BotFactory.kingOfTheHillId, 3);
+    addTearDown(session.driver.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SoloPlayView(session: session)),
+      ),
+    );
+    await tester.pump();
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.text('DASH'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

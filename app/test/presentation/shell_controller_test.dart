@@ -59,15 +59,9 @@ void main() {
       // Final rankings come from the domain (Rankings.finalRanking).
       final rankings = controller.matchResult;
       expect(rankings, isNotNull);
-      expect(
-        rankings!.finalRankings.map((p) => p.playerId).toList(),
-        players,
-      );
+      expect(rankings!.finalRankings.map((p) => p.playerId).toList(), players);
       expect(rankings.finalRankings.first.points, 20); // 4pt * 5 rounds.
-      expect(
-        rankings.finalRankings.map((p) => p.rank).toList(),
-        [1, 2, 3, 4],
-      );
+      expect(rankings.finalRankings.map((p) => p.rank).toList(), [1, 2, 3, 4]);
 
       // PODIUM -> LOBBY resets for a rematch.
       controller.toLobby();
@@ -104,10 +98,7 @@ void main() {
         ..startPlay()
         ..endRound(_roundResult(0, ['a', 'b']))
         ..toPodium();
-      expect(
-        controller.startMatch,
-        throwsA(isA<InvalidTransitionException>()),
-      );
+      expect(controller.startMatch, throwsA(isA<InvalidTransitionException>()));
       expect(controller.phase, RoundPhase.podium);
     });
   });

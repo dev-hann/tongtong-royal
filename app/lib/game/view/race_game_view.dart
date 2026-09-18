@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show Canvas, Color, Offset, Paint, Rect, Size;
 
+import 'package:app/design/tokens.dart' show ArenaPalette;
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/player_character.dart';
@@ -38,43 +39,6 @@ const double checkpointMarkerHeightMeters = 2.5;
 /// Engine constant: radius of the hammer pivot dot (meters).
 /// Display-only.
 const double hammerPivotDotRadiusMeters = 0.15;
-
-/// M1 placeholder palette: colored rectangles stand in for sprites
-/// (visual-only constants, exempt from gameplay-constant rules).
-abstract final class RaceGamePalette {
-  /// Course backdrop.
-  static const Color background = Color(0xFF101820);
-
-  /// Static platforms.
-  static const Color platform = Color(0xFF3E5C76);
-
-  /// Static walls.
-  static const Color wall = Color(0xFF2C3E50);
-
-  /// Checkpoint markers.
-  static const Color checkpoint = Color(0xFF7FC8A9);
-
-  /// Finish sensor.
-  static const Color finish = Color(0xFFFFD166);
-
-  /// Rotating hammers.
-  static const Color hammer = Color(0xFFB23A48);
-
-  /// Remote player bodies.
-  static const Color remotePlayer = Color(0xFF8D99AE);
-
-  /// Local player body (distinct).
-  static const Color localPlayer = Color(0xFFEF8354);
-}
-
-final Paint _backgroundPaint = Paint()..color = RaceGamePalette.background;
-final Paint _platformPaint = Paint()..color = RaceGamePalette.platform;
-final Paint _wallPaint = Paint()..color = RaceGamePalette.wall;
-final Paint _checkpointPaint = Paint()..color = RaceGamePalette.checkpoint;
-final Paint _finishPaint = Paint()..color = RaceGamePalette.finish;
-final Paint _hammerPaint = Paint()..color = RaceGamePalette.hammer;
-final Paint _remotePlayerPaint = Paint()..color = RaceGamePalette.remotePlayer;
-final Paint _localPlayerPaint = Paint()..color = RaceGamePalette.localPlayer;
 
 /// Producer of one [PlayerInputState] per simulation tick. Abstracts
 /// where input comes from (touch overlay now, keyboard/netcode later)
@@ -179,6 +143,7 @@ final class RaceGameView extends Game {
     RenderFeed? renderFeed,
     this.tickInputsProvider,
     this.tickEnabled,
+    this.palette = const ArenaPalette(),
   }) : assert(
          simulation != null || renderFeed != null,
          'either simulation or renderFeed must be provided',
@@ -226,6 +191,9 @@ final class RaceGameView extends Game {
   /// null always allows.
   final bool Function()? tickEnabled;
 
+  /// Render palette (design tokens); injectable for tests.
+  final ArenaPalette palette;
+
   /// Invoked after each completed simulation step (multi-seat hosts
   /// run their post-tick bookkeeping here).
   void Function()? onStep;
@@ -234,6 +202,15 @@ final class RaceGameView extends Game {
   int _stepCount = 0;
   bool _finished = false;
   StreamSubscription<RoundEvent>? _eventSubscription;
+
+  late final Paint _backgroundPaint = Paint()..color = palette.background;
+  late final Paint _platformPaint = Paint()..color = palette.platform;
+  late final Paint _wallPaint = Paint()..color = palette.platformEdge;
+  late final Paint _checkpointPaint = Paint()..color = palette.checkpoint;
+  late final Paint _finishPaint = Paint()..color = palette.finishLine;
+  late final Paint _hammerPaint = Paint()..color = palette.hazard;
+  late final Paint _remotePlayerPaint = Paint()..color = palette.playerRemote;
+  late final Paint _localPlayerPaint = Paint()..color = palette.playerLocal;
 
   /// Camera clamp rectangle for [map].
   @visibleForTesting
@@ -440,7 +417,7 @@ final class RaceGameView extends Game {
   }
 
   @override
-  Color backgroundColor() => const Color(0xFF101820);
+  Color backgroundColor() => palette.background;
 
   static double _axisClamp(
     double focus,

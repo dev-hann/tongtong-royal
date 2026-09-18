@@ -1,3 +1,6 @@
+import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_button.dart';
+import 'package:app/design/widgets/ttr_placement_list.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
@@ -22,50 +25,22 @@ class PodiumScreen extends StatelessWidget {
   /// Ranks shown on the podium (1st through 3rd).
   static const int _maxRank = 3;
 
-  String _label(int rank, bool shared) =>
-      shared ? 'T-${_ordinal(rank)}' : _ordinal(rank);
-
-  String _ordinal(int rank) => switch (rank) {
-    1 => '1st',
-    2 => '2nd',
-    3 => '3rd',
-    _ => '${rank}th',
-  };
-
   @override
   Widget build(BuildContext context) {
     final top = rankings
         .where((placement) => placement.rank <= _maxRank)
         .toList(growable: false);
-    final sharedRanks = <int>{
-      for (final rank in top.map((p) => p.rank))
-        if (top.where((p) => p.rank == rank).length > 1) rank,
-    };
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        for (final placement in top)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _label(placement.rank, sharedRanks.contains(placement.rank)),
-                ),
-                const SizedBox(width: 8),
-                Text(placement.playerId),
-                const SizedBox(width: 8),
-                Text('${placement.points} pt'),
-              ],
-            ),
-          ),
-        const SizedBox(height: 24),
-        ElevatedButton(
+        TtrPlacementList(placements: top),
+        const SizedBox(height: SpacingScale.xl),
+        TtrButton(
           key: rematchButtonKey,
+          label: 'Rematch',
+          size: TtrButtonSize.large,
           onPressed: onRematch,
-          child: const Text('Rematch'),
         ),
       ],
     );

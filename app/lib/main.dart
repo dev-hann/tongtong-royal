@@ -1,3 +1,4 @@
+import 'package:app/design/theme.dart';
 import 'package:app/presentation/game_screen.dart';
 import 'package:app/presentation/lobby_screen.dart';
 import 'package:app/presentation/phase_router.dart';
@@ -21,10 +22,7 @@ class TongTongApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'TongTong Royal',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
-        useMaterial3: true,
-      ),
+      theme: buildTtrTheme(),
       home: const ShellScaffold(),
     );
   }
@@ -87,8 +85,12 @@ class _ShellScaffoldState extends State<ShellScaffold> {
           return PhaseRouter(
             controller: _controller,
             lobbyPlayers: [
-              for (final seat in _solo.seats)
-                LobbyPlayer(displayName: seat.nickname, isReady: true),
+              for (final (i, seat) in _solo.seats.indexed)
+                LobbyPlayer(
+                  displayName: seat.nickname,
+                  isReady: true,
+                  isBot: i > 0,
+                ),
             ],
             onSolo: _solo.startSolo,
             minigameName: _solo.introName,

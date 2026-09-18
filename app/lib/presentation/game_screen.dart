@@ -1,17 +1,10 @@
+import 'package:app/design/game_hud/score_entry.dart';
+import 'package:app/design/game_hud/ttr_score_strip.dart';
+import 'package:app/design/game_hud/ttr_timer_badge.dart';
+import 'package:app/design/tokens.dart';
 import 'package:flutter/material.dart';
 
-/// View model for one HUD score-strip entry (dumb data).
-@immutable
-class ScoreEntry {
-  /// Creates a score entry.
-  const ScoreEntry({required this.playerId, required this.points});
-
-  /// The player this score belongs to.
-  final String playerId;
-
-  /// Cumulative points of the player.
-  final int points;
-}
+export 'package:app/design/game_hud/score_entry.dart' show ScoreEntry;
 
 /// ROUND_PLAY phase shell: HUD chrome around the Flame game viewport.
 ///
@@ -47,30 +40,21 @@ class GameScreen extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (final entry in scoreboard)
-                Text('${entry.playerId}: ${entry.points}'),
-            ],
-          ),
+          padding: const EdgeInsets.all(SpacingScale.sm),
+          child: TtrScoreStrip(entries: scoreboard),
         ),
         Expanded(
-          child: gameView ??
-              const ColoredBox(
+          child:
+              gameView ??
+              ColoredBox(
                 key: gameViewportKey,
-                color: Color(0xFF101820),
-                child: Center(child: Text('Game placeholder')),
+                color: const ArenaPalette().background,
+                child: const Center(child: Text('Game placeholder')),
               ),
         ),
         Padding(
-          padding: const EdgeInsets.all(8),
-          child: Text(
-            timeRemaining,
-            key: timerKey,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          padding: const EdgeInsets.all(SpacingScale.sm),
+          child: TtrTimerBadge(key: timerKey, timeLabel: timeRemaining),
         ),
       ],
     );

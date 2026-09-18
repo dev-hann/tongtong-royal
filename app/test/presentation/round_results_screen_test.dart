@@ -4,8 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 void main() {
-  Widget wrap(Widget child) =>
-      MaterialApp(home: Scaffold(body: child));
+  Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   testWidgets('shows placements and points from the passed-in result', (
     tester,
@@ -25,9 +24,9 @@ void main() {
     expect(find.text('p1'), findsOneWidget);
     expect(find.text('p2'), findsOneWidget);
     expect(find.text('p3'), findsOneWidget);
-    expect(find.text('#1'), findsOneWidget);
-    expect(find.text('#2'), findsOneWidget);
-    expect(find.text('#3'), findsOneWidget);
+    expect(find.text('1st'), findsOneWidget);
+    expect(find.text('2nd'), findsOneWidget);
+    expect(find.text('3rd'), findsOneWidget);
     expect(find.text('4 pt'), findsOneWidget);
     expect(find.text('3 pt'), findsOneWidget);
     expect(find.text('2 pt'), findsOneWidget);

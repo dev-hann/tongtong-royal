@@ -1,3 +1,4 @@
+import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/presentation/lobby_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,12 +34,15 @@ void main() {
       ),
     );
 
-    final button = tester.widget<ElevatedButton>(
+    final button = tester.widget<TtrButton>(
       find.byKey(LobbyScreen.startButtonKey),
     );
     expect(button.onPressed, isNull);
 
-    await tester.tap(find.byKey(LobbyScreen.startButtonKey));
+    await tester.tap(
+      find.byKey(LobbyScreen.startButtonKey),
+      warnIfMissed: false,
+    );
     await tester.pump();
     expect(started, isFalse);
   });
@@ -57,7 +61,7 @@ void main() {
       ),
     );
 
-    final button = tester.widget<ElevatedButton>(
+    final button = tester.widget<TtrButton>(
       find.byKey(LobbyScreen.startButtonKey),
     );
     expect(button.onPressed, isNotNull);

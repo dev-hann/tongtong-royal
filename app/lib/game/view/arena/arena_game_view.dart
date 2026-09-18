@@ -1,5 +1,6 @@
 import 'dart:ui' show Canvas, Color, Offset, Paint, Rect, Size;
 
+import 'package:app/design/tokens.dart' show ArenaPalette;
 import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/player_character.dart';
@@ -12,19 +13,6 @@ import 'package:flame/game.dart' show Game;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:forge2d/forge2d.dart' show Vector2;
 import 'package:tongtong_shared/tongtong_shared.dart';
-
-/// M1 placeholder palette shared by arena views (visual-only
-/// constants, exempt from gameplay-constant rules).
-abstract final class ArenaPalette {
-  /// Arena backdrop.
-  static const Color background = Color(0xFF101820);
-
-  /// Remote player bodies.
-  static const Color remotePlayer = Color(0xFF8D99AE);
-
-  /// Local player body (distinct).
-  static const Color localPlayer = Color(0xFFEF8354);
-}
 
 /// Flame view over an arena [RoundSimulation] (Hammer Dodge, King of
 /// the Hill): steps the simulation at [PhysicsConsts.fixedDt] with
@@ -44,6 +32,7 @@ final class ArenaGameView extends Game {
     List<PlayerId> playerIds = const [],
     Map<PlayerId, PlayerInputState> Function()? tickInputsProvider,
     bool Function()? tickEnabled,
+    ArenaPalette palette = const ArenaPalette(),
   }) => ArenaGameView._(
     simulation,
     localPlayerId,
@@ -51,6 +40,7 @@ final class ArenaGameView extends Game {
     tickInputsProvider,
     tickEnabled,
     HammerArenaVisuals(map),
+    palette: palette,
   );
 
   /// Creates a view over a King of the Hill arena round.
@@ -61,6 +51,7 @@ final class ArenaGameView extends Game {
     List<PlayerId> playerIds = const [],
     Map<PlayerId, PlayerInputState> Function()? tickInputsProvider,
     bool Function()? tickEnabled,
+    ArenaPalette palette = const ArenaPalette(),
   }) => ArenaGameView._(
     simulation,
     localPlayerId,
@@ -68,6 +59,7 @@ final class ArenaGameView extends Game {
     tickInputsProvider,
     tickEnabled,
     HillArenaVisuals(map),
+    palette: palette,
   );
 
   ArenaGameView._(
@@ -76,9 +68,9 @@ final class ArenaGameView extends Game {
     this.playerIds,
     this.tickInputsProvider,
     this.tickEnabled,
-    this._visuals,
-  );
-
+    this._visuals, {
+    this.palette = const ArenaPalette(),
+  });
 
   /// The round simulation stepped by this view's loop.
   final RoundSimulation simulation;
@@ -96,10 +88,17 @@ final class ArenaGameView extends Game {
   /// Whether the loop may run another step; null always allows.
   final bool Function()? tickEnabled;
 
+  /// Render palette (design tokens); injectable for tests.
+  final ArenaPalette palette;
+
   /// Invoked after each completed simulation step.
   void Function()? onStep;
 
   final ArenaVisuals _visuals;
+
+  late final Paint _backgroundPaint = Paint()..color = palette.background;
+  late final Paint _remotePlayerPaint = Paint()..color = palette.playerRemote;
+  late final Paint _localPlayerPaint = Paint()..color = palette.playerLocal;
 
   double _accumulatorSeconds = 0;
   int _stepCount = 0;
@@ -235,7 +234,7 @@ final class ArenaGameView extends Game {
   }
 
   @override
-  Color backgroundColor() => ArenaPalette.background;
+  Color backgroundColor() => palette.background;
 
   static double _axisClamp(
     double focus,
@@ -257,7 +256,3 @@ final class ArenaGameView extends Game {
     return focus;
   }
 }
-
-final Paint _backgroundPaint = Paint()..color = ArenaPalette.background;
-final Paint _remotePlayerPaint = Paint()..color = ArenaPalette.remotePlayer;
-final Paint _localPlayerPaint = Paint()..color = ArenaPalette.localPlayer;

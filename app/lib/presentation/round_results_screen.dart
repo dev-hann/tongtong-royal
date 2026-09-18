@@ -1,3 +1,5 @@
+import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_placement_list.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
@@ -19,15 +21,8 @@ class RoundResultsScreen extends StatelessWidget {
       return const Center(child: Text('Waiting for results...'));
     }
     return ListView(
-      children: [
-        for (final placement in result.placements)
-          ListTile(
-            key: ValueKey(placement.playerId),
-            leading: Text('#${placement.rank}'),
-            title: Text(placement.playerId),
-            trailing: Text('${placement.points} pt'),
-          ),
-      ],
+      padding: const EdgeInsets.all(SpacingScale.lg),
+      children: [TtrPlacementList(placements: result.placements)],
     );
   }
 }

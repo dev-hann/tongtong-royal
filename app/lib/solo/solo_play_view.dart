@@ -1,10 +1,13 @@
+import 'package:app/design/game_hud/ttr_action_button.dart';
 import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/arenas/hill/hill_arena_map.dart';
+import 'package:app/game/controls/action_input_controller.dart';
+import 'package:app/game/controls/auto_input_source.dart';
+import 'package:app/game/controls/steering.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/view/arena/arena_game_view.dart';
 import 'package:app/game/view/race_game_view.dart';
-import 'package:app/game/view/touch_input_source.dart';
 import 'package:app/solo/solo_match_controller.dart';
 import 'package:flame/game.dart' show Game, GameWidget;
 import 'package:flutter/material.dart';
@@ -12,8 +15,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 /// ROUND_PLAY widget for a solo match: mounts the session's
-/// simulation with the human on the touch overlay and the session's
-/// bot brains feeding the game view's tick-inputs provider.
+/// simulation with the human on the one-button controls (GDD § 3:
+/// automatic movement + a single JUMP/DASH button) and the
+/// session's bot brains feeding the game view's tick-inputs
+/// provider.
 ///
 /// Race rounds render through [RaceGameView], arena rounds (Hammer
 /// Dodge, King of the Hill) through [ArenaGameView]; unexpected
@@ -25,6 +30,9 @@ final class SoloPlayView extends StatefulWidget {
   /// Creates the view over [session].
   const SoloPlayView({required this.session, super.key});
 
+  /// Key of the one-button action control (tests).
+  static const Key actionButtonKey = Key('solo_action_button');
+
   /// The round to mount (from [SoloMatchController.currentRound]).
   final SoloRoundSession session;
 
@@ -33,14 +41,33 @@ final class SoloPlayView extends StatefulWidget {
 }
 
 final class _SoloPlayViewState extends State<SoloPlayView> {
-  late final TouchInputController _touchController = TouchInputController();
+  late final ActionInputController _controller = ActionInputController(
+    policies: _hillPolicyIfAny(),
+  );
+
+  /// Hill steering needs the round's map data; other games use the
+  /// controller's stateless defaults.
+  Map<String, SteeringPolicy> _hillPolicyIfAny() {
+    final map = widget.session.map;
+    if (map is HillArenaMap) {
+      return {kingOfTheHillId: HillSteering.fromArenaMap(map)};
+    }
+    return const {};
+  }
+
   Game? _game;
 
   @override
   void initState() {
     super.initState();
     final session = widget.session;
-    session.driver.humanInput = _touchController;
+    session.driver.humanInput = AutoInputSource(
+      gameId: session.minigameId,
+      controller: _controller,
+      simulation: session.simulation,
+      humanId: session.humanId,
+      roster: session.rosterIds,
+    );
     _game = _buildGame(session);
   }
 
@@ -98,8 +125,22 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
       return Stack(
         children: [
           Positioned.fill(child: GameWidget(game: game)),
-          Positioned.fill(
-            child: TouchInputSource(controller: _touchController),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 32,
+            child: Center(
+              child: TtrActionButton(
+                key: SoloPlayView.actionButtonKey,
+                label: switch (
+                    ActionInputController.verbFor(widget.session.minigameId)) {
+                  GameVerb.jump => 'JUMP',
+                  GameVerb.dash => 'DASH',
+                },
+                onPressed: _controller.press,
+                onReleased: _controller.release,
+              ),
+            ),
           ),
         ],
       );
