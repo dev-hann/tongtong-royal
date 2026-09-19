@@ -1,6 +1,6 @@
 # TongTong Royal (통통로얄)
 
-A 2-4 player real-time physics minigame collection for mobile. Think "pocket Fall Guys with friends": join a room with an invite code, play 5 short rounds of physics minigames, accumulate points, and claim the podium.
+A one-button physics race for mobile: auto-run, time your jumps, beat the bots. (Multiplayer rooms and extra minigames are built and preserved in the codebase for a later release — see docs/08-roadmap.md.)
 
 ## Stack
 

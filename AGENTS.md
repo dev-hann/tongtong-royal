@@ -6,7 +6,7 @@ This file is the **code of conduct** for every contributor, human or AI. It has 
 
 ## 1. Project Identity
 
-TongTong Royal is a 2-4 player real-time physics minigame collection. One shared room, 3 rounds, cumulative points, podium. Full rules: `docs/01-game-design.md`.
+TongTong Royal is a single-round one-button physics race vs bots (multiplayer infra preserved for a future rebuild). Full rules: `docs/01-game-design.md`.
 
 ## 2. Language Rules
 
