@@ -133,6 +133,7 @@ Hard rules. A test that breaks any of them does not merge — no exceptions, no 
 
 10. **Assert the behavior, exactly once logically.** Multiple expects are fine when they verify facets of ONE outcome; asserting two different behaviors belongs in two tests.
 11. **Precise matchers.** No `isNotNull` where `equals(x)` is possible; no `greaterThan(0)` where the exact value is specified. Doubles: `closeTo` with an epsilon that has a stated reason (comment).
+12. **Geometry where layout is law.** Shared components whose layout the design guide pins (dialog action rows, form action stretch, header centering, card-group margins) carry **spatial assertions** — widths/positions/alignment, not just presence. Material layout defaults (OverflowBar end-alignment precedent, 2026-09-19) silently fill any unpinned geometry; tests must pin what the guide pins.
 12. **Failure messages must be self-explanatory**: every `expect` on a loop or with non-obvious subject carries a `reason:`.
 13. **Expected values are literals with meaning** — expected `4` points is fine inline; expected computed values (`x + 1`) that mirror the implementation under test are forbidden (tautology smell).
 14. **Exceptions**: assert type AND payload fields (`having(...)`), not just `throws`.
