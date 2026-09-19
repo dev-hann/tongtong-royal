@@ -85,8 +85,9 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 
 Fredoka and Nunito are SIL OFL, bundled as `.ttf` assets in `app/assets/fonts/` (offline-first rule — no runtime font fetching). Every font file gets a row in `ATTRIBUTION.md` before it ships. New fonts must follow this guide's role table or the guide must change first (same commit).
 
-## 8. Accessibility Notes
+## 8. Accessibility & Fullscreen Notes
 
+- **Immersive fullscreen**: the app hides status and navigation bars (`SystemUiMode.immersiveSticky`, portrait-only). Backdrops/world render edge-to-edge; **content always sits inside SafeArea** — hidden bars do not remove display cutouts (punch-hole cameras). Bottom-anchored controls add `MediaQuery.viewPaddingOf(context).bottom` on top of their visual margin.
 - Contrast: player colors are WCAG-checked against arena background (tokens test enforces).
 - Touch targets ≥ 88px for the action button, ≥ 56px standard buttons.
 - Reduced-motion support: backlog (not in MVP).

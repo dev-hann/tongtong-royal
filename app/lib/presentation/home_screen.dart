@@ -25,8 +25,11 @@ class HomeScreen extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
+        // Backdrop bleeds edge-to-edge; content stays inside the
+        // safe area (design guide § 8 — display cutouts).
         const TtrAmbientBackdrop(),
-        Center(
+        SafeArea(
+          child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -71,6 +74,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ],
     );

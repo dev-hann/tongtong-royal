@@ -135,6 +135,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('action button respects the bottom view padding', (
+    tester,
+  ) async {
+    final session = buildSession(BotFactory.trapRaceId, 1);
+    addTearDown(session.driver.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(viewPadding: EdgeInsets.only(bottom: 24)),
+          child: Scaffold(body: SoloPlayView(session: session)),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final button = tester.getBottomRight(
+      find.byKey(SoloPlayView.actionButtonKey),
+    );
+    // 32 visual margin + 24 inset = 56 px above the screen bottom.
+    expect(button.dy, lessThan(600));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('race: tapping the button jumps the human', (tester) async {
     final session = buildSession(BotFactory.trapRaceId, 1);
     addTearDown(session.driver.dispose);

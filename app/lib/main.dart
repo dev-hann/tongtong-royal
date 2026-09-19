@@ -11,9 +11,18 @@ import 'package:app/solo/solo_match_config.dart';
 import 'package:app/solo/solo_match_controller.dart';
 import 'package:app/solo/solo_play_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Immersive fullscreen (design guide § 8): hide status and
+  // navigation bars; content still respects SafeArea for display
+  // cutouts. Portrait-only: the whole shell is designed vertical.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  SystemChrome.setPreferredOrientations(<DeviceOrientation>[
+    DeviceOrientation.portraitUp,
+  ]);
   runApp(const TongTongApp());
 }
 

@@ -45,4 +45,12 @@ void main() {
     );
     expect(button.onPressed, isNull);
   });
+
+  testWidgets('content is protected by SafeArea (design guide 8)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(const HomeScreen()));
+
+    expect(find.byType(SafeArea), findsOneWidget);
+  });
 }

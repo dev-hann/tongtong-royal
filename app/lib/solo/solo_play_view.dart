@@ -104,7 +104,9 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 32,
+            // Respect the bottom system-inset (gesture area when the
+            // bars are swiped back in) on top of the visual margin.
+            bottom: 32 + MediaQuery.viewPaddingOf(context).bottom,
             child: Center(
               child: TtrActionButton(
                 key: SoloPlayView.actionButtonKey,

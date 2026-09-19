@@ -56,34 +56,39 @@ class GameScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(SpacingScale.sm),
-          child: TtrScoreStrip(
-            entries: scoreboard,
-            roundNumber: roundNumber,
-            totalRounds: totalRounds,
+    return SafeArea(
+      // Display cutouts only (system bars are hidden — immersive
+      // fullscreen, design guide § 8).
+      bottom: false,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(SpacingScale.sm),
+            child: TtrScoreStrip(
+              entries: scoreboard,
+              roundNumber: roundNumber,
+              totalRounds: totalRounds,
+            ),
           ),
-        ),
-        Expanded(
-          child:
-              gameView ??
-              ColoredBox(
-                key: gameViewportKey,
-                color: const ArenaPalette().background,
-                child: const Center(child: Text('Game placeholder')),
-              ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(SpacingScale.sm),
-          child: _HudTimer(
-            key: timerKey,
-            label: timeRemaining,
-            remainingSeconds: remainingSeconds,
+          Expanded(
+            child:
+                gameView ??
+                ColoredBox(
+                  key: gameViewportKey,
+                  color: const ArenaPalette().background,
+                  child: const Center(child: Text('Game placeholder')),
+                ),
           ),
-        ),
-      ],
+          Padding(
+            padding: const EdgeInsets.all(SpacingScale.sm),
+            child: _HudTimer(
+              key: timerKey,
+              label: timeRemaining,
+              remainingSeconds: remainingSeconds,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
