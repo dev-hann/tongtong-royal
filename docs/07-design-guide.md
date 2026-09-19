@@ -84,15 +84,24 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 
 ## 6. Screen Layout Patterns
 
-- **Home**: centered column — logo (two-tone display), tagline, stacked actions (PLAY SOLO primary large, FRIENDS secondary disabled + chip). Ambient backdrop. **Entry points: profile avatar top-left, settings gear top-right** (SafeArea-protected corners).
-- **Profile**: avatar block (player color + nickname), nickname edit field, color palette grid (PlayerPalette swatches; selection ring = primary), stats cards row (matches / wins / 1st places — Fredoka numerals, staggered entrance). Local-only, no sync UI.
-- **Settings**: grouped list — sound toggle, credits row, version footer. Primary-colored active toggle.
-- **Credits**: scrollable attribution rows (asset name, source, license) — mirrors `ATTRIBUTION.md`, body type.
+**The Non-Game Form Law (absolute — violations are review blockers, AGENTS § 10).** Every screen outside the game world (HUD/play rendering) follows EXACTLY ONE of two archetypes. No third layouts, no per-screen improvisation:
+
+- **A. FOCUSED** (single-purpose, no chrome): centered vertical column, no header, no scroll. Applies to: **Home, Round Intro, Results header zone**.
+- **B. FORM** (meta pages with content): `TtrPageHeader` (fixed, back + centered title, `SpacingScale.lg` padding — never inside the scroll area) + ONE scrollable body (`horizontal: SpacingScale.xl`) whose content appears ONLY inside `TtrCardGroup` sections (section label + card rows), actions full-width (`CrossAxisAlignment.stretch`), optional bottom-pinned footer. Applies to: **Profile, Settings, Credits, Onboarding** — and every future meta page.
+
+Shared mandates for both archetypes: `TtrPageShell` surface, SafeArea-protected content, all spacing/typography/icons from tokens (no raw sizes — avatars use the tokenized size), staggered entrance on every list/grid/section (§ 4), one pulsing element maximum.
+
+Screens:
+
+- **Home** (FOCUSED): centered column — logo (two-tone display), tagline, stacked actions (PLAY SOLO primary large, FRIENDS secondary disabled + chip). Ambient backdrop. **Entry points: profile avatar top-left, settings gear top-right** (SafeArea-protected corners).
 - **Lobby**: reserved for the multiplayer rebuild (MVP Home replaces it) — seat card grid 2×2 centered, actions bottom.
-- **Intro**: vertical rhythm — banner, giant countdown. Nothing else (single round: no round pill). Backdrop tinted to the race arena family.
-- **Play**: full-bleed world; HUD strip top (standings), timer badge bottom under the world, single action button bottom-center (bottom viewPadding-aware).
+- **Intro** (FOCUSED): vertical rhythm — banner, giant countdown. Nothing else (single round: no round pill). Backdrop tinted to the race arena family.
+- **Play**: full-bleed world; HUD strip top (standings), timer badge bottom under the world, single action button bottom-center (bottom viewPadding-aware). (Game world — the Form Law does not apply here.)
 - **Results**: terminal screen — header pill, placement list (staggered), standings with delta chips, PLAY AGAIN primary + HOME secondary. No auto-advance.
 - **Podium**: removed from the MVP shell (multi-round flow deleted 2026-09-19); pattern returns with the multiplayer rebuild.
+- **Profile** (FORM): `[IDENTITY]` avatar + nickname field + SAVE / `[COLOR]` palette grid / `[RECORD]` stats cards.
+- **Settings** (FORM): `[GENERAL]` sound toggle / `[ABOUT]` credits row; version footer bottom-pinned.
+- **Credits** (FORM): attribution rows in cards, body type.
 
 ## 7. Fonts & Licensing
 
