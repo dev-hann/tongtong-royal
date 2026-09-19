@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 void main() {
-  const pool = ['trap_race', 'hammer_dodge', 'king_of_the_hill'];
+  const pool = ['trap_race', 'hammer_dodge'];
 
   test('default config seats the human named You', () {
     const config = SoloMatchConfig();
@@ -14,13 +14,13 @@ void main() {
 
   test('plan is deterministic for the same seed and generation', () {
     final a = planSoloRounds(
-      rounds: 5,
+      rounds: 3,
       pool: pool,
       matchSeed: 42,
       generation: 0,
     );
     final b = planSoloRounds(
-      rounds: 5,
+      rounds: 3,
       pool: pool,
       matchSeed: 42,
       generation: 0,
@@ -30,12 +30,12 @@ void main() {
 
   test('plan draws every round from the pool', () {
     final plan = planSoloRounds(
-      rounds: 5,
+      rounds: 3,
       pool: pool,
       matchSeed: 7,
       generation: 0,
     );
-    expect(plan, hasLength(5));
+    expect(plan, hasLength(3));
     for (final round in plan) {
       expect(pool, contains(round.minigameId));
       expect(round.mapSeed, greaterThanOrEqualTo(0));
@@ -44,13 +44,13 @@ void main() {
 
   test('a later generation re-plans with fresh map seeds', () {
     final first = planSoloRounds(
-      rounds: 5,
+      rounds: 3,
       pool: pool,
       matchSeed: 7,
       generation: 0,
     );
     final second = planSoloRounds(
-      rounds: 5,
+      rounds: 3,
       pool: pool,
       matchSeed: 7,
       generation: 1,
@@ -64,13 +64,13 @@ void main() {
 
   test('different match seeds plan different matches', () {
     final a = planSoloRounds(
-      rounds: 5,
+      rounds: 3,
       pool: pool,
       matchSeed: 1,
       generation: 0,
     );
     final b = planSoloRounds(
-      rounds: 5,
+      rounds: 3,
       pool: pool,
       matchSeed: 2,
       generation: 0,

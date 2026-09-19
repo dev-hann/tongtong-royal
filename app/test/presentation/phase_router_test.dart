@@ -1,3 +1,5 @@
+import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_standings_list.dart';
 import 'package:app/presentation/game_screen.dart';
 import 'package:app/presentation/lobby_screen.dart';
 import 'package:app/presentation/phase_router.dart';
@@ -30,6 +32,13 @@ void main() {
         countdownValue: 3,
         scoreboard: const [ScoreEntry(playerId: 'p1', points: 4)],
         timeRemaining: '42',
+        resultsMinigameName: 'Trap Race',
+        resultsStandings: const [
+          StandingEntry(playerId: 'p1', totalPoints: 7, roundDelta: 4),
+        ],
+        resultsAutoAdvanceSeconds: 6,
+        podiumNicknames: const {'p1': 'Winner'},
+        podiumPlayerColors: const {'p1': PlayerPalette.one},
       ),
     ),
   );
@@ -53,6 +62,12 @@ void main() {
     expect(find.byType(RoundIntroScreen), findsOneWidget);
     expect(find.text('Trap Race'), findsOneWidget);
     expect(find.byType(LobbyScreen), findsNothing);
+    // Round badge derives from the controller's round counter.
+    expect(find.byKey(RoundIntroScreen.roundBadgeKey), findsOneWidget);
+    expect(
+      find.text('ROUND 1 / ${MatchRules.roundCount}'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('ROUND_PLAY renders GameScreen', (tester) async {
@@ -75,9 +90,16 @@ void main() {
     controller.endRound(result);
     await tester.pumpWidget(host(controller));
     expect(find.byType(RoundResultsScreen), findsOneWidget);
-    expect(find.text('p1'), findsOneWidget);
+    // p1 appears in the placement list and the standings mini list.
+    expect(find.text('p1'), findsNWidgets(2));
     expect(find.text('p2'), findsOneWidget);
     expect(find.byType(GameScreen), findsNothing);
+    // Header pill, standings deltas and auto-advance bar forwarded.
+    expect(find.byKey(RoundResultsScreen.headerKey), findsOneWidget);
+    expect(find.text('ROUND 1 / ${MatchRules.roundCount} · TRAP RACE'),
+        findsOneWidget);
+    expect(find.text('+4'), findsOneWidget);
+    expect(find.byKey(RoundResultsScreen.autoAdvanceKey), findsOneWidget);
   });
 
   testWidgets('PODIUM renders PodiumScreen from controller rankings', (
@@ -90,8 +112,11 @@ void main() {
       ..toPodium();
     await tester.pumpWidget(host(controller));
     expect(find.byType(PodiumScreen), findsOneWidget);
-    expect(find.text('p1'), findsOneWidget);
+    // Nickname map wins over the raw player id on the podium.
+    expect(find.text('Winner'), findsOneWidget);
     expect(find.byType(RoundResultsScreen), findsNothing);
+    // Podium receives the injected nickname.
+    expect(find.text('Winner'), findsOneWidget);
   });
 
   testWidgets('router rebuilds on controller transitions', (tester) async {

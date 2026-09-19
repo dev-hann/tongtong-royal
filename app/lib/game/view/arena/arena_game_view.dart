@@ -2,7 +2,6 @@ import 'dart:ui' show Canvas, Color, Offset, Paint, Rect, Size;
 
 import 'package:app/design/tokens.dart' show ArenaPalette;
 import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/player_character.dart';
 import 'package:app/game/round_simulation.dart';
 import 'package:app/game/view/arena/arena_camera.dart';
@@ -14,11 +13,11 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:forge2d/forge2d.dart' show Vector2;
 import 'package:tongtong_shared/tongtong_shared.dart';
 
-/// Flame view over an arena [RoundSimulation] (Hammer Dodge, King of
-/// the Hill): steps the simulation at [PhysicsConsts.fixedDt] with
-/// the same clamped accumulator policy as `RaceGameView` and draws
-/// the arena purely from map data — Forge2D bodies are never touched
-/// by the render path.
+/// Flame view over an arena [RoundSimulation] (Hammer Dodge): steps
+/// the simulation at [PhysicsConsts.fixedDt] with the same clamped
+/// accumulator policy as `RaceGameView` and draws the arena purely
+/// from map data — Forge2D bodies are never touched by the render
+/// path.
 ///
 /// Elimination rendering rule (survival archetype): a player whose
 /// [RoundSimulation.poseOf] is null (body destroyed) is simply not
@@ -40,25 +39,6 @@ final class ArenaGameView extends Game {
     tickInputsProvider,
     tickEnabled,
     HammerArenaVisuals(map),
-    palette: palette,
-  );
-
-  /// Creates a view over a King of the Hill arena round.
-  factory ArenaGameView.hill({
-    required RoundSimulation simulation,
-    required HillArenaMap map,
-    required PlayerId localPlayerId,
-    List<PlayerId> playerIds = const [],
-    Map<PlayerId, PlayerInputState> Function()? tickInputsProvider,
-    bool Function()? tickEnabled,
-    ArenaPalette palette = const ArenaPalette(),
-  }) => ArenaGameView._(
-    simulation,
-    localPlayerId,
-    playerIds,
-    tickInputsProvider,
-    tickEnabled,
-    HillArenaVisuals(map),
     palette: palette,
   );
 
@@ -127,8 +107,7 @@ final class ArenaGameView extends Game {
       if (simulation.poseOf(id) case final pose?) (id: id, pose: pose),
   ];
 
-  /// Render angle of hammer arm [hammerIndex], radians. Hill arenas
-  /// have no arms (RangeError on any index).
+  /// Render angle of hammer arm [hammerIndex], radians.
   @visibleForTesting
   double armAngleFor(int hammerIndex) {
     final hammers = _visuals.hammers;

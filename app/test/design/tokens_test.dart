@@ -92,6 +92,30 @@ void main() {
       expect(MotionDurations.tap, const Duration(milliseconds: 80));
       expect(MotionDurations.transition, const Duration(milliseconds: 240));
       expect(MotionDurations.countdownPop, const Duration(milliseconds: 150));
+      expect(MotionDurations.pulse, const Duration(milliseconds: 900));
+      expect(MotionDurations.ambient, const Duration(seconds: 12));
+    });
+  });
+
+  group('backdrop tints', () {
+    int alpha255(Color color) => (color.a * 255).round();
+
+    test('soft tints are translucent variants of brand colors', () {
+      expect(alpha255(ColorPalette.primarySoft), 0x1A);
+      expect(alpha255(ColorPalette.secondarySoft), 0x1A);
+      expect(alpha255(ColorPalette.warningSoft), 0x1A);
+      expect(
+        ColorPalette.primarySoft.withValues(alpha: 1),
+        ColorPalette.primary,
+      );
+      expect(
+        ColorPalette.secondarySoft.withValues(alpha: 1),
+        ColorPalette.secondary,
+      );
+      expect(
+        ColorPalette.warningSoft.withValues(alpha: 1),
+        ColorPalette.warning,
+      );
     });
   });
 }

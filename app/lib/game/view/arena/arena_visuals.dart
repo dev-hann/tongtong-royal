@@ -1,22 +1,20 @@
 import 'dart:ui' show Canvas;
 
 import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/view/arena/arena_camera.dart';
 import 'package:app/game/view/arena/hammer_arena_painter.dart';
-import 'package:app/game/view/arena/hill_arena_painter.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 /// Per-arena render data: camera bounds, static-geometry drawing and
 /// arm-angle kinematics, all from map data only (Forge2D bodies are
-/// never touched). Sealed union of the two arena archetypes.
+/// never touched). Sealed union of the arena archetypes.
 sealed class ArenaVisuals {
   const ArenaVisuals();
 
   /// Camera clamp rectangle.
   ArenaCameraBounds get bounds;
 
-  /// Hammer arm specs of this arena (empty for hill).
+  /// Hammer arm specs of this arena.
   List<HammerSpec> get hammers => const [];
 
   /// Draws the arena in world coordinates (call under the view's
@@ -54,20 +52,4 @@ final class HammerArenaVisuals extends ArenaVisuals {
     canvas: canvas,
     armAngles: [for (final spec in map.hammers) hammerArmAngle(spec, ticks)],
   );
-}
-
-/// Render data for a King of the Hill arena.
-final class HillArenaVisuals extends ArenaVisuals {
-  /// Creates hill-arena visuals over [map].
-  const HillArenaVisuals(this.map);
-
-  /// Arena map data rendered by these visuals.
-  final HillArenaMap map;
-
-  @override
-  ArenaCameraBounds get bounds => ArenaCameraBounds.fromHillMap(map);
-
-  @override
-  void draw(Canvas canvas, int ticks) =>
-      drawHillArena(map: map, canvas: canvas);
 }

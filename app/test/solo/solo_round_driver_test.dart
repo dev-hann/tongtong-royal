@@ -84,7 +84,7 @@ void main() {
   });
 
   test('grounded is approximated from vertical speed', () {
-    final sim = FakeSoloSim(minigameId: 'king_of_the_hill', roster: roster)
+    final sim = FakeSoloSim(minigameId: 'hammer_dodge', roster: roster)
       ..poses['bot-1'] = (x: 0, y: 1, angle: 0, vx: 0, vy: 0.1)
       ..poses['bot-2'] = (x: 2, y: 3, angle: 0, vx: 0, vy: -4);
     final grounded = _RecordingBrain();
@@ -96,7 +96,7 @@ void main() {
   });
 
   test('nearby players are exposed within the awareness radius', () {
-    final sim = FakeSoloSim(minigameId: 'king_of_the_hill', roster: roster)
+    final sim = FakeSoloSim(minigameId: 'hammer_dodge', roster: roster)
       ..poses['bot-1'] = (x: 0, y: 0, angle: 0, vx: 0, vy: 0)
       ..poses['bot-2'] = (x: 3, y: 0, angle: 0, vx: 0, vy: 0)
       ..poses['bot-3'] = (x: 50, y: 0, angle: 0, vx: 0, vy: 0);

@@ -6,7 +6,8 @@ enum GameVerb {
   /// Trap Race, Hammer Dodge: the button jumps.
   jump,
 
-  /// King of the Hill: the button dashes/shoves.
+  /// Reserved for future minigames (GDD § 3: the dash verb stays in
+  /// the input vocabulary); no MVP game maps the button to a dash.
   dash,
 }
 
@@ -15,10 +16,6 @@ const String trapRaceId = 'trap_race';
 
 /// Minigame id for Hammer Dodge (shared domain `HammerDodge.id`).
 const String hammerDodgeId = 'hammer_dodge';
-
-/// Minigame id for King of the Hill
-/// (shared domain `KingOfTheHill.id`).
-const String kingOfTheHillId = 'king_of_the_hill';
 
 /// One-button input controller (GDD § 3): owns the physical button
 /// state (press/release edges) and combines it with the game's
@@ -31,9 +28,8 @@ const String kingOfTheHillId = 'king_of_the_hill';
 /// button widgets drive this through [press]/[release].
 final class ActionInputController {
   /// Creates a controller. [policies] overrides or extends the
-  /// built-in per-game steering (the hill policy needs its
-  /// arena map and must be registered here by the wiring layer;
-  /// race and hammer defaults are stateless).
+  /// built-in per-game steering (race and hammer defaults are
+  /// stateless; a future map-bound policy would register here).
   ActionInputController({Map<String, SteeringPolicy> policies = const {}})
     : _policies = {
         trapRaceId: const RaceSteering(),
@@ -52,8 +48,6 @@ final class ActionInputController {
       case trapRaceId:
       case hammerDodgeId:
         return GameVerb.jump;
-      case kingOfTheHillId:
-        return GameVerb.dash;
       default:
         throw ArgumentError.value(gameId, 'gameId', 'unknown minigame id');
     }
@@ -81,13 +75,13 @@ final class ActionInputController {
   /// with the pending button edge (if any):
   ///
   /// - jump games: the edge becomes `jumpPressed`;
-  /// - dash games (hill): the edge becomes `dashPressed` and the
+  /// - dash games (none in the MVP; [GameVerb.dash] is reserved for
+  ///   future minigames): the edge becomes `dashPressed` and the
   ///   move vector becomes the steering policy's dash target
   ///   direction for that one tick (the dash impulse follows the
-  ///   move vector, GDD § 3), so the shove aims at the nearest
-  ///   contested occupant or the crown center;
-  /// - the hill policy's automatic ramp jump passes through as
-  ///   `jumpPressed` regardless of the button.
+  ///   move vector, GDD § 3);
+  /// - a policy's automatic jump passes through as `jumpPressed`
+  ///   regardless of the button.
   PlayerInputState sampleFor(String gameId, SteeringObservation obs) {
     final policy = _policies[gameId];
     if (policy == null) {

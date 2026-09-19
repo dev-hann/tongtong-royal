@@ -36,8 +36,6 @@ RoundResult resolveRound(MiniGame game, RoundEvents events, RoundData data) {
       );
     case final HammerDodge hammer:
       return hammer.resolve(events, HammerDodgeInput(roster: data.roster));
-    case final KingOfTheHill hill:
-      return hill.resolve(events, KingOfTheHillInput(roster: data.roster));
     default:
       throw ArgumentError.value(game.id, 'game', 'no resolve input binding');
   }

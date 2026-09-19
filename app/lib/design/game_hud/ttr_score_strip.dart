@@ -7,7 +7,12 @@ import 'package:flutter/material.dart';
 /// doc § 4).
 class TtrScoreStrip extends StatelessWidget {
   /// Creates the score strip.
-  const TtrScoreStrip({required this.entries, this.roundNumber, super.key});
+  const TtrScoreStrip({
+    required this.entries,
+    this.roundNumber,
+    this.totalRounds,
+    super.key,
+  });
 
   /// Cumulative score entries, injected.
   final List<ScoreEntry> entries;
@@ -15,11 +20,18 @@ class TtrScoreStrip extends StatelessWidget {
   /// 1-based round number; `null` hides the round chip.
   final int? roundNumber;
 
+  /// Total rounds in the match; shown as `Round n / total`.
+  final int? totalRounds;
+
   @override
   Widget build(BuildContext context) {
+    final round = roundNumber;
+    final roundLabel = round == null
+        ? null
+        : (totalRounds == null ? 'Round $round' : 'Round $round / $totalRounds');
     return Row(
       children: [
-        if (roundNumber case final round?)
+        if (roundLabel != null)
           Padding(
             padding: const EdgeInsets.only(right: SpacingScale.sm),
             child: Container(
@@ -32,7 +44,7 @@ class TtrScoreStrip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(RadiusScale.chip),
               ),
               child: Text(
-                'Round $round',
+                roundLabel,
                 style: const TextStyle(
                   fontSize: TypeScale.labelSize,
                   fontWeight: FontWeight.w600,

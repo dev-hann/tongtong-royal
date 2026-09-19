@@ -25,7 +25,7 @@ final class SoloMatchConfig {
   /// Lobby nickname of the human seat.
   final String humanNickname;
 
-  /// Rounds per match (GDD § 2: 5).
+  /// Rounds per match (GDD § 2: 3).
   final int rounds;
 
   /// Root seed of the match; every shuffle and map seed derives from

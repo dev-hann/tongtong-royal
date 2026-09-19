@@ -20,6 +20,10 @@ void main() {
     expect(registry.pool, containsAll(<String>['trap_race', 'hammer_dodge']));
   });
 
+  test('pool_is_exactly_the_two_mvp_games', () {
+    expect(registry.pool, ['trap_race', 'hammer_dodge']);
+  });
+
   test('registry_looks_up_injected_games', () {
     const custom = MinigameRegistry([_FakeGame()]);
 

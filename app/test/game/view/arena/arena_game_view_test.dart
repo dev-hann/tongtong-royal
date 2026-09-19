@@ -1,7 +1,5 @@
 import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/arenas/hammer/hammer_simulation.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
-import 'package:app/game/arenas/hill/hill_simulation.dart';
 import 'package:app/game/view/arena/arena_game_view.dart';
 import 'package:app/game/view/race_game_view.dart' show maxStepsPerFrame;
 import 'package:flutter_test/flutter_test.dart';
@@ -185,30 +183,6 @@ void main() {
       final poses = game.renderPoses;
       expect(poses.length, 2);
       expect(poses.first.id, 'p1');
-    });
-  });
-
-  group('hill arena view', () {
-    test('steps and keeps every player (no elimination in hill)', () {
-      final hillMap = HillArenaMap.kingOfTheHill(5);
-      final hillSim = HillSimulation(
-        map: hillMap,
-        playerIds: const ['p1', 'p2'],
-      );
-      addTearDown(hillSim.dispose);
-      final game = ArenaGameView.hill(
-        simulation: hillSim,
-        map: hillMap,
-        localPlayerId: 'p1',
-        playerIds: const ['p1', 'p2'],
-        tickInputsProvider: () => const {},
-      );
-      for (var i = 0; i < 10; i++) {
-        game.update(PhysicsConsts.fixedDt);
-      }
-      expect(game.stepCount, 10);
-      expect(game.renderPoses.length, 2);
-      expect(hillSim.poseOf('p2'), isNotNull);
     });
   });
 }

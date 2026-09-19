@@ -1,20 +1,21 @@
 import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_button.dart';
-import 'package:app/design/widgets/ttr_player_chip.dart';
+import 'package:app/design/widgets/ttr_seat_card.dart';
 import 'package:flutter/material.dart';
 
-/// View model for one lobby row (dumb data; rules live in the domain).
+/// View model for one lobby seat (dumb data; rules live in the domain).
 @immutable
 class LobbyPlayer {
-  /// Creates a lobby row model.
+  /// Creates a lobby seat model.
   const LobbyPlayer({
     required this.displayName,
     required this.isReady,
     this.isBot = false,
+    this.isLocal = false,
     this.isDisconnected = false,
   });
 
-  /// Name shown in the lobby list.
+  /// Name shown on the seat card.
   final String displayName;
 
   /// Whether this player pressed ready.
@@ -23,14 +24,18 @@ class LobbyPlayer {
   /// Whether this seat is a bot (shows the BOT badge).
   final bool isBot;
 
+  /// Whether this is the local player's seat (tappable color pick).
+  final bool isLocal;
+
   /// Whether this player is currently disconnected.
   final bool isDisconnected;
 }
 
-/// LOBBY phase screen: player list, ready badges, Start button.
+/// LOBBY phase screen: 2x2 grid of seat cards, solo + start actions.
 ///
 /// Pure renderer (architecture doc § 10): all values are passed in;
-/// [canStart] is decided elsewhere (domain/host), never here.
+/// [canStart] is decided elsewhere (domain/host), never here. The
+/// local seat's color cycling is presentation-local state only.
 class LobbyScreen extends StatelessWidget {
   /// Creates the lobby screen.
   const LobbyScreen({
@@ -62,46 +67,49 @@ class LobbyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(SpacingScale.lg),
-            children: [
-              for (final (index, player) in players.indexed)
-                Padding(
-                  key: ValueKey(player.displayName),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: SpacingScale.xs,
+    return SafeArea(
+      child: Column(
+        children: [
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(SpacingScale.lg),
+              mainAxisSpacing: SpacingScale.md,
+              crossAxisSpacing: SpacingScale.md,
+              childAspectRatio: 1.15,
+              children: [
+                for (final (index, player) in players.indexed)
+                  Center(
+                    child: TtrSeatCard(
+                      nickname: player.displayName,
+                      playerColor: PlayerPalette.forIndex(index),
+                      isReady: player.isReady && !player.isDisconnected,
+                      isBot: player.isBot,
+                      isLocal: player.isLocal,
+                    ),
                   ),
-                  child: TtrPlayerChip(
-                    nickname: player.displayName,
-                    playerColor: PlayerPalette.forIndex(index),
-                    isReady: player.isReady,
-                    isBot: player.isBot,
-                    isDisconnected: player.isDisconnected,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        TtrButton(
-          key: startButtonKey,
-          label: 'Start',
-          size: TtrButtonSize.large,
-          onPressed: canStart ? onStart : null,
-        ),
-        if (onSolo != null)
-          Padding(
-            padding: const EdgeInsets.only(top: SpacingScale.sm),
-            child: TtrButton(
-              key: soloButtonKey,
-              label: 'Play Solo (vs bots)',
-              variant: TtrButtonVariant.secondary,
-              onPressed: onSolo,
+              ],
             ),
           ),
-      ],
+          if (onSolo != null) ...[
+            TtrButton(
+              key: soloButtonKey,
+              label: 'PLAY SOLO',
+              size: TtrButtonSize.large,
+              onPressed: onSolo,
+            ),
+            const SizedBox(height: SpacingScale.sm),
+          ],
+          TtrButton(
+            key: startButtonKey,
+            label: 'Start',
+            variant: TtrButtonVariant.secondary,
+            onPressed: canStart ? onStart : null,
+          ),
+          const SizedBox(height: SpacingScale.lg),
+        ],
+      ),
     );
   }
 }

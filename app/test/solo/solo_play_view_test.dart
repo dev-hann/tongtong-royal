@@ -1,7 +1,5 @@
 import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/arenas/hammer/hammer_simulation.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
-import 'package:app/game/arenas/hill/hill_simulation.dart';
 import 'package:app/game/bots/bot_factory.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
@@ -22,7 +20,6 @@ void main() {
     final game = const MinigameRegistry().byId(minigameId);
     final map = switch (minigameId) {
       BotFactory.hammerDodgeId => HammerArenaMap.hammerArena(mapSeed),
-      BotFactory.kingOfTheHillId => HillArenaMap.kingOfTheHill(mapSeed),
       _ => CourseMap.trapRace(mapSeed),
     };
     final simulation = defaultRoundSimulationFactory(
@@ -60,7 +57,6 @@ void main() {
   int tickCountOf(Object simulation) => switch (simulation) {
     final RaceSimulation race => race.currentTick,
     final HammerSimulation hammer => hammer.currentTick,
-    final HillSimulation hill => hill.currentTick,
     _ => throw ArgumentError('unknown simulation'),
   };
 
@@ -86,10 +82,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final entry in {
-    'hammer': BotFactory.hammerDodgeId,
-    'hill': BotFactory.kingOfTheHillId,
-  }.entries) {
+  for (final entry in {'hammer': BotFactory.hammerDodgeId}.entries) {
     testWidgets('arena session (${entry.key}) mounts ArenaGameView', (
       tester,
     ) async {
@@ -171,24 +164,6 @@ void main() {
 
     // The press edge reached the simulation as a grounded jump.
     expect(maxY, greaterThan(startY + 0.1));
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('hill: one button labeled DASH', (tester) async {
-    final session = buildSession(BotFactory.kingOfTheHillId, 3);
-    addTearDown(session.driver.dispose);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: SoloPlayView(session: session)),
-      ),
-    );
-    await tester.pump();
-    for (var i = 0; i < 4; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-
-    expect(find.text('DASH'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

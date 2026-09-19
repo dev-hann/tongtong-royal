@@ -29,6 +29,13 @@ class ShellController extends ChangeNotifier {
   /// The most recently delivered round result, if any.
   RoundResult? get latestRoundResult => _latestRoundResult;
 
+  /// Results of all completed rounds, in completion order (input for
+  /// HUD standings and cumulative views).
+  List<RoundResult> get roundResults => List.unmodifiable(_roundResults);
+
+  /// Maximum rounds in the current match (GDD § 2).
+  int get totalRounds => _machine.maxRounds;
+
   /// Final standings; only set while the phase is [RoundPhase.podium].
   MatchResult? get matchResult => _matchResult;
 

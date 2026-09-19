@@ -52,7 +52,7 @@ void main() {
         expect(controller.latestRoundResult, same(result));
       }
 
-      // ROUND_RESULTS -> PODIUM (match complete after 5 rounds).
+      // ROUND_RESULTS -> PODIUM (match complete after all rounds).
       controller.toPodium();
       expect(controller.phase, RoundPhase.podium);
 
@@ -60,8 +60,15 @@ void main() {
       final rankings = controller.matchResult;
       expect(rankings, isNotNull);
       expect(rankings!.finalRankings.map((p) => p.playerId).toList(), players);
-      expect(rankings.finalRankings.first.points, 20); // 4pt * 5 rounds.
+      expect(
+        rankings.finalRankings.first.points,
+        4 * MatchRules.roundCount,
+      );
       expect(rankings.finalRankings.map((p) => p.rank).toList(), [1, 2, 3, 4]);
+
+      // Round results are exposed for HUD/standings computations.
+      expect(controller.roundResults, hasLength(MatchRules.roundCount));
+      expect(controller.totalRounds, MatchRules.roundCount);
 
       // PODIUM -> LOBBY resets for a rematch.
       controller.toLobby();
@@ -69,9 +76,10 @@ void main() {
       expect(controller.roundIndex, 0);
       expect(controller.latestRoundResult, isNull);
       expect(controller.matchResult, isNull);
+      expect(controller.roundResults, isEmpty);
 
-      // 3 transitions per round * 5 rounds + toPodium + toLobby.
-      expect(notifications, 17);
+      // 3 transitions per round * rounds + toPodium + toLobby.
+      expect(notifications, 3 * MatchRules.roundCount + 2);
     });
   });
 

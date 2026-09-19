@@ -1,5 +1,4 @@
 import 'package:tongtong_shared/src/domain/game/hammer_dodge.dart';
-import 'package:tongtong_shared/src/domain/game/king_of_the_hill.dart';
 import 'package:tongtong_shared/src/domain/game/trap_race.dart';
 import 'package:tongtong_shared/src/domain/minigame.dart';
 import 'package:tongtong_shared/src/domain/models.dart';
@@ -12,7 +11,7 @@ final class MinigameRegistry {
   /// Creates the registry over [games], which defaults to every
   /// built-in minigame.
   const MinigameRegistry([
-    List<MiniGame> games = const [TrapRace(), HammerDodge(), KingOfTheHill()],
+    List<MiniGame> games = const [TrapRace(), HammerDodge()],
   ]) : _games = games;
 
   final List<MiniGame> _games;

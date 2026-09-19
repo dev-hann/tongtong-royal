@@ -15,7 +15,7 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 final class AutoInputSource implements InputSource {
   /// Creates the source for [gameId]. [controller] must already
   /// carry the steering policy for [gameId] when the game needs a
-  /// map-bound one (hill); [roster] lists every seat so nearby
+  /// map-bound one; [roster] lists every seat so nearby
   /// players can be observed.
   AutoInputSource({
     required this.gameId,

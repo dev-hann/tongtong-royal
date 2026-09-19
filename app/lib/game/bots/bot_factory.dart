@@ -1,9 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/bots/bot_brain.dart';
-import 'package:app/game/bots/hill_bot.dart';
 import 'package:app/game/bots/race_bot.dart';
 import 'package:app/game/bots/survival_bot.dart';
 import 'package:app/game/course/course_map.dart';
@@ -21,10 +19,6 @@ final class BotFactory {
 
   /// Minigame id for Hammer Dodge (shared domain `HammerDodge.id`).
   static const String hammerDodgeId = 'hammer_dodge';
-
-  /// Minigame id for King of the Hill
-  /// (shared domain `KingOfTheHill.id`).
-  static const String kingOfTheHillId = 'king_of_the_hill';
 
   /// Size of the bot identity pool: `bot-1`..`bot-3` (GDD § 9.1).
   static const int maxBots = 3;
@@ -62,15 +56,6 @@ final class BotFactory {
           );
         }
         return SurvivalBot.fromArenaMap(map, seed: seed);
-      case kingOfTheHillId:
-        if (map is! HillArenaMap) {
-          throw ArgumentError.value(
-            map,
-            'map',
-            'king_of_the_hill requires a HillArenaMap',
-          );
-        }
-        return HillBot.fromArenaMap(map);
       default:
         throw ArgumentError.value(id, 'id', 'unknown minigame id');
     }

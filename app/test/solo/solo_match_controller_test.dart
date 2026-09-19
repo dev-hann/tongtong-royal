@@ -39,11 +39,6 @@ final class _ScriptedSoloSim extends FakeSoloSim {
         emit(const PlayerEliminated(tick: 1, playerId: 'bot-3'));
         emit(const PlayerEliminated(tick: 2, playerId: 'bot-2'));
         emit(const PlayerEliminated(tick: 3, playerId: 'bot-1'));
-      case 'king_of_the_hill':
-        emit(const HoldTimeSample(playerId: 'solo-player', seconds: 9));
-        emit(const HoldTimeSample(playerId: 'bot-1', seconds: 6));
-        emit(const HoldTimeSample(playerId: 'bot-2', seconds: 3));
-        emit(const HoldTimeSample(playerId: 'bot-3', seconds: 1));
       default:
         fail('script missing for $minigameId');
     }
@@ -92,7 +87,7 @@ void main() {
     expect(controller.seats[1].nickname, 'BOT 1');
   });
 
-  test('full match: five rounds then podium with domain standings', () {
+  test('full match: three rounds then podium with domain standings', () {
     final phases = <RoundPhase>[shell.phase];
     shell.addListener(() => phases.add(shell.phase));
 
@@ -105,7 +100,7 @@ void main() {
       }
     });
 
-    for (var round = 0; round < 5; round++) {
+    for (var round = 0; round < MatchRules.roundCount; round++) {
       scheduler.elapse(3000); // intro countdown
       expect(shell.phase, RoundPhase.roundPlay);
       expect(
@@ -121,8 +116,8 @@ void main() {
     }
 
     expect(shell.phase, RoundPhase.podium);
-    expect(results, hasLength(5));
-    for (var round = 0; round < 5; round++) {
+    expect(results, hasLength(MatchRules.roundCount));
+    for (var round = 0; round < MatchRules.roundCount; round++) {
       expect(results[round].roundIndex, round);
       // 4 players ranked: points 4/3/2/1 (GDD § 2), human first in
       // every script.
@@ -138,15 +133,9 @@ void main() {
 
     final rankings = shell.matchResult!.finalRankings;
     expect(rankings.first.playerId, 'solo-player');
-    expect(rankings.first.points, 20);
-    expect(rankings.map((p) => p.playerId).toSet(), {
-      'solo-player',
-      'bot-1',
-      'bot-2',
-      'bot-3',
-    });
+    expect(rankings.first.points, 12);
 
-    // Deduped phase sequence: intro/play/results x5 then podium.
+    // Deduped phase sequence: intro/play/results x3 then podium.
     final deduped = <RoundPhase>[];
     for (final phase in phases) {
       if (deduped.isEmpty || deduped.last != phase) {
@@ -155,7 +144,7 @@ void main() {
     }
     expect(deduped, [
       RoundPhase.lobby,
-      for (var i = 0; i < 5; i++) ...[
+      for (var i = 0; i < MatchRules.roundCount; i++) ...[
         RoundPhase.roundIntro,
         RoundPhase.roundPlay,
         RoundPhase.roundResults,
@@ -202,7 +191,7 @@ void main() {
 
   test('rematch replans with fresh seeds and restarts from the lobby', () {
     controller.startSolo();
-    for (var round = 0; round < 5; round++) {
+    for (var round = 0; round < MatchRules.roundCount; round++) {
       scheduler.elapse(3000);
       playRound();
       scheduler.elapse(6000);

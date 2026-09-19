@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/controls/action_input_controller.dart';
 import 'package:app/game/controls/auto_input_source.dart';
 import 'package:app/game/controls/steering.dart';
@@ -31,6 +30,40 @@ final class _FakeSim implements RoundSimulation {
 
   @override
   void dispose() {}
+}
+
+/// Test policy: walks toward the nearest observed player (sign of
+/// the smallest |dx|).
+final class _TowardNearestPlayer implements SteeringPolicy {
+  const _TowardNearestPlayer();
+
+  @override
+  SteeringDecision sample(SteeringObservation obs) {
+    if (obs.nearbyPlayers.isEmpty) {
+      return SteeringDecision(moveDir: Vector2.zero());
+    }
+    var nearest = obs.nearbyPlayers.first;
+    for (final other in obs.nearbyPlayers) {
+      if ((other.x - obs.selfX).abs() < (nearest.x - obs.selfX).abs()) {
+        nearest = other;
+      }
+    }
+    final dx = nearest.x - obs.selfX;
+    return SteeringDecision(moveDir: Vector2(dx.sign, 0));
+  }
+}
+
+/// Test policy: auto-jumps on the first sample only (tick 0).
+final class _JumpOnFirstTick implements SteeringPolicy {
+  const _JumpOnFirstTick();
+
+  @override
+  SteeringDecision sample(SteeringObservation obs) {
+    return SteeringDecision(
+      moveDir: Vector2(1, 0),
+      jumpPressed: obs.tick == 0,
+    );
+  }
 }
 
 PlayerPose pose(double x, double y) =>
@@ -72,29 +105,25 @@ void main() {
   });
 
   test('nearby players are filtered to the awareness radius', () {
-    final map = HillArenaMap.kingOfTheHill(1);
-    final y = map.crownTopY + 0.8;
     final sim = _FakeSim({
-      humanId: pose(map.crownCenter.x + 0.6, y),
-      'bot-1': pose(map.crownCenter.x + 1.7, y),
-      'bot-2': pose(500, y),
+      humanId: pose(0, 1),
+      'bot-1': pose(1.7, 1),
+      'bot-2': pose(500, 1),
     });
     final controller = ActionInputController(
-      policies: {kingOfTheHillId: HillSteering.fromArenaMap(map)},
+      policies: {raceId: const _TowardNearestPlayer()},
     );
     final source = AutoInputSource(
-      gameId: kingOfTheHillId,
+      gameId: raceId,
       controller: controller,
       simulation: sim,
       humanId: humanId,
       roster: roster,
     );
 
-    controller.press();
     final state = source.sample();
-    expect(state.dashPressed, isTrue);
     expect(state.moveDir.x, greaterThan(0),
-        reason: 'bot-1 (near, on crown) is the dash target; '
+        reason: 'bot-1 (near) drives the steering; '
             'bot-2 at x=500 is filtered out');
   });
 
@@ -114,15 +143,13 @@ void main() {
     expect(state.dashPressed, isFalse);
   });
 
-  test('tick counter advances per sample (cooldown bookkeeping)', () {
-    final map = HillArenaMap.kingOfTheHill(1);
-    final rampMinX = map.ramps[3].center.x - map.ramps[3].width / 2;
-    final sim = _FakeSim({humanId: pose(rampMinX - 0.5, 0.8)});
+  test('tick counter advances per sample', () {
+    final sim = _FakeSim({humanId: pose(0, 1)});
     final controller = ActionInputController(
-      policies: {kingOfTheHillId: HillSteering.fromArenaMap(map)},
+      policies: {raceId: const _JumpOnFirstTick()},
     );
     final source = AutoInputSource(
-      gameId: kingOfTheHillId,
+      gameId: raceId,
       controller: controller,
       simulation: sim,
       humanId: humanId,
@@ -131,8 +158,8 @@ void main() {
 
     expect(source.sample().jumpPressed, isTrue);
     expect(source.sample().jumpPressed, isFalse,
-        reason: 'internal tick advanced, cooldown engaged');
+        reason: 'internal tick advanced past the policy window');
   });
 }
 
-const kingOfTheHillId = 'king_of_the_hill';
+const raceId = 'trap_race';

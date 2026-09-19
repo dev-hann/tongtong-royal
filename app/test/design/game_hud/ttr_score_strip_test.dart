@@ -32,6 +32,21 @@ void main() {
     expect(find.text('Round 2'), findsOneWidget);
   });
 
+  testWidgets('round chip shows total when totalRounds is given', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: TtrScoreStrip(entries: [], roundNumber: 2, totalRounds: 3),
+        ),
+      ),
+    );
+
+    expect(find.text('Round 2 / 3'), findsOneWidget);
+    expect(find.text('Round 2'), findsNothing);
+  });
+
   testWidgets('hides the round chip when roundNumber is null', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

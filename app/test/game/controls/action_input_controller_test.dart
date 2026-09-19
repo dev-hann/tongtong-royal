@@ -1,4 +1,3 @@
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/controls/action_input_controller.dart';
 import 'package:app/game/controls/steering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,15 +5,9 @@ import 'package:forge2d/forge2d.dart' show Vector2;
 
 const raceId = 'trap_race';
 const hammerId = 'hammer_dodge';
-const hillId = 'king_of_the_hill';
+const removedHillId = 'king_of_the_hill';
 
 void main() {
-  HillArenaMap hillMap() => HillArenaMap.kingOfTheHill(1);
-
-  ActionInputController hillController() => ActionInputController(
-        policies: {hillId: HillSteering.fromArenaMap(hillMap())},
-      );
-
   group('ActionInputController verb wiring', () {
     test('race: press fires a jump edge exactly once per press', () {
       final controller = ActionInputController();
@@ -48,22 +41,6 @@ void main() {
           reason: 'hammer auto-steering seeks the center');
     });
 
-    test('hill: button maps to dash', () {
-      final controller = hillController();
-      final obs = SteeringObservation(
-        tick: 0,
-        selfX: hillMap().crownCenter.x - 0.8,
-        selfY: hillMap().crownTopY + 0.8,
-      );
-
-      controller.press();
-      final state = controller.sampleFor(hillId, obs);
-      expect(state.dashPressed, isTrue);
-      expect(state.jumpPressed, isFalse);
-      expect(state.moveDir.x, greaterThan(0),
-          reason: 'dash impulse follows the dash target direction');
-    });
-
     test('press while already pressed does not queue a second edge', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(tick: 0, selfX: 0, selfY: 0);
@@ -92,10 +69,13 @@ void main() {
       );
     });
 
-    test('hill without a registered policy throws ArgumentError', () {
+    test('removed king_of_the_hill id has no policy and throws', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(tick: 0, selfX: 0, selfY: 0);
-      expect(() => controller.sampleFor(hillId, obs), throwsArgumentError);
+      expect(
+        () => controller.sampleFor(removedHillId, obs),
+        throwsArgumentError,
+      );
     });
   });
 
@@ -108,24 +88,6 @@ void main() {
       final state = controller.sampleFor(raceId, obs);
       expect(state.moveDir.x, 1);
       expect(state.jumpPressed, isTrue);
-    });
-
-    test('hill auto-jump passes through without a button press', () {
-      final map = hillMap();
-      final controller = hillController();
-      final rampMinX = map.ramps[3].center.x - map.ramps[3].width / 2;
-
-      final state = controller.sampleFor(
-        hillId,
-        SteeringObservation(
-          tick: 0,
-          selfX: rampMinX - 0.5,
-          selfY: 0.8,
-        ),
-      );
-      expect(state.jumpPressed, isTrue,
-          reason: 'ramp auto-jump is automatic, not button-driven');
-      expect(state.dashPressed, isFalse);
     });
 
     test('NaN observation yields a sanitized zero move vector', () {
@@ -153,14 +115,24 @@ void main() {
   });
 
   group('GameVerb lookup', () {
-    test('race and hammer use jump; hill uses dash', () {
+    test('race and hammer use jump', () {
       expect(ActionInputController.verbFor(raceId), GameVerb.jump);
       expect(ActionInputController.verbFor(hammerId), GameVerb.jump);
-      expect(ActionInputController.verbFor(hillId), GameVerb.dash);
     });
 
     test('unknown id throws', () {
       expect(() => ActionInputController.verbFor('nope'), throwsArgumentError);
+    });
+
+    test('removed king_of_the_hill id throws like any unknown id', () {
+      expect(
+        () => ActionInputController.verbFor(removedHillId),
+        throwsArgumentError,
+      );
+    });
+
+    test('dash verb stays in the vocabulary for future games', () {
+      expect(GameVerb.values, containsAll([GameVerb.jump, GameVerb.dash]));
     });
   });
 }

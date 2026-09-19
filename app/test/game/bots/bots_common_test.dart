@@ -1,9 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/bots/bot_brain.dart';
-import 'package:app/game/bots/hill_bot.dart';
 import 'package:app/game/bots/race_bot.dart';
 import 'package:app/game/bots/survival_bot.dart';
 import 'package:app/game/course/course_map.dart';
@@ -13,7 +11,6 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 void main() {
   final raceMap = CourseMap.trapRace(1);
   final hammerMap = HammerArenaMap.hammerArena(1);
-  final hillMap = HillArenaMap.kingOfTheHill(1);
 
   List<PlayerInputState> runRace(RaceBot bot) {
     return [
@@ -46,33 +43,11 @@ void main() {
     ];
   }
 
-  List<PlayerInputState> runHill(HillBot bot) {
-    return [
-      for (var t = 0; t < 100; t++)
-        bot.decide(
-          BotObservation(
-            tick: t,
-            self: (
-              x: hillMap.crownCenter.x + (10 - t * 0.25),
-              y: t < 50 ? 0.76 : 1.76,
-              vx: 1,
-              vy: 0,
-            ),
-            nearbyPlayers: [
-              if (t >= 60)
-                (x: hillMap.crownCenter.x + 0.5, y: 1.76, vx: 0, vy: 0),
-            ],
-          ),
-        ),
-    ];
-  }
-
   group('bot output sanitization', () {
     test('outputs stay finite and clamped on extreme poses', () {
       final brains = <BotBrain>[
         RaceBot.fromCourseMap(raceMap),
         SurvivalBot.fromArenaMap(hammerMap, seed: 7),
-        HillBot.fromArenaMap(hillMap),
       ];
       const extremes = <({double x, double y, double vx, double vy})>[
         (x: 0, y: 0.76, vx: 4, vy: 0),
@@ -134,10 +109,6 @@ void main() {
         expectSequencesEqual(
           runSurvival(SurvivalBot.fromArenaMap(hammerMap, seed: 42)),
           runSurvival(SurvivalBot.fromArenaMap(hammerMap, seed: 42)),
-        );
-        expectSequencesEqual(
-          runHill(HillBot.fromArenaMap(hillMap)),
-          runHill(HillBot.fromArenaMap(hillMap)),
         );
       },
     );

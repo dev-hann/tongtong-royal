@@ -1,7 +1,5 @@
 import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/bots/bot_factory.dart';
-import 'package:app/game/bots/hill_bot.dart';
 import 'package:app/game/bots/race_bot.dart';
 import 'package:app/game/bots/survival_bot.dart';
 import 'package:app/game/course/course_map.dart';
@@ -10,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final raceMap = CourseMap.trapRace(1);
   final hammerMap = HammerArenaMap.hammerArena(1);
-  final hillMap = HillArenaMap.kingOfTheHill(1);
 
   group('buildBotRoster (GDD 9.1 fill policy)', () {
     test('fills empty seats to the seat target, capped by identity pool', () {
@@ -54,10 +51,6 @@ void main() {
         BotFactory.forGame('hammer_dodge', seed: 1, map: hammerMap),
         isA<SurvivalBot>(),
       );
-      expect(
-        BotFactory.forGame('king_of_the_hill', seed: 1, map: hillMap),
-        isA<HillBot>(),
-      );
     });
 
     test('unknown minigame id: ArgumentError', () {
@@ -67,13 +60,16 @@ void main() {
       );
     });
 
+    test('removed king_of_the_hill id: ArgumentError', () {
+      expect(
+        () => BotFactory.forGame('king_of_the_hill', seed: 1, map: raceMap),
+        throwsArgumentError,
+      );
+    });
+
     test('map type mismatched with the minigame: ArgumentError', () {
       expect(
         () => BotFactory.forGame('trap_race', seed: 1, map: hammerMap),
-        throwsArgumentError,
-      );
-      expect(
-        () => BotFactory.forGame('king_of_the_hill', seed: 1, map: raceMap),
         throwsArgumentError,
       );
     });

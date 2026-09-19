@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/bots/bot_brain.dart';
 import 'package:app/game/bots/bot_factory.dart';
 import 'package:app/game/course/course_map.dart';
@@ -134,6 +133,26 @@ final class SoloMatchController extends ChangeNotifier {
   /// Seconds left on the intro countdown (GDD § 5).
   int get countdownValue => _countdown;
 
+  /// Seconds left in the running round, from the driver's timeout
+  /// budget (`timeoutTicks - tickCount` at the fixed rate); null
+  /// outside ROUND_PLAY.
+  int? get remainingSeconds {
+    final driver = _session?.driver;
+    if (driver == null) {
+      return null;
+    }
+    final left = (driver.timeoutTicks - driver.tickCount)
+        .clamp(0, driver.timeoutTicks);
+    return (left * PhysicsConsts.fixedDt).ceil();
+  }
+
+  /// Display name of the latest round's minigame for the results
+  /// header; null when no round result exists yet.
+  String? get resultsMinigameName {
+    final id = shell.latestRoundResult?.minigameId;
+    return id == null ? null : registry.byId(id).spec.name;
+  }
+
   /// LOBBY -> ROUND_INTRO: starts the solo match.
   void startSolo() {
     if (shell.phase != RoundPhase.lobby) {
@@ -256,7 +275,6 @@ final class SoloMatchController extends ChangeNotifier {
   Object _mapFor(MiniGameId minigameId, int mapSeed) => switch (minigameId) {
     'trap_race' => CourseMap.trapRace(mapSeed),
     'hammer_dodge' => HammerArenaMap.hammerArena(mapSeed),
-    'king_of_the_hill' => HillArenaMap.kingOfTheHill(mapSeed),
     _ => throw ArgumentError.value(
       minigameId,
       'minigameId',

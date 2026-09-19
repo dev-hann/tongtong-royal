@@ -59,6 +59,16 @@ abstract final class ColorPalette {
 
   /// Semantic warning (also the gold used by finish/crown zones).
   static const Color warning = Color(0xFFFFD166);
+
+  /// Translucent primary tint (~10% opacity) — ambient backdrop
+  /// shapes, phase-tinted washes behind intro/results screens.
+  static const Color primarySoft = Color(0x1AFF8C42);
+
+  /// Translucent secondary tint (~10% opacity) — ambient backdrop.
+  static const Color secondarySoft = Color(0x1A2EC4B6);
+
+  /// Translucent warning/gold tint (~10% opacity) — ambient backdrop.
+  static const Color warningSoft = Color(0x1AFFD166);
 }
 
 /// The four player colors. Assigned by seat index (human and bot
@@ -103,8 +113,6 @@ class ArenaPalette {
     this.platform = const Color(0xFF3E5C76),
     this.platformEdge = const Color(0xFF2C3E50),
     this.hazard = const Color(0xFFE63946),
-    this.crownZone = ColorPalette.warning,
-    this.crownZoneHighlight = const Color(0xCCFFFFFF),
     this.killZoneHint = const Color(0xFF7A1F2B),
     this.checkpoint = const Color(0xFF7FC8A9),
     this.finishLine = ColorPalette.warning,
@@ -123,12 +131,6 @@ class ArenaPalette {
 
   /// Hazards (hammer arms and other danger geometry).
   final Color hazard;
-
-  /// Crown zone (King of the Hill scoring area).
-  final Color crownZone;
-
-  /// Bright strip highlighting the crown zone on the platform top.
-  final Color crownZoneHighlight;
 
   /// Kill zone hint (fall line, kill ring).
   final Color killZoneHint;
@@ -223,4 +225,10 @@ abstract final class MotionDurations {
 
   /// Countdown number pop-in.
   static const Duration countdownPop = Duration(milliseconds: 150);
+
+  /// Repeating celebration pulse (podium first-place pedestal).
+  static const Duration pulse = Duration(milliseconds: 900);
+
+  /// One slow drift cycle of ambient backdrop shapes.
+  static const Duration ambient = Duration(seconds: 12);
 }

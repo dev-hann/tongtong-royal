@@ -1,28 +1,87 @@
+import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_button.dart';
+import 'package:app/design/widgets/ttr_seat_card.dart';
 import 'package:app/presentation/lobby_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const players = [
-    LobbyPlayer(displayName: 'Ari', isReady: true),
-    LobbyPlayer(displayName: 'Bo', isReady: false),
+    LobbyPlayer(displayName: 'Ari', isReady: true, isLocal: true),
+    LobbyPlayer(displayName: 'BOT 1', isReady: true, isBot: true),
   ];
 
   Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
-  testWidgets('renders player names and ready state', (tester) async {
+  testWidgets('renders one seat card per player with names and badges', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(const LobbyScreen(players: players, canStart: false)),
     );
 
+    expect(find.byType(TtrSeatCard), findsNWidgets(2));
     expect(find.text('Ari'), findsOneWidget);
-    expect(find.text('Bo'), findsOneWidget);
-    expect(find.text('Ready'), findsOneWidget);
-    expect(find.text('Not ready'), findsOneWidget);
+    expect(find.text('BOT 1'), findsOneWidget);
+    expect(find.text('YOU'), findsOneWidget);
+    expect(find.text('BOT'), findsOneWidget);
   });
 
-  testWidgets('Start button disabled when canStart is false', (tester) async {
+  testWidgets('tapping the local card cycles its seat color', (tester) async {
+    await tester.pumpWidget(
+      wrap(const LobbyScreen(players: players, canStart: false)),
+    );
+
+    await tester.tap(find.byKey(TtrSeatCard.cardKey).first);
+    await tester.pump();
+
+    final avatar = tester.widget<DecoratedBox>(
+      find.byKey(TtrSeatCard.avatarKey).first,
+    );
+    expect((avatar.decoration as BoxDecoration).color, PlayerPalette.two);
+  });
+
+  testWidgets('bot cards render but are not tappable', (tester) async {
+    await tester.pumpWidget(
+      wrap(const LobbyScreen(players: players, canStart: false)),
+    );
+
+    expect(
+      tester
+          .widget<GestureDetector>(find.byKey(TtrSeatCard.cardKey).last)
+          .onTap,
+      isNull,
+    );
+  });
+
+  testWidgets('PLAY SOLO is the large primary action and fires onSolo', (
+    tester,
+  ) async {
+    var soloStarted = false;
+    await tester.pumpWidget(
+      wrap(
+        LobbyScreen(
+          players: players,
+          canStart: false,
+          onSolo: () => soloStarted = true,
+        ),
+      ),
+    );
+
+    final solo = tester.widget<TtrButton>(
+      find.byKey(LobbyScreen.soloButtonKey),
+    );
+    expect(solo.size, TtrButtonSize.large);
+    expect(solo.variant, TtrButtonVariant.primary);
+
+    await tester.tap(find.byKey(LobbyScreen.soloButtonKey));
+    await tester.pump();
+    expect(soloStarted, isTrue);
+  });
+
+  testWidgets('Start is the secondary action, gated by canStart', (
+    tester,
+  ) async {
     var started = false;
     await tester.pumpWidget(
       wrap(
@@ -34,10 +93,10 @@ void main() {
       ),
     );
 
-    final button = tester.widget<TtrButton>(
+    final start = tester.widget<TtrButton>(
       find.byKey(LobbyScreen.startButtonKey),
     );
-    expect(button.onPressed, isNull);
+    expect(start.variant, TtrButtonVariant.secondary);
 
     await tester.tap(
       find.byKey(LobbyScreen.startButtonKey),
@@ -47,9 +106,7 @@ void main() {
     expect(started, isFalse);
   });
 
-  testWidgets('Start button enabled and fires callback when canStart true', (
-    tester,
-  ) async {
+  testWidgets('Start fires when canStart is true', (tester) async {
     var started = false;
     await tester.pumpWidget(
       wrap(
@@ -60,11 +117,6 @@ void main() {
         ),
       ),
     );
-
-    final button = tester.widget<TtrButton>(
-      find.byKey(LobbyScreen.startButtonKey),
-    );
-    expect(button.onPressed, isNotNull);
 
     await tester.tap(find.byKey(LobbyScreen.startButtonKey));
     await tester.pump();
@@ -77,22 +129,5 @@ void main() {
     );
 
     expect(find.byKey(LobbyScreen.soloButtonKey), findsNothing);
-  });
-
-  testWidgets('solo button fires onSolo when provided', (tester) async {
-    var soloStarted = false;
-    await tester.pumpWidget(
-      wrap(
-        LobbyScreen(
-          players: players,
-          canStart: false,
-          onSolo: () => soloStarted = true,
-        ),
-      ),
-    );
-
-    await tester.tap(find.byKey(LobbyScreen.soloButtonKey));
-    await tester.pump();
-    expect(soloStarted, isTrue);
   });
 }

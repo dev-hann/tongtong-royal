@@ -1,3 +1,4 @@
+import 'package:app/design/widgets/ttr_standings_list.dart';
 import 'package:app/presentation/game_screen.dart';
 import 'package:app/presentation/lobby_screen.dart';
 import 'package:app/presentation/podium_screen.dart';
@@ -6,6 +7,8 @@ import 'package:app/presentation/round_results_screen.dart';
 import 'package:app/shell_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
+
+export 'package:app/design/game_hud/score_entry.dart' show ScoreEntry;
 
 /// Builds the screen matching the [ShellController] phase (GDD § 5).
 ///
@@ -26,7 +29,13 @@ class PhaseRouter extends StatelessWidget {
     this.countdownValue = 0,
     this.scoreboard = const [],
     this.timeRemaining = '',
+    this.resultsMinigameName,
+    this.resultsStandings = const [],
+    this.resultsAutoAdvanceSeconds,
+    this.podiumNicknames = const {},
+    this.podiumPlayerColors = const {},
     this.onRematch,
+    this.onExitToHome,
     super.key,
   });
 
@@ -61,8 +70,27 @@ class PhaseRouter extends StatelessWidget {
   /// Timer text for the game HUD (host-owned value).
   final String timeRemaining;
 
+  /// Display name of the finished round's minigame (results header).
+  final String? resultsMinigameName;
+
+  /// Cumulative standings (controller-computed) for the results
+  /// screen.
+  final List<StandingEntry> resultsStandings;
+
+  /// Host auto-advance dwell in seconds for the results progress bar.
+  final int? resultsAutoAdvanceSeconds;
+
+  /// Display names by player id on the podium.
+  final Map<String, String> podiumNicknames;
+
+  /// Seat colors by player id on the podium.
+  final Map<String, Color> podiumPlayerColors;
+
   /// Invoked when the players choose a rematch on the podium.
   final VoidCallback? onRematch;
+
+  /// Invoked when the players exit the podium to the home screen.
+  final VoidCallback? onExitToHome;
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +108,8 @@ class PhaseRouter extends StatelessWidget {
             minigameName: minigameName,
             ruleLine: minigameRule,
             countdownValue: countdownValue,
+            roundNumber: controller.roundIndex + 1,
+            totalRounds: controller.totalRounds,
           ),
           RoundPhase.roundPlay => GameScreen(
             scoreboard: scoreboard,
@@ -87,10 +117,20 @@ class PhaseRouter extends StatelessWidget {
           ),
           RoundPhase.roundResults => RoundResultsScreen(
             result: controller.latestRoundResult,
+            roundNumber: controller.latestRoundResult == null
+                ? controller.roundIndex
+                : controller.latestRoundResult!.roundIndex + 1,
+            totalRounds: controller.totalRounds,
+            minigameName: resultsMinigameName,
+            standings: resultsStandings,
+            autoAdvanceSeconds: resultsAutoAdvanceSeconds,
           ),
           RoundPhase.podium => PodiumScreen(
             rankings: controller.matchResult?.finalRankings ?? const [],
+            nicknames: podiumNicknames,
+            playerColors: podiumPlayerColors,
             onRematch: onRematch,
+            onExit: onExitToHome,
           ),
         };
       },

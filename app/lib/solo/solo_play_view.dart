@@ -1,9 +1,7 @@
 import 'package:app/design/game_hud/ttr_action_button.dart';
 import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hill/hill_arena_map.dart';
 import 'package:app/game/controls/action_input_controller.dart';
 import 'package:app/game/controls/auto_input_source.dart';
-import 'package:app/game/controls/steering.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/view/arena/arena_game_view.dart';
@@ -21,11 +19,11 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 /// provider.
 ///
 /// Race rounds render through [RaceGameView], arena rounds (Hammer
-/// Dodge, King of the Hill) through [ArenaGameView]; unexpected
-/// sim/map combinations fall back to a headless status pane (same
-/// accumulator policy, driven by a frame `Ticker`). Wiring only —
-/// judging stays in the driver's domain resolve (architecture
-/// doc § 2), timers only here in the widget layer.
+/// Dodge) through [ArenaGameView]; unexpected sim/map combinations
+/// fall back to a headless status pane (same accumulator policy,
+/// driven by a frame `Ticker`). Wiring only — judging stays in the
+/// driver's domain resolve (architecture doc § 2), timers only here
+/// in the widget layer.
 final class SoloPlayView extends StatefulWidget {
   /// Creates the view over [session].
   const SoloPlayView({required this.session, super.key});
@@ -41,19 +39,7 @@ final class SoloPlayView extends StatefulWidget {
 }
 
 final class _SoloPlayViewState extends State<SoloPlayView> {
-  late final ActionInputController _controller = ActionInputController(
-    policies: _hillPolicyIfAny(),
-  );
-
-  /// Hill steering needs the round's map data; other games use the
-  /// controller's stateless defaults.
-  Map<String, SteeringPolicy> _hillPolicyIfAny() {
-    final map = widget.session.map;
-    if (map is HillArenaMap) {
-      return {kingOfTheHillId: HillSteering.fromArenaMap(map)};
-    }
-    return const {};
-  }
+  late final ActionInputController _controller = ActionInputController();
 
   Game? _game;
 
@@ -86,16 +72,6 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
     }
     if (map is HammerArenaMap) {
       return ArenaGameView.hammer(
-        simulation: simulation,
-        map: map,
-        localPlayerId: session.humanId,
-        playerIds: session.rosterIds,
-        tickInputsProvider: session.driver.buildInputs,
-        tickEnabled: () => !session.isOver,
-      )..onStep = session.driver.postTick;
-    }
-    if (map is HillArenaMap) {
-      return ArenaGameView.hill(
         simulation: simulation,
         map: map,
         localPlayerId: session.humanId,
