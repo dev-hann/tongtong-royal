@@ -80,6 +80,8 @@ class _ShellScaffoldState extends State<ShellScaffold> {
   @override
   void initState() {
     super.initState();
+    // Fire-and-forget is fine: profile loads into a ChangeNotifier
+    // that rebuilds the shell when ready (no ordering dependency).
     unawaited(_loadProfile());
     _controller.addListener(_onPhaseChanged);
   }
@@ -160,6 +162,8 @@ class _ShellScaffoldState extends State<ShellScaffold> {
       return;
     }
     _resultsRecorded = true;
+    // Stats are best-effort local persistence; a failed write must
+    // not block the results screen.
     unawaited(recorder.recordMatch(finalRank: human.first.rank));
   }
 

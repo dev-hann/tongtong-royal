@@ -72,7 +72,7 @@ GOOD: feat(game): checkpoint respawn on fall (GDD § 4.1)
 
 ### M2 — Shell UI
 
-- [ ] Full state machine: lobby → intro → play → results → podium → lobby
+- [ ] Full state machine: home → intro → play → results (terminal) → home
 - [ ] Widget tests per screen; state transitions unit-tested in domain
 - [ ] No game logic in widgets (architecture § 10 audit)
 
@@ -84,11 +84,9 @@ GOOD: feat(game): checkpoint respawn on fall (GDD § 4.1)
 - [ ] Disconnect policies (§ 5) incl. backgrounding auto-rejoin, all tested
 - [ ] E2E integration test green (testing doc § 7)
 
-### M4 — Minigames 2 & 3
+### M4 — Minigame expansion *(superseded 2026-09-19)*
 
-- [ ] Hammer Dodge + King of the Hill pass their GDD § 7 edge-case suites
-- [ ] Map data driven (new course = JSON, no engine change)
-- [ ] Selection rule (§ 6) tested incl. no-immediate-repeat constraint
+Originally "Hammer Dodge + King of the Hill + selection rule". The scope reset (GDD § 8.2) deleted those games; this milestone is re-scoped by `docs/08-roadmap.md` (trigger-gated). Historical record; no current DoD items.
 
 ### M5 — Release
 

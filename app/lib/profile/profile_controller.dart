@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:app/design/tokens.dart';
 import 'package:app/infra/profile_store.dart';
 import 'package:flutter/foundation.dart';
@@ -54,7 +56,9 @@ final class ProfileController extends ChangeNotifier {
     if (clamped == store.profile.colorIndex) {
       return;
     }
-    store.saveColorIndex(clamped);
+    // Local-only save; failure is invisible by design (flag
+    // persistence is best-effort).
+    unawaited(store.saveColorIndex(clamped));
     notifyListeners();
   }
 

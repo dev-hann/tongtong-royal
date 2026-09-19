@@ -65,7 +65,7 @@ CI (`.github/workflows/ci.yml`) runs the same gates on every push and pull reque
 | M1 | Single-player core: physics character (move/jump/dash), one race course | 2-3 wk |
 | M2 | Shell UI: lobby → intro → play → results → podium state machine | 1-2 wk |
 | M3 | Server + netcode: rooms/invite codes, 20Hz snapshots, interpolation | 3-4 wk |
-| M4 | Two more minigames (Hammer Dodge, King of the Hill) | 3-4 wk |
+| M4 | ~~Minigames 2 & 3~~ *(superseded by the 2026-09-19 scope reset — single-game single-round; expansion is trigger-gated in the roadmap)* | — |
 | M5 | Polish: disconnect handling, sound, ads, store release | 2-3 wk |
 
 Milestone acceptance criteria: `docs/05-conventions.md` § Definition of Done.

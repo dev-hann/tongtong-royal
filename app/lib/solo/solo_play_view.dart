@@ -188,7 +188,7 @@ final class _HeadlessRoundPaneState extends State<_HeadlessRoundPane>
   Widget build(BuildContext context) {
     final session = widget.session;
     return ColoredBox(
-      color: const Color(0xFF101820),
+      color: const ArenaPalette().background,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -32,10 +32,11 @@ Checklist document. Nothing ships until its boxes are ticked. Legal requirements
 
 ## 4. Store Checklists
 
-Pre-build sanity (learned from the 2026-09 icon incident — Material icon font silently missing):
+Pre-build sanity (learned from the 2026-09 icon incident — Material icon font silently missing; and the 2026-09-19 review — doc drift after scope changes):
 
 - [ ] `app/pubspec.yaml` contains `flutter: uses-material-design: true`
-- [ ] All bundled assets listed in `ATTRIBUTION.md` (fonts, icons, art, sound)
+- [ ] All bundled assets listed in `ATTRIBUTION.md` (fonts, icons, art, sound) **and rendered in the in-app credits**
+- [ ] GDD core-loop diagram + design-guide screen patterns match the implemented flow (post-scope-change drift check)
 
 ### Google Play
 

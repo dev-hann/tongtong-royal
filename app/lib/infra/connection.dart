@@ -89,9 +89,18 @@ final class WebSocketConnection implements Connection {
       return Future<void>.value();
     }
     _closedByUser = true;
-    unawaited(_subscription.cancel().catchError((Object error) {}));
+    // Teardown: cancel errors are irrelevant once closed, but log
+    // them rather than swallowing silently (AGENTS 6.5).
+    unawaited(
+      _subscription.cancel().catchError((Object error) {
+        _log.warn('subscription cancel failed: $error');
+      }),
+    );
     unawaited(_incomingController.close());
-    return _channel.sink.close().then((_) {}, onError: (Object error,
+    return _channel.sink.close().then((_) {},
+      // Sink close errors mean the socket was already gone; the
+      // reconnect path owns recovery. Log for diagnostics.
+      onError: (Object error,
         StackTrace stack) {
       _log.warn('close failed: $error');
     });
@@ -107,7 +116,10 @@ final class WebSocketConnection implements Connection {
     // translates into the reconnect path (network doc § 9).
     unawaited(_incomingController.close());
     unawaited(
-      _channel.sink.close().then((_) {}, onError: (Object _) {}),
+      // Failure path is already terminal; log for diagnostics only.
+      _channel.sink.close().then((_) {}, onError: (Object error) {
+        _log.warn('sink close after failure errored: $error');
+      }),
     );
   }
 }

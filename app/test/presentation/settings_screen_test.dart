@@ -57,8 +57,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(CreditsScreen), findsOneWidget);
-    expect(find.byKey(CreditsScreen.fredokaRowKey), findsOneWidget);
-    expect(find.byKey(CreditsScreen.nunitoRowKey), findsOneWidget);
+    expect(
+      find.byKey(const Key('credits_row_Fredoka font')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('credits_row_Phosphor Icons (Fill)')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('version footer shows the app version const', (tester) async {

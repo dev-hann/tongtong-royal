@@ -18,6 +18,11 @@ const List<CreditRow> kCreditRows = <CreditRow>[
     source: 'github.com/google/fonts (ofl/nunito)',
     license: 'SIL OFL 1.1',
   ),
+  (
+    asset: 'Phosphor Icons (Fill)',
+    source: 'phosphoricons.com',
+    license: 'MIT',
+  ),
 ];
 
 /// Scrollable attribution list mirroring `ATTRIBUTION.md` (legal § 3
@@ -25,12 +30,6 @@ const List<CreditRow> kCreditRows = <CreditRow>[
 class CreditsScreen extends StatelessWidget {
   /// Creates the credits screen.
   const CreditsScreen({super.key});
-
-  /// Key of the Fredoka attribution row (tests).
-  static const Key fredokaRowKey = Key('credits_fredoka_row');
-
-  /// Key of the Nunito attribution row (tests).
-  static const Key nunitoRowKey = Key('credits_nunito_row');
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +57,7 @@ class CreditsScreen extends StatelessWidget {
                   itemCount: kCreditRows.length,
                   itemBuilder: (context, index) => _CreditRowCard(
                     row: kCreditRows[index],
-                    rowKey: index == 0 ? fredokaRowKey : nunitoRowKey,
+                    rowKey: Key('credits_row_${kCreditRows[index].asset}'),
                   ),
                 ),
               ),

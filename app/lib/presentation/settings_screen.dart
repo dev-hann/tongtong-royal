@@ -59,7 +59,10 @@ class SettingsScreen extends StatelessWidget {
                       key: soundToggleKey,
                       value: controller.soundEnabled,
                       onChanged: (value) =>
-                          unawaited(controller.setSoundEnabled(value: value)),
+                          // Local-only persistence; UI already flipped.
+                          unawaited(
+                            controller.setSoundEnabled(value: value),
+                          ),
                     ),
                   ),
                 ),

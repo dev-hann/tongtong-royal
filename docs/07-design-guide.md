@@ -86,11 +86,11 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 - **Profile**: avatar block (player color + nickname), nickname edit field, color palette grid (PlayerPalette swatches; selection ring = primary), stats cards row (matches / wins / 1st places — Fredoka numerals, staggered entrance). Local-only, no sync UI.
 - **Settings**: grouped list — sound toggle, credits row, version footer. Primary-colored active toggle.
 - **Credits**: scrollable attribution rows (asset name, source, license) — mirrors `ATTRIBUTION.md`, body type.
-- **Lobby**: seat card grid 2×2 centered, match meta pill above (rounds, bot fill), actions bottom.
-- **Intro**: vertical rhythm — round pill, banner, giant countdown. Nothing else. Backdrop tinted to the upcoming minigame's arena family.
-- **Play**: full-bleed world; HUD strip top (standings + timer + round), single action button bottom-center (bottom viewPadding-aware).
-- **Results**: header pill, placement list (staggered), standings with delta chips, auto-advance progress bar at bottom.
-- **Podium**: pedestals bottom-heavy, winner center-tall pulsing; Rematch primary + Exit secondary below.
+- **Lobby**: reserved for the multiplayer rebuild (MVP Home replaces it) — seat card grid 2×2 centered, actions bottom.
+- **Intro**: vertical rhythm — banner, giant countdown. Nothing else (single round: no round pill). Backdrop tinted to the race arena family.
+- **Play**: full-bleed world; HUD strip top (standings), timer badge bottom under the world, single action button bottom-center (bottom viewPadding-aware).
+- **Results**: terminal screen — header pill, placement list (staggered), standings with delta chips, PLAY AGAIN primary + HOME secondary. No auto-advance.
+- **Podium**: removed from the MVP shell (multi-round flow deleted 2026-09-19); pattern returns with the multiplayer rebuild.
 
 ## 7. Fonts & Licensing
 

@@ -36,23 +36,9 @@ abstract final class TtrIcons {
     fontPackage: 'phosphor_flutter',
   );
 
-  /// Winner trophy.
-  static const IconData trophy = IconData(
-    0xe67e,
-    fontFamily: 'PhosphorFill',
-    fontPackage: 'phosphor_flutter',
-  );
-
   /// Speaker with waves (sound on).
   static const IconData speakerHigh = IconData(
     0xe44a,
-    fontFamily: 'PhosphorFill',
-    fontPackage: 'phosphor_flutter',
-  );
-
-  /// Slashed speaker (sound off).
-  static const IconData speakerSlash = IconData(
-    0xe45a,
     fontFamily: 'PhosphorFill',
     fontPackage: 'phosphor_flutter',
   );

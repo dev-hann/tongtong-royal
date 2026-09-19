@@ -7,9 +7,11 @@ TongTong Royal: 2-4 player real-time physics minigame collection. Fall Guys-scal
 ## 1. Core Loop
 
 ```
-Home → Create/Join room (invite code) → Lobby (players ready up)
-  → [ Round 1..5: intro (3s) → play (60-90s) → results ]
-  → Final podium → back to Lobby (rematch)
+Home → ROUND_INTRO (3s, rule one-liner)
+     → ROUND_PLAY (one Trap Race, ≤90s)
+     → ROUND_RESULTS (terminal: placements)
+        ├─ PLAY AGAIN → ROUND_INTRO (fresh mapSeed)
+        └─ HOME → Home
 ```
 
 ## 2. Round Structure & Scoring
