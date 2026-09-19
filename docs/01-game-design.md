@@ -41,7 +41,6 @@ Every minigame is **one-button with automatic movement** (hyper-casual standard)
 |----------|--------|--------------------|
 | Trap Race | Jump | Auto-run: constant rightward movement |
 | Hammer Dodge | Jump | Auto-center: drift back toward the arena center |
-| King of the Hill | Dash/shove | Auto-approach: walk toward the crown, auto-jump ramps to climb |
 
 Rules:
 
@@ -49,11 +48,11 @@ Rules:
 - Movement is **fully automatic** — the player only times the single action.
 - Internal representation is unchanged: clients translate (auto-steering + button edges) into the same `PlayerInputState` vector used since M1. Protocol, server, netcode, and bots are unaffected.
 - Bot opponents (§ 9) are unaffected: they already produce input vectors directly.
-- Dash impulse direction in King of the Hill: toward the nearest contested occupant (the shove target); with no target nearby, toward the crown center.
+- The dash verb remains in the input vocabulary (`GameVerb.dash`) for future minigames; no MVP game uses it.
 
 ## 4. MVP Minigames
 
-Three archetypes; one engine each, maps are data. Each minigame implements the shared `MiniGame` interface (see `docs/02-architecture.md` § Minigame Interface).
+Two archetypes (a third is planned post-MVP, § 8.2); one engine each, maps are data. Each minigame implements the shared `MiniGame` interface (see `docs/02-architecture.md` § Minigame Interface).
 
 ### 4.1 Trap Race (archetype: race)
 
@@ -69,13 +68,6 @@ Three archetypes; one engine each, maps are data. Each minigame implements the s
 - **Ranking**: elimination order reversed = placement. First eliminated is last.
 - **Round end**: one player remains, or timeout (60s) — survivors ranked by ... §7.5.
 
-### 4.3 King of the Hill (archetype: occupancy)
-
-- **Goal**: accumulate hold-time on the crown zone.
-- **Arena**: one elevated crown platform (auto-climbed via ramp jumps), open floor around it.
-- **Scoring in-round**: holding = 1 point/second while solely on the crown zone. If two or more players stand on it simultaneously, nobody scores (contested). Hold time is **cumulative — falling off does not reset accumulated time**.
-- **Placement**: hold-time ranking at timeout (75s). The crown zone is the only place time counts.
-
 ## 5. Round Flow States
 
 ```
@@ -89,9 +81,9 @@ State machine is owned by `shared/domain` (see architecture doc). Server relays 
 
 ## 6. Minigame Selection Rule
 
-- The 5 rounds are drawn from the 3 minigames: **shuffled cycle** — shuffle the full list, deal rounds from it, reshuffle when exhausted; constraint: the first game of a new cycle must not equal the last game of the previous cycle.
+- A match is **3 rounds** drawn from the 2 minigames: **shuffled cycle** — shuffle the full list, deal rounds from it, reshuffle when exhausted; constraint: the first game of a new cycle must not equal the last game of the previous cycle.
 - Seed comes from the host at round start and is broadcast (identical map variants for everyone, see network doc § Sequencing).
-- With 3 games and 5 rounds: e.g. cycle `[B, A, C]` then reshuffle `[A, B, C]` → rounds = B, A, C, A, B (immediate repeat of C avoided by constraint).
+- With 2 games and 3 rounds the constraint forces strict alternation: B, A, B (or A, B, A).
 
 ## 7. Game-Rule Edge Cases (exhaustive — do not improvise beyond this list)
 
@@ -143,13 +135,14 @@ State machine is owned by `shared/domain` (see architecture doc). Server relays 
 
 ### 8.1 MVP (in)
 
-- 2-4 players, invite-code rooms, 5-round matches, 3 minigames, podium, rematch.
+- 2-4 players, invite-code rooms, 3-round matches, 2 minigames (a 3rd is planned post-MVP), podium, rematch.
 - **Bot fill** (§ 9): host-side bot players fill empty seats.
 - Sound effects, best-score persistence (local), simple character customization (color).
 
 ### 8.2 Backlog (explicitly out — do not build)
 
 - Random matchmaking, AFK handling, spectator mode, cosmetics beyond color, chat, seasons, ranked, bot difficulty tiers.
+- **King of the Hill** — removed from MVP for pacing ("too boring" verdict); revisit as a redesigned occupancy archetype after launch polish.
 
 ## 9. Bot Players
 
@@ -168,4 +161,3 @@ State machine is owned by `shared/domain` (see architecture doc). Server relays 
 - Common: bots act on their own pose + map data + tick only (no omniscience: they cannot read other players' future inputs; contact-level awareness of nearby bodies is allowed).
 - Race: run toward the finish, jump when obstructed or at gaps (map-data driven), occasional dash.
 - Survival: drift toward the arena center, jump/dash to avoid incoming hammers (contact-level detection of nearby hammer arms).
-- King of the Hill: move toward the crown, jump to climb, shove (dash) a contested occupant.
