@@ -28,23 +28,25 @@ Future<NetClient> joinedClient(FakeConnection fake) async {
 
 void main() {
   group('NetClient.host api (additive)', () {
-    test('sendHost puts a typed host message on the wire when joined',
-        () async {
-      final fake = FakeConnection();
-      final client = await joinedClient(fake);
-      addTearDown(client.dispose);
+    test(
+      'sendHost puts a typed host message on the wire when joined',
+      () async {
+        final fake = FakeConnection();
+        final client = await joinedClient(fake);
+        addTearDown(client.dispose);
 
-      const message = RoundStarting(
-        roundIndex: 2,
-        minigameId: 'trap_race',
-        mapSeed: 42,
-        timeoutMs: 90_000,
-      );
-      client.sendHost(message);
+        const message = RoundStarting(
+          roundIndex: 2,
+          minigameId: 'trap_race',
+          mapSeed: 42,
+          timeoutMs: 90_000,
+        );
+        client.sendHost(message);
 
-      expect(fake.sent.last, encode(message));
-      expect(decode(fake.sent.last), message);
-    });
+        expect(fake.sent.last, encode(message));
+        expect(decode(fake.sent.last), message);
+      },
+    );
 
     test('sendHost is a logged no-op before joining a room', () async {
       final fake = FakeConnection();
@@ -56,22 +58,30 @@ void main() {
       addTearDown(client.dispose);
       await client.connect(Uri.parse('ws://test'), 'p1', 'nick');
 
-      client.sendHost(const RoundStarting(
-        roundIndex: 0,
-        minigameId: 'trap_race',
-        mapSeed: 1,
-        timeoutMs: 90_000,
-      ));
-      await pumpEventQueue();
-
-      expect(
-        fake.sent,
-        isNot(contains(encode(const RoundStarting(
+      client.sendHost(
+        const RoundStarting(
           roundIndex: 0,
           minigameId: 'trap_race',
           mapSeed: 1,
           timeoutMs: 90_000,
-        )))),
+        ),
+      );
+      await pumpEventQueue();
+
+      expect(
+        fake.sent,
+        isNot(
+          contains(
+            encode(
+              const RoundStarting(
+                roundIndex: 0,
+                minigameId: 'trap_race',
+                mapSeed: 1,
+                timeoutMs: 90_000,
+              ),
+            ),
+          ),
+        ),
       );
     });
 
@@ -83,13 +93,15 @@ void main() {
       client.memberInputs.listen(received.add);
 
       fake.serverSends(
-        encode(PlayerInputMessage(
-          seq: 7,
-          moveX: 0.5,
-          moveY: -0.25,
-          jump: true,
-          dash: false,
-        )),
+        encode(
+          PlayerInputMessage(
+            seq: 7,
+            moveX: 0.5,
+            moveY: -0.25,
+            jump: true,
+            dash: false,
+          ),
+        ),
       );
       await pumpEventQueue();
 

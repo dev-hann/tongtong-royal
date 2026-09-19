@@ -77,9 +77,7 @@ final class Harness {
   }
 
   /// Joins `ABC234` on [connection] and returns it once joined.
-  Future<FakeConnection> joinRoom({
-    FakeConnection? connection,
-  }) async {
+  Future<FakeConnection> joinRoom({FakeConnection? connection}) async {
     final fake = connection ?? FakeConnection();
     await connect(connection: fake);
     client.createRoom();
@@ -94,22 +92,19 @@ final class Harness {
 RoomSnapshot roomSnapshot({
   String code = 'ABC234',
   RoundPhase phase = RoundPhase.lobby,
-}) =>
-    RoomSnapshot(
-      code: code,
-      players: const [
-        PlayerInfo(playerId: 'p1', nickname: 'nick', ready: true),
-      ],
-      phase: phase,
-      roundIndex: 0,
-    );
+}) => RoomSnapshot(
+  code: code,
+  players: const [PlayerInfo(playerId: 'p1', nickname: 'nick', ready: true)],
+  phase: phase,
+  roundIndex: 0,
+);
 
 Snapshot gameSnapshot(int tick) => Snapshot(
-      tick: tick,
-      players: const [
-        PlayerState(playerId: 'p1', x: 1, y: 2, angle: 0, vx: 0, vy: 0),
-      ],
-    );
+  tick: tick,
+  players: const [
+    PlayerState(playerId: 'p1', x: 1, y: 2, angle: 0, vx: 0, vy: 0),
+  ],
+);
 
 const RoundStarting roundStartingMsg = RoundStarting(
   roundIndex: 0,
@@ -128,8 +123,7 @@ const RoundResultsMessage resultsMsg = RoundResultsMessage(
 
 void main() {
   group('handshake', () {
-    test('connect sends Hello with protocol version and identity',
-        () async {
+    test('connect sends Hello with protocol version and identity', () async {
       final h = Harness();
       final fake = FakeConnection();
       h.factory.nextIs(fake);
@@ -169,8 +163,7 @@ void main() {
   });
 
   group('rooms', () {
-    test('createRoom sends CreateRoom and joins on RoomSnapshot',
-        () async {
+    test('createRoom sends CreateRoom and joins on RoomSnapshot', () async {
       final h = Harness();
       final fake = await h.joinRoom();
 
@@ -205,8 +198,7 @@ void main() {
       expect(decode(fake.sent[1]), const RejoinRoom(code: 'ABC234'));
     });
 
-    test('setReady, startMatch and ping send expected messages',
-        () async {
+    test('setReady, startMatch and ping send expected messages', () async {
       final h = Harness();
       final fake = await h.joinRoom();
 
@@ -247,14 +239,11 @@ void main() {
       expect(h.client.lastInputSeq, 2);
     });
 
-    test('NaN and out-of-range values are sanitized on the wire',
-        () async {
+    test('NaN and out-of-range values are sanitized on the wire', () async {
       final h = Harness();
       final fake = await h.joinRoom();
 
-      h.client.sendInput(
-        PlayerInputState(moveDir: Vector2(double.nan, 3)),
-      );
+      h.client.sendInput(PlayerInputState(moveDir: Vector2(double.nan, 3)));
       h.client.sendInput(PlayerInputState(moveDir: Vector2(1.5, -2)));
       await pumpEventQueue();
 
@@ -347,8 +336,7 @@ void main() {
       );
     });
 
-    test('malformed JSON is dropped and logged without throwing',
-        () async {
+    test('malformed JSON is dropped and logged without throwing', () async {
       final h = Harness();
       final fake = await h.joinRoom();
 
@@ -370,23 +358,27 @@ void main() {
       expect(h.log.warns, isNotEmpty);
     });
 
-    test('client-to-server tags arriving from the server are dropped',
-        () async {
-      final h = Harness();
-      final fake = await h.joinRoom();
+    test(
+      'client-to-server tags arriving from the server are dropped',
+      () async {
+        final h = Harness();
+        final fake = await h.joinRoom();
 
-      fake.serverSends(
-        encode(const Hello(
-          protocolVersion: protocolVersion,
-          playerId: 'p2',
-          nickname: 'ghost',
-        )),
-      );
-      await pumpEventQueue();
+        fake.serverSends(
+          encode(
+            const Hello(
+              protocolVersion: protocolVersion,
+              playerId: 'p2',
+              nickname: 'ghost',
+            ),
+          ),
+        );
+        await pumpEventQueue();
 
-      expect(h.client.state, const NetJoined(roomCode: 'ABC234'));
-      expect(h.log.warns, isNotEmpty);
-    });
+        expect(h.client.state, const NetJoined(roomCode: 'ABC234'));
+        expect(h.log.warns, isNotEmpty);
+      },
+    );
 
     test('server notices surface on the notices stream', () async {
       final h = Harness();
@@ -402,8 +394,7 @@ void main() {
   });
 
   group('app lifecycle (network doc 5.3)', () {
-    test('pause closes the connection cleanly and arms reconnect',
-        () async {
+    test('pause closes the connection cleanly and arms reconnect', () async {
       final h = Harness();
       final fake = await h.joinRoom();
 
@@ -417,8 +408,7 @@ void main() {
       expect(h.backoffCalls, isEmpty); // waits for resume, no spam
     });
 
-    test('resume within grace auto-rejoins without user interaction',
-        () async {
+    test('resume within grace auto-rejoins without user interaction', () async {
       final h = Harness();
       await h.joinRoom();
 
@@ -445,17 +435,13 @@ void main() {
       h.elapse(rejoinGraceWindow + const Duration(seconds: 1));
       await h.client.onAppLifecycleResumed();
 
-      expect(
-        h.client.state,
-        const NetClosed(needsManualRejoin: true),
-      );
+      expect(h.client.state, const NetClosed(needsManualRejoin: true));
       expect(h.factory.calls, 1); // no second connection attempt
     });
   });
 
   group('snapshot starvation watchdog (network doc 6)', () {
-    test('no game snapshot for 2 s during a match marks unstable',
-        () async {
+    test('no game snapshot for 2 s during a match marks unstable', () async {
       final h = Harness();
       final fake = await h.joinRoom();
       final statuses = <NetStatus>[];
@@ -542,16 +528,12 @@ void main() {
       fake1.serverCloses();
       await pumpEventQueue();
 
-      expect(
-        h.client.state,
-        const NetClosed(needsManualRejoin: true),
-      );
+      expect(h.client.state, const NetClosed(needsManualRejoin: true));
       expect(h.backoffCalls, [1, 2, 3, 4, 5]);
       expect(h.factory.calls, maxReconnectAttempts + 1);
     });
 
-    test('sink error during send is caught and drops the connection',
-        () async {
+    test('sink error during send is caught and drops the connection', () async {
       final h = Harness();
       final fake = await h.joinRoom();
       final statuses = <NetStatus>[];
@@ -575,10 +557,7 @@ void main() {
       await h.client.close();
       await pumpEventQueue();
 
-      expect(
-        h.client.state,
-        const NetClosed(needsManualRejoin: false),
-      );
+      expect(h.client.state, const NetClosed(needsManualRejoin: false));
       expect(h.backoffCalls, isEmpty);
     });
   });

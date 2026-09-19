@@ -8,21 +8,23 @@ import 'host_harness.dart';
 
 void main() {
   group('HostRuntime.startRound', () {
-    test('emits RoundStarting with round, minigame, seed and spec timeout',
-        () async {
-      final h = HostHarness();
-      addTearDown(h.client.dispose);
-      await h.boot();
+    test(
+      'emits RoundStarting with round, minigame, seed and spec timeout',
+      () async {
+        final h = HostHarness();
+        addTearDown(h.client.dispose);
+        await h.boot();
 
-      h.runtime.startRound(3, 'trap_race', 42);
+        h.runtime.startRound(3, 'trap_race', 42);
 
-      final starting = h.sentMessages.whereType<RoundStarting>().single;
-      expect(starting.roundIndex, 3);
-      expect(starting.minigameId, 'trap_race');
-      expect(starting.mapSeed, 42);
-      expect(starting.timeoutMs, const TrapRace().spec.timeoutMs);
-      expect(h.runtime.isRoundActive, isTrue);
-    });
+        final starting = h.sentMessages.whereType<RoundStarting>().single;
+        expect(starting.roundIndex, 3);
+        expect(starting.minigameId, 'trap_race');
+        expect(starting.mapSeed, 42);
+        expect(starting.timeoutMs, const TrapRace().spec.timeoutMs);
+        expect(h.runtime.isRoundActive, isTrue);
+      },
+    );
 
     test('rejects starting while a round is running', () async {
       final h = HostHarness();
@@ -79,55 +81,77 @@ void main() {
       expect(after, lessThanOrEqualTo(before));
     });
 
-    test('absent player idles: zero input, body stays put (network doc 5.2)',
-        () async {
-      final h = HostHarness(roster: const {p1, p2});
-      addTearDown(h.client.dispose);
-      await h.boot();
-      h.runtime.startRound(0, 'trap_race', 7);
+    test(
+      'absent player idles: zero input, body stays put (network doc 5.2)',
+      () async {
+        final h = HostHarness(roster: const {p1, p2});
+        addTearDown(h.client.dispose);
+        await h.boot();
+        h.runtime.startRound(0, 'trap_race', 7);
 
-      // Settle spawn overlap, then compare positions across windows.
-      for (var i = 0; i < 240; i++) {
-        h.tick();
-      }
-      final snapshots = h.snapshotsSent;
-      PlayerState stateOf(int tick) => snapshots
-          .firstWhere((s) => s.tick == tick)
-          .players
-          .firstWhere((p) => p.playerId == p2);
+        // Settle spawn overlap, then compare positions across windows.
+        for (var i = 0; i < 240; i++) {
+          h.tick();
+        }
+        final snapshots = h.snapshotsSent;
+        PlayerState stateOf(int tick) => snapshots
+            .firstWhere((s) => s.tick == tick)
+            .players
+            .firstWhere((p) => p.playerId == p2);
 
-      final settled = stateOf(120);
-      final later = stateOf(240);
-      expect(later.x, closeTo(settled.x, 0.05));
-      expect(later.y, closeTo(settled.y, 0.05));
-      expect(h.runtime.isRoundActive, isTrue);
-      expect(snapshots.last.players, hasLength(2));
-    });
+        final settled = stateOf(120);
+        final later = stateOf(240);
+        expect(later.x, closeTo(settled.x, 0.05));
+        expect(later.y, closeTo(settled.y, 0.05));
+        expect(h.runtime.isRoundActive, isTrue);
+        expect(snapshots.last.players, hasLength(2));
+      },
+    );
   });
 
   group('HostRuntime snapshot cadence', () {
-    test('60 fixed ticks produce exactly 20 snapshots with rising ticks',
-        () async {
-      final h = HostHarness();
-      addTearDown(h.client.dispose);
-      await h.boot();
-      h.runtime.startRound(0, 'trap_race', 7);
+    test(
+      '60 fixed ticks produce exactly 20 snapshots with rising ticks',
+      () async {
+        final h = HostHarness();
+        addTearDown(h.client.dispose);
+        await h.boot();
+        h.runtime.startRound(0, 'trap_race', 7);
 
-      for (var i = 0; i < 60; i++) {
-        h.tick();
-      }
+        for (var i = 0; i < 60; i++) {
+          h.tick();
+        }
 
-      final ticks = h.snapshotsSent.map((s) => s.tick).toList();
-      const expected = [
-        3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48,
-        51, 54, 57, 60,
-      ];
-      expect(ticks, hasLength(20));
-      expect(ticks, expected);
-      for (var i = 1; i < ticks.length; i++) {
-        expect(ticks[i], greaterThan(ticks[i - 1]));
-      }
-    });
+        final ticks = h.snapshotsSent.map((s) => s.tick).toList();
+        const expected = [
+          3,
+          6,
+          9,
+          12,
+          15,
+          18,
+          21,
+          24,
+          27,
+          30,
+          33,
+          36,
+          39,
+          42,
+          45,
+          48,
+          51,
+          54,
+          57,
+          60,
+        ];
+        expect(ticks, hasLength(20));
+        expect(ticks, expected);
+        for (var i = 1; i < ticks.length; i++) {
+          expect(ticks[i], greaterThan(ticks[i - 1]));
+        }
+      },
+    );
 
     test('accumulator slices partial frames into whole ticks', () async {
       final h = HostHarness();
@@ -175,33 +199,37 @@ void main() {
       expect(h.fake.sent.length, sentBefore);
     });
 
-    test('timeout: progress-ranked placements via domain samples (GDD 7.4)',
-        () async {
-      final h = HostHarness(
-        roster: const {p1, p2},
-        mapBuilder: (seed) => flatCourse(seed, finishX: 1000),
-      );
-      addTearDown(h.client.dispose);
-      await h.boot();
-      final completed = <RoundResult>[];
-      h.runtime.onRoundComplete.listen(completed.add);
+    test(
+      'timeout: progress-ranked placements via domain samples (GDD 7.4)',
+      () async {
+        final h = HostHarness(
+          roster: const {p1, p2},
+          mapBuilder: (seed) => flatCourse(seed, finishX: 1000),
+        );
+        addTearDown(h.client.dispose);
+        await h.boot();
+        final completed = <RoundResult>[];
+        h.runtime.onRoundComplete.listen(completed.add);
 
-      h.runtime.startRound(0, 'trap_race', 7);
-      h.driveRight(playerId: p1, ticks: 60);
-      expect(h.runtime.isRoundActive, isTrue, reason: 'finish unreachable');
+        h.runtime.startRound(0, 'trap_race', 7);
+        h.driveRight(playerId: p1, ticks: 60);
+        expect(h.runtime.isRoundActive, isTrue, reason: 'finish unreachable');
 
-      h.runtime.advance(90); // spec timeout: 90 s at 60 Hz
-      expect(h.runtime.isRoundActive, isFalse);
+        h.runtime.advance(90); // spec timeout: 90 s at 60 Hz
+        expect(h.runtime.isRoundActive, isFalse);
 
-      final result =
-          h.sentMessages.whereType<RoundResultsMessage>().single.roundResult;
-      expect(result.placements.first.playerId, p1);
-      expect(result.placements.last.playerId, p2);
-      expect(result.placements.first.rank, 1);
-      expect(result.placements.last.rank, 2);
-      expect(completed.single.roundIndex, result.roundIndex);
-      expect(completed.single.placements, result.placements);
-    });
+        final result = h.sentMessages
+            .whereType<RoundResultsMessage>()
+            .single
+            .roundResult;
+        expect(result.placements.first.playerId, p1);
+        expect(result.placements.last.playerId, p2);
+        expect(result.placements.first.rank, 1);
+        expect(result.placements.last.rank, 2);
+        expect(completed.single.roundIndex, result.roundIndex);
+        expect(completed.single.placements, result.placements);
+      },
+    );
   });
 
   group('HostRuntime member-input bridge', () {
@@ -225,10 +253,7 @@ void main() {
       for (var i = 0; i < 90 && h.runtime.isRoundActive; i++) {
         if (i.isEven) {
           seq++;
-          await wireInput(
-            h,
-            inputSample(seq: seq, moveX: 1, playerId: p2),
-          );
+          await wireInput(h, inputSample(seq: seq, moveX: 1, playerId: p2));
         }
         h.tick();
       }
@@ -236,8 +261,11 @@ void main() {
       final last = h.snapshotsSent.last;
       final x1 = last.players.firstWhere((p) => p.playerId == p1).x;
       final x2 = last.players.firstWhere((p) => p.playerId == p2).x;
-      expect(x2, greaterThan(x1 + 0.5),
-          reason: 'attributed sample must drive p2, not p1');
+      expect(
+        x2,
+        greaterThan(x1 + 0.5),
+        reason: 'attributed sample must drive p2, not p1',
+      );
       expect(h.runtime.isRoundActive, isTrue);
     });
 
@@ -272,8 +300,11 @@ void main() {
       final after = h.snapshotsSent.last;
       expect(xOf(p1, after), closeTo(xOf(p1, settled), 0.05));
       expect(xOf(p2, after), closeTo(xOf(p2, settled), 0.05));
-      expect(log.warnings, isNotEmpty,
-          reason: 'unattributed inputs must be logged, never silent');
+      expect(
+        log.warnings,
+        isNotEmpty,
+        reason: 'unattributed inputs must be logged, never silent',
+      );
       expect(h.runtime.isRoundActive, isTrue);
     });
   });
@@ -294,14 +325,10 @@ void main() {
 
       expect(() => h.runtime.advance(-1), throwsArgumentError);
       expect(() => h.runtime.advance(double.nan), throwsArgumentError);
-      expect(
-        () => h.runtime.advance(double.infinity),
-        throwsArgumentError,
-      );
+      expect(() => h.runtime.advance(double.infinity), throwsArgumentError);
     });
 
-    test("round timeout ticks derive from the started round's spec",
-        () async {
+    test("round timeout ticks derive from the started round's spec", () async {
       final h = HostHarness();
       addTearDown(h.client.dispose);
       await h.boot();

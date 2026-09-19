@@ -36,8 +36,8 @@ typedef NetConnectionFactory = Future<Connection> Function(Uri uri);
 final class WebSocketConnection implements Connection {
   /// Connects to [uri] and wraps the resulting channel.
   WebSocketConnection.connect(Uri uri, {NetLog? log})
-      : _log = log ?? const SilentNetLog(),
-        _channel = WebSocketChannel.connect(uri) {
+    : _log = log ?? const SilentNetLog(),
+      _channel = WebSocketChannel.connect(uri) {
     _subscription = _channel.stream.listen(
       (dynamic data) => _incomingController.add(data as String),
       onError: (Object error, StackTrace stack) =>
@@ -47,15 +47,20 @@ final class WebSocketConnection implements Connection {
     // Sink/connection errors surface asynchronously on `ready` and on
     // the sink's `done` future; both are folded into transport failure.
     unawaited(
-      _channel.ready.then((_) {}, onError: (Object error, StackTrace stack) {
-        _fail(error, stack, 'connection setup failed');
-      }),
+      _channel.ready.then(
+        (_) {},
+        onError: (Object error, StackTrace stack) {
+          _fail(error, stack, 'connection setup failed');
+        },
+      ),
     );
     unawaited(
-      _channel.sink.done.then((_) {}, onError: (Object error,
-          StackTrace stack) {
-        _fail(error, stack, 'sink failed');
-      }),
+      _channel.sink.done.then(
+        (_) {},
+        onError: (Object error, StackTrace stack) {
+          _fail(error, stack, 'sink failed');
+        },
+      ),
     );
   }
 
@@ -97,13 +102,14 @@ final class WebSocketConnection implements Connection {
       }),
     );
     unawaited(_incomingController.close());
-    return _channel.sink.close().then((_) {},
+    return _channel.sink.close().then(
+      (_) {},
       // Sink close errors mean the socket was already gone; the
       // reconnect path owns recovery. Log for diagnostics.
-      onError: (Object error,
-        StackTrace stack) {
-      _log.warn('close failed: $error');
-    });
+      onError: (Object error, StackTrace stack) {
+        _log.warn('close failed: $error');
+      },
+    );
   }
 
   void _fail(Object error, StackTrace stack, String reason) {
@@ -117,9 +123,12 @@ final class WebSocketConnection implements Connection {
     unawaited(_incomingController.close());
     unawaited(
       // Failure path is already terminal; log for diagnostics only.
-      _channel.sink.close().then((_) {}, onError: (Object error) {
-        _log.warn('sink close after failure errored: $error');
-      }),
+      _channel.sink.close().then(
+        (_) {},
+        onError: (Object error) {
+          _log.warn('sink close after failure errored: $error');
+        },
+      ),
     );
   }
 }

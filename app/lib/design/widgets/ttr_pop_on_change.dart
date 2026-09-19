@@ -40,15 +40,17 @@ class _TtrPopOnChangeState extends State<TtrPopOnChange>
   late final Animation<double> _scale = TweenSequence<double>([
     TweenSequenceItem(
       weight: 40,
-      tween: Tween<double>(begin: 1, end: MotionScales.pop).chain(
-        CurveTween(curve: Curves.easeOut),
-      ),
+      tween: Tween<double>(
+        begin: 1,
+        end: MotionScales.pop,
+      ).chain(CurveTween(curve: Curves.easeOut)),
     ),
     TweenSequenceItem(
       weight: 60,
-      tween: Tween<double>(begin: MotionScales.pop, end: 1).chain(
-        CurveTween(curve: Curves.easeIn),
-      ),
+      tween: Tween<double>(
+        begin: MotionScales.pop,
+        end: 1,
+      ).chain(CurveTween(curve: Curves.easeIn)),
     ),
   ]).animate(_pop);
 

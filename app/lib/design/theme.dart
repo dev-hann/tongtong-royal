@@ -26,25 +26,15 @@ ThemeData buildTtrTheme() {
     displaySmall: TypeScale.display.copyWith(
       fontSize: TypeScale.displaySmallSize,
     ),
-    headlineLarge: TypeScale.title.copyWith(
-      fontSize: TypeScale.headlineSize,
-    ),
+    headlineLarge: TypeScale.title.copyWith(fontSize: TypeScale.headlineSize),
     headlineMedium: TypeScale.title,
-    headlineSmall: TypeScale.title.copyWith(
-      fontSize: TypeScale.headlineSize,
-    ),
+    headlineSmall: TypeScale.title.copyWith(fontSize: TypeScale.headlineSize),
     titleLarge: TypeScale.title,
-    titleMedium: TypeScale.title.copyWith(
-      fontSize: TypeScale.bodyLargeSize,
-    ),
+    titleMedium: TypeScale.title.copyWith(fontSize: TypeScale.bodyLargeSize),
     titleSmall: TypeScale.label,
-    bodyLarge: TypeScale.body.copyWith(
-      fontSize: TypeScale.bodyLargeSize,
-    ),
+    bodyLarge: TypeScale.body.copyWith(fontSize: TypeScale.bodyLargeSize),
     bodyMedium: TypeScale.body,
-    bodySmall: TypeScale.body.copyWith(
-      fontSize: TypeScale.labelSize,
-    ),
+    bodySmall: TypeScale.body.copyWith(fontSize: TypeScale.labelSize),
     labelLarge: TypeScale.label,
     labelMedium: TypeScale.bodyLabel,
     labelSmall: TypeScale.bodyLabel.copyWith(

@@ -20,8 +20,7 @@ class PlayerCharacter {
         fixedRotation: true,
       ),
     );
-    final shape = PolygonShape()
-      ..setAsBoxXY(widthMeters / 2, heightMeters / 2);
+    final shape = PolygonShape()..setAsBoxXY(widthMeters / 2, heightMeters / 2);
     _body.createFixture(
       FixtureDef(
         shape,
@@ -110,8 +109,9 @@ class PlayerCharacter {
     if (PhysicsGuards.isExplosive(body.position, body.linearVelocity)) {
       needsRespawn = true;
     }
-    body.linearVelocity
-        .setFrom(PhysicsGuards.clampLinearVelocity(body.linearVelocity));
+    body.linearVelocity.setFrom(
+      PhysicsGuards.clampLinearVelocity(body.linearVelocity),
+    );
     body.angularVelocity = _clampAngular(body.angularVelocity);
     return needsRespawn;
   }
@@ -130,9 +130,7 @@ class PlayerCharacter {
       contact.getWorldManifold(_worldManifold);
       // Box2D normals point from fixture A to fixture B; flip when
       // the player is fixture A so "up" always means ground below.
-      final normalY = isA
-          ? -_worldManifold.normal.y
-          : _worldManifold.normal.y;
+      final normalY = isA ? -_worldManifold.normal.y : _worldManifold.normal.y;
       if (normalY >= _groundNormalYMinimum) {
         groundedNow = true;
         break;

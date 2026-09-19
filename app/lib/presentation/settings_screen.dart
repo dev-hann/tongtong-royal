@@ -3,7 +3,8 @@ import 'dart:async' show unawaited;
 import 'package:app/app_config.dart';
 import 'package:app/design/tokens.dart';
 import 'package:app/design/ttr_icons.dart';
-import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
+import 'package:app/design/widgets/ttr_back_button.dart';
+import 'package:app/design/widgets/ttr_page_shell.dart';
 import 'package:app/design/widgets/ttr_settings_row.dart';
 import 'package:app/design/widgets/ttr_switch.dart';
 import 'package:app/presentation/credits_screen.dart';
@@ -29,76 +30,75 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const TtrAmbientBackdrop(),
-        SafeArea(
-          child: ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(SpacingScale.lg),
-                  child: Text(
+    return TtrPageShell(
+      child: ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(SpacingScale.lg),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TtrBackButton(),
+                  ),
+                  Text(
                     'SETTINGS',
                     style: TypeScale.title,
                     textAlign: TextAlign.center,
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingScale.xl,
-                  ),
-                  child: TtrSettingsRow(
-                    leading: TtrIcons.speakerHigh,
-                    title: 'Sound',
-                    subtitle: 'Sound effects and music',
-                    trailing: TtrSwitch(
-                      key: soundToggleKey,
-                      value: controller.soundEnabled,
-                      onChanged: (value) =>
-                          // Local-only persistence; UI already flipped.
-                          unawaited(
-                            controller.setSoundEnabled(value: value),
-                          ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingScale.xl,
-                    vertical: SpacingScale.md,
-                  ),
-                  child: TtrSettingsRow(
-                    key: creditsRowKey,
-                    leading: TtrIcons.bookOpen,
-                    title: 'Credits',
-                    subtitle: 'Fonts and asset attribution',
-                    trailing: const Icon(
-                      TtrIcons.caretRight,
-                      color: ColorPalette.neutral500,
-                    ),
-                    onTap: () => _openCredits(context),
-                  ),
-                ),
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: SpacingScale.lg),
-                  child: Text(
-                    'v$appVersion',
-                    style: TypeScale.bodyLabel.copyWith(
-                      color: ColorPalette.neutral500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: SpacingScale.xl),
+              child: TtrSettingsRow(
+                leading: TtrIcons.speakerHigh,
+                title: 'Sound',
+                subtitle: 'Sound effects and music',
+                trailing: TtrSwitch(
+                  key: soundToggleKey,
+                  value: controller.soundEnabled,
+                  onChanged: (value) =>
+                      // Local-only persistence; UI already flipped.
+                      unawaited(controller.setSoundEnabled(value: value)),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpacingScale.xl,
+                vertical: SpacingScale.md,
+              ),
+              child: TtrSettingsRow(
+                key: creditsRowKey,
+                leading: TtrIcons.bookOpen,
+                title: 'Credits',
+                subtitle: 'Fonts and asset attribution',
+                trailing: const Icon(
+                  TtrIcons.caretRight,
+                  color: ColorPalette.neutral500,
+                ),
+                onTap: () => _openCredits(context),
+              ),
+            ),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.only(bottom: SpacingScale.lg),
+              child: Text(
+                'v$appVersion',
+                style: TypeScale.bodyLabel.copyWith(
+                  color: ColorPalette.neutral500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 

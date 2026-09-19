@@ -8,16 +8,9 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 /// [PhysicsConsts.fixedDt] — no wall clock, no futures (testing doc § 4).
 CharacterWorld _settledGroundedSim() {
   final sim = CharacterWorld()
-    ..addStaticBox(
-      center: Vector2(0, -0.5),
-      width: 20,
-      height: 1,
-    )
+    ..addStaticBox(center: Vector2(0, -0.5), width: 20, height: 1)
     ..spawnPlayer(
-      position: Vector2(
-        0,
-        PlayerCharacter.heightMeters / 2 + 0.01,
-      ),
+      position: Vector2(0, PlayerCharacter.heightMeters / 2 + 0.01),
     );
   for (var i = 0; i < 30; i++) {
     sim.step();
@@ -66,12 +59,9 @@ void main() {
       player.jump();
       sim.step();
 
-      const takeoffSpeed = PhysicsConsts.jumpImpulse /
-          PlayerCharacter.referenceMassKg;
-      expect(
-        player.body.linearVelocity.y,
-        greaterThan(takeoffSpeed * 0.9),
-      );
+      const takeoffSpeed =
+          PhysicsConsts.jumpImpulse / PlayerCharacter.referenceMassKg;
+      expect(player.body.linearVelocity.y, greaterThan(takeoffSpeed * 0.9));
 
       var sawAirborne = false;
       var peakY = player.body.position.y;
@@ -97,13 +87,14 @@ void main() {
       final player = sim.spawnPlayer()..dash(Vector2(1, 0));
       sim.step();
 
-      const dashSpeed = PhysicsConsts.dashImpulse /
-          PlayerCharacter.referenceMassKg;
+      const dashSpeed =
+          PhysicsConsts.dashImpulse / PlayerCharacter.referenceMassKg;
       expect(player.body.linearVelocity.x, closeTo(dashSpeed, 1e-6));
 
       player
-        ..body.linearVelocity
-            .setFrom(Vector2(PhysicsConsts.maxLinearVelocity, 0))
+        ..body.linearVelocity.setFrom(
+          Vector2(PhysicsConsts.maxLinearVelocity, 0),
+        )
         ..dash(Vector2(1, 0));
       sim.step();
 
@@ -123,8 +114,9 @@ void main() {
       );
       final player = sim.spawnPlayer(position: Vector2(0, 1.5));
 
-      player.body.linearVelocity
-          .setFrom(Vector2(PhysicsConsts.maxLinearVelocity, 0));
+      player.body.linearVelocity.setFrom(
+        Vector2(PhysicsConsts.maxLinearVelocity, 0),
+      );
       var maxX = player.body.position.x;
       for (var i = 0; i < 30; i++) {
         sim.step();
@@ -136,8 +128,7 @@ void main() {
 
       const wallNearFace = wallX - PhysicsConsts.minWallThickness / 2;
 
-      const restCenterX =
-          wallNearFace - PlayerCharacter.widthMeters / 2;
+      const restCenterX = wallNearFace - PlayerCharacter.widthMeters / 2;
       expect(maxX, greaterThan(restCenterX - 0.1));
       expect(maxX, lessThan(wallNearFace));
       expect(player.needsRespawn, isFalse);

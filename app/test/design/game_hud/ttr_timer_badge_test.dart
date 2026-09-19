@@ -14,9 +14,7 @@ void main() {
     expect(find.text('42'), findsOneWidget);
   });
 
-  testWidgets('numerals use the Fredoka SemiBold display face', (
-    tester,
-  ) async {
+  testWidgets('numerals use the Fredoka SemiBold display face', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(body: TtrTimerBadge(timeLabel: '42')),

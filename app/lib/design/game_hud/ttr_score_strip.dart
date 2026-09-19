@@ -32,7 +32,9 @@ class TtrScoreStrip extends StatelessWidget {
     final round = roundNumber;
     final roundLabel = round == null
         ? null
-        : (totalRounds == null ? 'Round $round' : 'Round $round / $totalRounds');
+        : (totalRounds == null
+              ? 'Round $round'
+              : 'Round $round / $totalRounds');
     return Row(
       children: [
         if (roundLabel != null)

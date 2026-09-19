@@ -149,9 +149,7 @@ final class _ActionIconButton extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           label,
-          style: TypeScale.label.copyWith(
-            color: ColorPalette.onPrimary,
-          ),
+          style: TypeScale.label.copyWith(color: ColorPalette.onPrimary),
         ),
       ),
     );

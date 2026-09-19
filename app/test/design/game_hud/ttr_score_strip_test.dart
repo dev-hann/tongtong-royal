@@ -23,9 +23,7 @@ void main() {
     expect(find.text('b: 4'), findsOneWidget);
   });
 
-  testWidgets('numerals use the Fredoka SemiBold display face', (
-    tester,
-  ) async {
+  testWidgets('numerals use the Fredoka SemiBold display face', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(

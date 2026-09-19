@@ -1,6 +1,9 @@
-import 'package:app/design/arena_palette.dart';
+import 'dart:async' show unawaited;
+
 import 'package:app/design/game_hud/ttr_action_button.dart';
 import 'package:app/design/tokens.dart';
+import 'package:app/design/ttr_icons.dart';
+import 'package:app/design/widgets/ttr_quit_dialog.dart';
 import 'package:app/game/controls/action_input_controller.dart';
 import 'package:app/game/controls/auto_input_source.dart';
 import 'package:app/game/course/course_map.dart';
@@ -27,14 +30,22 @@ final class SoloPlayView extends StatefulWidget {
   const SoloPlayView({
     required this.session,
     this.humanColorIndex = 0,
+    this.onQuit,
     super.key,
   });
 
   /// Key of the one-button action control (tests).
   static const Key actionButtonKey = Key('solo_action_button');
 
+  /// Key of the top-right race-quit button (tests).
+  static const Key quitButtonKey = Key('solo_quit_button');
+
   /// The round to mount (from [SoloMatchController.currentRound]).
   final SoloRoundSession session;
+
+  /// Fired when the player confirms the mid-round quit dialog
+  /// (GDD § 7.11): the shell abandons the match back to home.
+  final VoidCallback? onQuit;
 
   /// Palette index of the human's persisted profile color; the
   /// local body renders with it (GDD § 8.1).
@@ -94,37 +105,97 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
     super.dispose();
   }
 
+  /// Quit confirm (GDD § 7.11): QUIT fires [SoloPlayView.onQuit];
+  /// every other dismissal keeps the race running.
+  Future<void> _confirmQuit() async {
+    final quit = await TtrQuitDialog.show(context);
+    if (quit && mounted) {
+      widget.onQuit?.call();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final game = _game;
-    if (game != null) {
-      return Stack(
-        children: [
-          Positioned.fill(child: GameWidget(game: game)),
-          Positioned(
-            left: 0,
-            right: 0,
-            // Respect the bottom system-inset (gesture area when the
-            // bars are swiped back in) on top of the visual margin.
-            bottom: 32 + MediaQuery.viewPaddingOf(context).bottom,
-            child: Center(
-              child: TtrActionButton(
-                key: SoloPlayView.actionButtonKey,
-                label: switch (ActionInputController.verbFor(
-                  widget.session.minigameId,
-                )) {
-                  GameVerb.jump => 'JUMP',
-                  GameVerb.dash => 'DASH',
-                },
-                onPressed: _controller.press,
-                onReleased: _controller.release,
+    // System back is intercepted behind the same quit confirm as
+    // the exit button (GDD § 7.11) — back never silently kills the
+    // app mid-race.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          unawaited(_confirmQuit());
+        }
+      },
+      child: SafeArea(
+        bottom: false,
+        child: Stack(
+          children: [
+            if (_game case final game?)
+              Positioned.fill(child: GameWidget(game: game))
+            else
+              Positioned.fill(
+                child: _HeadlessRoundPane(session: widget.session),
+              ),
+            Positioned(
+              top: SpacingScale.sm,
+              right: SpacingScale.sm,
+              child: _QuitButton(
+                key: SoloPlayView.quitButtonKey,
+                onPressed: _confirmQuit,
               ),
             ),
+            Positioned(
+              left: 0,
+              right: 0,
+              // Respect the bottom system-inset (gesture area when the
+              // bars are swiped back in) on top of the visual margin.
+              bottom: 32 + MediaQuery.viewPaddingOf(context).bottom,
+              child: Center(
+                child: TtrActionButton(
+                  key: SoloPlayView.actionButtonKey,
+                  label: switch (ActionInputController.verbFor(
+                    widget.session.minigameId,
+                  )) {
+                    GameVerb.jump => 'JUMP',
+                    GameVerb.dash => 'DASH',
+                  },
+                  onPressed: _controller.press,
+                  onReleased: _controller.release,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Top-right race exit affordance (GDD § 7.11): surface chip so the
+/// sign-out glyph reads against the dark arena.
+class _QuitButton extends StatelessWidget {
+  const _QuitButton({required this.onPressed, super.key});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: ColorPalette.surface,
+      borderRadius: BorderRadius.circular(RadiusScale.pill),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(RadiusScale.pill),
+        onTap: onPressed,
+        child: const Padding(
+          padding: EdgeInsets.all(SpacingScale.sm),
+          child: Icon(
+            TtrIcons.signOut,
+            size: 24,
+            color: ColorPalette.onSurface,
           ),
-        ],
-      );
-    }
-    return _HeadlessRoundPane(session: widget.session);
+        ),
+      ),
+    );
   }
 }
 

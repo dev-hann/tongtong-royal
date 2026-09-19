@@ -28,7 +28,6 @@ final class AutoInputSource implements InputSource {
   /// Minigame whose steering policy samples here.
   final String gameId;
 
-
   /// Button + steering owner.
   final ActionInputController controller;
 

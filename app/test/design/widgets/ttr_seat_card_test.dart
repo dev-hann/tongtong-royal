@@ -77,9 +77,7 @@ void main() {
     );
 
     expect(
-      tester.widget<GestureDetector>(
-        find.byKey(TtrSeatCard.cardKey),
-      ).onTap,
+      tester.widget<GestureDetector>(find.byKey(TtrSeatCard.cardKey)).onTap,
       isNull,
     );
   });

@@ -111,9 +111,7 @@ void main() {
     expect(find.text('60'), findsOneWidget);
   });
 
-  testWidgets('HUD is protected by SafeArea (design guide 8)', (
-    tester,
-  ) async {
+  testWidgets('HUD is protected by SafeArea (design guide 8)', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: GameScreen(

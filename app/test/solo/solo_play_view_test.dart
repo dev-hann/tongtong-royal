@@ -1,3 +1,4 @@
+import 'package:app/design/widgets/ttr_quit_dialog.dart';
 import 'package:app/game/bots/bot_factory.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
@@ -150,5 +151,88 @@ void main() {
     // The press edge reached the simulation as a grounded jump.
     expect(maxY, greaterThan(startY + 0.1));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('quit button opens the confirm dialog; KEEP RUNNING stays', (
+    tester,
+  ) async {
+    var quits = 0;
+    final session = buildSession(BotFactory.trapRaceId, 1);
+    addTearDown(session.driver.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SoloPlayView(session: session, onQuit: () => quits++),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(SoloPlayView.quitButtonKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byKey(TtrQuitDialog.dialogKey), findsOneWidget);
+    expect(find.text('Quit the race?'), findsOneWidget);
+    expect(quits, 0, reason: 'dialog alone must not quit');
+
+    await tester.tap(find.byKey(TtrQuitDialog.keepRunningButtonKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(TtrQuitDialog.dialogKey), findsNothing);
+    expect(quits, 0);
+  });
+
+  testWidgets('confirming QUIT in the dialog fires onQuit once', (
+    tester,
+  ) async {
+    var quits = 0;
+    final session = buildSession(BotFactory.trapRaceId, 1);
+    addTearDown(session.driver.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SoloPlayView(session: session, onQuit: () => quits++),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(SoloPlayView.quitButtonKey));
+    await tester.pump();
+    await tester.tap(find.byKey(TtrQuitDialog.confirmButtonKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(quits, 1);
+    expect(find.byKey(TtrQuitDialog.dialogKey), findsNothing);
+  });
+
+  testWidgets('system back during play shows the quit dialog, not exit', (
+    tester,
+  ) async {
+    var quits = 0;
+    final session = buildSession(BotFactory.trapRaceId, 1);
+    addTearDown(session.driver.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SoloPlayView(session: session, onQuit: () => quits++),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Back is intercepted: the dialog appears, nothing pops or quits.
+    expect(find.byKey(TtrQuitDialog.dialogKey), findsOneWidget);
+    expect(quits, 0);
+    expect(find.byKey(SoloPlayView.actionButtonKey), findsOneWidget);
   });
 }

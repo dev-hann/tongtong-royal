@@ -52,10 +52,10 @@ final class NetClient {
     NetClock? clock,
     ReconnectBackoff? backoff,
     NetLog? log,
-  })  : _factory = connectionFactory ?? _defaultFactory,
-        _clock = clock ?? _defaultNetClock,
-        _backoff = backoff ?? _defaultReconnectBackoff,
-        _log = log ?? const SilentNetLog();
+  }) : _factory = connectionFactory ?? _defaultFactory,
+       _clock = clock ?? _defaultNetClock,
+       _backoff = backoff ?? _defaultReconnectBackoff,
+       _log = log ?? const SilentNetLog();
 
   final NetConnectionFactory _factory;
   final NetClock _clock;
@@ -113,11 +113,11 @@ final class NetClient {
 
   /// Current UI-facing status.
   NetStatus get status => NetStatus(
-        state: _state,
-        ping: _pingRtt,
-        unstable: _unstable,
-        lastError: _lastError,
-      );
+    state: _state,
+    ping: _pingRtt,
+    unstable: _unstable,
+    lastError: _lastError,
+  );
 
   /// Emits on every status change (state, ping, unstable, lastError).
   Stream<NetStatus> get statusChanges => _statusController.stream;
@@ -135,8 +135,7 @@ final class NetClient {
   /// `playerId` before relaying (network doc § 1 "Input attribution");
   /// a null playerId means unattributed and must be dropped by the
   /// consumer.
-  Stream<PlayerInputMessage> get memberInputs =>
-      _memberInputsController.stream;
+  Stream<PlayerInputMessage> get memberInputs => _memberInputsController.stream;
 
   /// Round announcements (`ROUND_INTRO`, network doc § 4).
   Stream<RoundStarting> get roundStarting => _roundStartingController.stream;
@@ -454,8 +453,7 @@ final class NetClient {
       _log.warn('dropped malformed frame: $error');
       return;
     } on Object catch (error, stack) {
-      _log.error('unexpected decode failure; transport suspect', error,
-          stack);
+      _log.error('unexpected decode failure; transport suspect', error, stack);
       _handleTransportFailure();
       return;
     }
@@ -484,9 +482,7 @@ final class NetClient {
         }
       case final PlayerInputMessage input:
         _memberInputsController.add(input);
-      case RateLimited() ||
-            AlreadyConnected() ||
-            ServerFull():
+      case RateLimited() || AlreadyConnected() || ServerFull():
         _noticesController.add(message);
       default:
         _log.warn(
@@ -601,9 +597,12 @@ final class NetClient {
     _connection = null;
     if (connection != null) {
       unawaited(
-        connection.close().then((_) {}, onError: (Object error) {
-          _log.warn('connection close failed: $error');
-        }),
+        connection.close().then(
+          (_) {},
+          onError: (Object error) {
+            _log.warn('connection close failed: $error');
+          },
+        ),
       );
     }
   }

@@ -1,7 +1,7 @@
 import 'package:app/design/tokens.dart';
-import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/design/widgets/ttr_color_swatch.dart';
+import 'package:app/design/widgets/ttr_page_shell.dart';
 import 'package:app/infra/profile_store.dart';
 import 'package:app/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +17,7 @@ class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({
     required this.controller,
     required this.onStart,
+    required this.onSkip,
     super.key,
   });
 
@@ -26,6 +27,9 @@ class OnboardingScreen extends StatefulWidget {
   /// Key of the START button (tests).
   static const Key startButtonKey = Key('onboarding_start_button');
 
+  /// Key of the SKIP button (tests).
+  static const Key skipButtonKey = Key('onboarding_skip_button');
+
   /// Key prefix of palette swatches: `onboarding_swatch_$i`.
   static const String swatchKeyPrefix = 'onboarding_swatch_';
 
@@ -34,6 +38,10 @@ class OnboardingScreen extends StatefulWidget {
 
   /// Fired after the profile was saved and onboarding completed.
   final VoidCallback onStart;
+
+  /// Fired when the player skips setup: the default profile (PLAYER,
+  /// color 0) stays stored and remains editable via Profile later.
+  final VoidCallback onSkip;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -71,14 +79,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     widget.onStart();
   }
 
+  /// SKIP (GDD § 8.1): completes onboarding storing the untouched
+  /// defaults — typed-but-unsaved input is discarded.
+  Future<void> _skip() async {
+    await widget.controller.completeOnboarding();
+    if (!mounted) {
+      return;
+    }
+    widget.onSkip();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const TtrAmbientBackdrop(),
-        SafeArea(
-          child: ListenableBuilder(
+    return TtrPageShell(
+      child: Stack(
+        children: [
+          ListenableBuilder(
             listenable: widget.controller,
             builder: (context, _) {
               final profile = widget.controller.profile;
@@ -125,6 +141,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       onSubmitted: (_) => _start(),
                       maxLength: 20,
                       textAlign: TextAlign.center,
+                      // Nicknames are names, not words — no spell-check
+                      // squiggles (ux-checklist).
+                      spellCheckConfiguration:
+                          const SpellCheckConfiguration.disabled(),
                       style: TypeScale.title,
                       decoration: InputDecoration(
                         labelText: 'NICKNAME',
@@ -186,8 +206,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               );
             },
           ),
-        ),
-      ],
+          // Secondary text affordance pinned to the top-right safe
+          // corner (TtrPageShell SafeAreas the stack).
+          Positioned(
+            top: SpacingScale.sm,
+            right: SpacingScale.sm,
+            child: TextButton(
+              key: OnboardingScreen.skipButtonKey,
+              onPressed: _skip,
+              style: TextButton.styleFrom(
+                foregroundColor: ColorPalette.neutral700,
+                textStyle: TypeScale.label,
+              ),
+              child: const Text('SKIP'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

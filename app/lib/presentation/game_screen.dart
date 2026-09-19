@@ -142,9 +142,7 @@ class _HudTimerState extends State<_HudTimer> {
   Widget build(BuildContext context) {
     _ensureTicking();
     return TtrTimerBadge(
-      timeLabel: widget.remainingSeconds == null
-          ? widget.label
-          : '$_seconds',
+      timeLabel: widget.remainingSeconds == null ? widget.label : '$_seconds',
     );
   }
 }

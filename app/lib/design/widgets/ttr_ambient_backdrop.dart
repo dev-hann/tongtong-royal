@@ -23,24 +23,9 @@ class TtrAmbientBackdrop extends StatefulWidget {
 class _TtrAmbientBackdropState extends State<TtrAmbientBackdrop>
     with SingleTickerProviderStateMixin {
   static const List<_ShapeSpec> _shapes = [
-    (
-      color: ColorPalette.primarySoft,
-      size: 220,
-      left: 0.05,
-      top: 0.55,
-    ),
-    (
-      color: ColorPalette.secondarySoft,
-      size: 160,
-      left: 0.68,
-      top: 0.62,
-    ),
-    (
-      color: ColorPalette.warningSoft,
-      size: 120,
-      left: 0.38,
-      top: 0.70,
-    ),
+    (color: ColorPalette.primarySoft, size: 220, left: 0.05, top: 0.55),
+    (color: ColorPalette.secondarySoft, size: 160, left: 0.68, top: 0.62),
+    (color: ColorPalette.warningSoft, size: 120, left: 0.38, top: 0.70),
   ];
 
   late final AnimationController _drift = AnimationController(
@@ -75,10 +60,7 @@ class _TtrAmbientBackdropState extends State<TtrAmbientBackdrop>
                         shape: BoxShape.circle,
                         color: shape.color,
                       ),
-                      child: SizedBox(
-                        width: shape.size,
-                        height: shape.size,
-                      ),
+                      child: SizedBox(width: shape.size, height: shape.size),
                     ),
                   ),
               ],

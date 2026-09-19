@@ -58,9 +58,11 @@ One minigame (one archetype, the race; more are planned post-MVP § 8.2 / roadma
 
 ```
 LOBBY(Home) → ROUND_INTRO (3s, rule one-liner)
-           → ROUND_PLAY (≤90s)
-           → ROUND_RESULTS (placements, no auto-advance)
-           → LOBBY(Home)      [PLAY AGAIN re-enters ROUND_INTRO with a fresh seed]
+            → ROUND_PLAY (≤90s)
+            → ROUND_RESULTS (placements, no auto-advance)
+            → LOBBY(Home)      [PLAY AGAIN re-enters ROUND_INTRO with a fresh seed]
+
+ROUND_PLAY → LOBBY(Home)  [ABANDON: solo quit mid-round — § 7.11]
 ```
 
 State machine is owned by `shared/domain`. With the single-round match, `ROUND_RESULTS → LOBBY` is the ending transition (`toPodium` remains available to the machine for compatibility but the MVP shell does not route through PODIUM).
@@ -105,6 +107,12 @@ Each play generates a fresh `mapSeed` (host/solo side); identical seed = identic
 ### 7.10 Host starts a round, then a player readies/unreadies
 
 - Once `ROUND_INTRO` begins, ready state is frozen. Late/absent players are spectators until the next round.
+
+### 7.11 Solo abandon (quit mid-round)
+
+- Solo (vs bots) only: the local player may quit during `ROUND_PLAY` — an exit button top-right or the system back gesture, both behind a confirm dialog ("Quit the race?").
+- Transition: `ROUND_PLAY → LOBBY` directly (machine `abandon`). No `ROUND_RESULTS`, **no result recorded, no stats recorded** (abandoned races never reach the results screen, which is the single stats trigger).
+- The bots' virtual outcome is discarded; starting solo again begins a fresh match with a fresh seed.
 
 ## 8. Scope
 

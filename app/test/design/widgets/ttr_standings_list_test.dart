@@ -53,9 +53,7 @@ void main() {
     expect(find.text('±0'), findsOneWidget);
   });
 
-  testWidgets('displays entries verbatim in the given order', (
-    tester,
-  ) async {
+  testWidgets('displays entries verbatim in the given order', (tester) async {
     await tester.pumpWidget(
       wrap(
         const TtrStandingsList(

@@ -166,6 +166,33 @@ void main() {
     expect(shell.latestRoundResult, isNull);
     expect(shell.roundResults, isEmpty);
   });
+  test('abandonMatch quits mid-round to the lobby without a result', () {
+    controller.startSolo();
+    scheduler.elapse(3000);
+    expect(shell.phase, RoundPhase.roundPlay);
+    expect(controller.currentRound, isNotNull);
+    final oldSeed = controller.rounds.single.mapSeed;
+
+    controller.abandonMatch();
+
+    expect(shell.phase, RoundPhase.lobby);
+    // No round result was recorded (abandoned races record no stats).
+    expect(shell.latestRoundResult, isNull);
+    expect(shell.roundResults, isEmpty);
+    // The round session was released and the next match replans.
+    expect(controller.currentRound, isNull);
+    expect(controller.rounds.single.mapSeed, isNot(oldSeed));
+
+    // And the fresh match plays from the intro again.
+    controller.startSolo();
+    scheduler.elapse(3000);
+    expect(shell.phase, RoundPhase.roundPlay);
+  });
+
+  test('abandonMatch outside ROUND_PLAY is a no-op', () {
+    controller.abandonMatch();
+    expect(shell.phase, RoundPhase.lobby);
+  });
 }
 
 List<RoundPhase> deduped(List<RoundPhase> phases) {

@@ -104,6 +104,46 @@ void main() {
     expect(sm.canTransition(RoundPhase.podium), isTrue);
   });
 
+  test('abandon_moves_round_play_back_to_lobby', () {
+    final sm = RoundStateMachine()
+      ..beginRound()
+      ..startPlay();
+
+    expect(sm.canTransition(RoundPhase.lobby), isTrue);
+    sm.abandon();
+
+    expect(sm.phase, RoundPhase.lobby);
+    expect(sm.roundsCompleted, 0);
+    // The lobby can start a fresh match immediately.
+    expect(sm.canTransition(RoundPhase.roundIntro), isTrue);
+  });
+
+  test('abandon_rejected_outside_round_play', () {
+    final sm = RoundStateMachine();
+
+    expect(
+      sm.abandon,
+      throwsA(
+        isA<InvalidTransitionException>().having(
+          (e) => (e.from, e.to),
+          'from/to',
+          (RoundPhase.lobby, RoundPhase.lobby),
+        ),
+      ),
+    );
+    expect(sm.phase, RoundPhase.lobby, reason: 'state unchanged after throw');
+
+    final results = RoundStateMachine()
+      ..beginRound()
+      ..startPlay()
+      ..endRound();
+    expect(
+      results.abandon,
+      throwsA(isA<InvalidTransitionException>()),
+      reason: 'results screen exits via toLobby, not abandon',
+    );
+  });
+
   test('invalid_transitions_throw_invalid_transition_exception', () {
     final sm = RoundStateMachine();
 

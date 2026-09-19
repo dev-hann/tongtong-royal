@@ -24,7 +24,9 @@ void main() {
       MaterialApp(theme: buildTtrTheme(), home: const SizedBox()),
     );
 
-    final text = tester.widget<MaterialApp>(find.byType(MaterialApp)).theme!
+    final text = tester
+        .widget<MaterialApp>(find.byType(MaterialApp))
+        .theme!
         .textTheme;
 
     // Display-side slots: Fredoka.
@@ -64,7 +66,9 @@ void main() {
       MaterialApp(theme: buildTtrTheme(), home: const SizedBox()),
     );
 
-    final text = tester.widget<MaterialApp>(find.byType(MaterialApp)).theme!
+    final text = tester
+        .widget<MaterialApp>(find.byType(MaterialApp))
+        .theme!
         .textTheme;
     final styles = [
       text.displayLarge,
@@ -104,9 +108,6 @@ void main() {
       theme.textTheme.labelLarge!.fontWeight!.value,
       TypeScale.labelWeight,
     );
-    expect(
-      theme.textTheme.labelLarge!.letterSpacing,
-      TypeScale.labelTracking,
-    );
+    expect(theme.textTheme.labelLarge!.letterSpacing, TypeScale.labelTracking);
   });
 }

@@ -10,12 +10,29 @@ environment:
 flutter:
   uses-material-design: true
   fonts:
+    # Static weight instances (NOT the variable TTFs): Flutter does
+    # not drive the wght axis of variable fonts from fontWeight
+    # (issue 74643) — hierarchy collapsed to the default weight.
     - family: Fredoka
       fonts:
-        - asset: assets/fonts/Fredoka.ttf
+        - asset: assets/fonts/Fredoka-400.ttf
+          weight: 400
+        - asset: assets/fonts/Fredoka-500.ttf
+          weight: 500
+        - asset: assets/fonts/Fredoka-600.ttf
+          weight: 600
+        - asset: assets/fonts/Fredoka-700.ttf
+          weight: 700
     - family: Nunito
       fonts:
-        - asset: assets/fonts/Nunito.ttf
+        - asset: assets/fonts/Nunito-400.ttf
+          weight: 400
+        - asset: assets/fonts/Nunito-600.ttf
+          weight: 600
+        - asset: assets/fonts/Nunito-700.ttf
+          weight: 700
+        - asset: assets/fonts/Nunito-800.ttf
+          weight: 800
 
 dependencies:
   flame: ^1.18.0

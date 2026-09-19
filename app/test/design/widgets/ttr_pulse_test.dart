@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Widget wrap() => const MaterialApp(
-    home: Scaffold(body: Center(child: TtrPulse(child: Text('1st')))),
+    home: Scaffold(
+      body: Center(child: TtrPulse(child: Text('1st'))),
+    ),
   );
 
   testWidgets('runs a repeating pulse between 1.0 and the peak token', (

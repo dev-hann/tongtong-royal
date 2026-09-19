@@ -79,6 +79,17 @@ class ShellController extends ChangeNotifier {
     });
   }
 
+  /// ROUND_PLAY -> LOBBY without a result (solo abandon, GDD § 7.11):
+  /// clears per-match state so nothing records stats.
+  void abandonMatch() {
+    _apply(() {
+      _machine.abandon();
+      _roundResults.clear();
+      _latestRoundResult = null;
+      _matchResult = null;
+    });
+  }
+
   /// Runs [action] (which may throw [InvalidTransitionException]) and
   /// notifies listeners only when it succeeded.
   void _apply(void Function() action) {

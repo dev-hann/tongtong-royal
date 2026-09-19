@@ -197,8 +197,7 @@ final class NetStatus {
       other.lastError == lastError;
 
   @override
-  int get hashCode => Object.hash(NetStatus, state, ping, unstable,
-      lastError);
+  int get hashCode => Object.hash(NetStatus, state, ping, unstable, lastError);
 
   @override
   String toString() =>

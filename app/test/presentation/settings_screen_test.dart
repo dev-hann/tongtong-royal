@@ -1,4 +1,5 @@
 import 'package:app/design/ttr_icons.dart';
+import 'package:app/design/widgets/ttr_back_button.dart';
 import 'package:app/design/widgets/ttr_settings_row.dart';
 import 'package:app/design/widgets/ttr_switch.dart';
 import 'package:app/infra/profile_store.dart';
@@ -26,6 +27,32 @@ void main() {
   }
 
   setUp(() => storage = FakeKeyValueStorage());
+
+  testWidgets('top-left back affordance pops the route', (tester) async {
+    final profileController = ProfileController(
+      store: ProfileStore(storage: FakeKeyValueStorage()),
+    );
+    await profileController.load();
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator))
+      ..push(
+        MaterialPageRoute<void>(
+          builder: (_) => SettingsScreen(controller: profileController),
+        ),
+      );
+    await tester.pump();
+    // Fixed pumps, not pumpAndSettle: the ambient backdrop animates
+    // forever.
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(navigator.canPop(), isTrue);
+
+    await tester.tap(find.byKey(TtrBackButton.buttonKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(navigator.canPop(), isFalse);
+  });
 
   testWidgets('sound toggle starts on, flips off and persists', (tester) async {
     await pumpScreen(tester);
@@ -57,10 +84,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(CreditsScreen), findsOneWidget);
-    expect(
-      find.byKey(const Key('credits_row_Fredoka font')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('credits_row_Fredoka font')), findsOneWidget);
     expect(
       find.byKey(const Key('credits_row_Phosphor Icons (Fill)')),
       findsOneWidget,

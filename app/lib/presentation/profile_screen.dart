@@ -1,9 +1,9 @@
 import 'package:app/design/tokens.dart';
-import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
+import 'package:app/design/widgets/ttr_back_button.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/design/widgets/ttr_color_swatch.dart';
-import 'package:app/design/widgets/ttr_staggered_entrance.dart';
-import 'package:app/infra/profile_store.dart';
+import 'package:app/design/widgets/ttr_page_shell.dart';
+import 'package:app/presentation/profile_stats.dart';
 import 'package:app/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -63,54 +63,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const TtrAmbientBackdrop(),
-        SafeArea(
-          child: ListenableBuilder(
-            listenable: widget.controller,
-            builder: (context, _) {
-              final profile = widget.controller.profile;
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(SpacingScale.xl),
-                child: Column(
-                  children: [
-                    const Text('PROFILE', style: TypeScale.title),
-                    const SizedBox(height: SpacingScale.lg),
-                    _AvatarBlock(
-                      colorIndex: profile.colorIndex,
-                      nickname: profile.nickname,
-                      avatarKey: ProfileScreen.avatarKey,
-                    ),
-                    const SizedBox(height: SpacingScale.xl),
-                    _NicknameField(
-                      key: ProfileScreen.nicknameFieldKey,
-                      controller: _nickname,
-                      invalid: _invalid,
-                      onSubmitted: (_) => _saveNickname(),
-                    ),
-                    const SizedBox(height: SpacingScale.md),
-                    TtrButton(
-                      key: ProfileScreen.saveNicknameButtonKey,
-                      label: 'SAVE',
-                      onPressed: _saveNickname,
-                    ),
-                    const SizedBox(height: SpacingScale.xl),
-                    _PaletteGrid(
-                      swatchKeyPrefix: ProfileScreen.swatchKeyPrefix,
-                      selectedIndex: profile.colorIndex,
-                      onSelect: widget.controller.selectColor,
-                    ),
-                    const SizedBox(height: SpacingScale.xl),
-                    _StatsRow(stats: widget.controller.stats),
-                  ],
+    return TtrPageShell(
+      child: ListenableBuilder(
+        listenable: widget.controller,
+        builder: (context, _) {
+          final profile = widget.controller.profile;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(SpacingScale.xl),
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(SpacingScale.lg),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TtrBackButton(),
+                      ),
+                      Text(
+                        'PROFILE',
+                        style: TypeScale.title,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
-          ),
-        ),
-      ],
+                const SizedBox(height: SpacingScale.lg),
+                _AvatarBlock(
+                  colorIndex: profile.colorIndex,
+                  nickname: profile.nickname,
+                  avatarKey: ProfileScreen.avatarKey,
+                ),
+                const SizedBox(height: SpacingScale.xl),
+                _NicknameField(
+                  key: ProfileScreen.nicknameFieldKey,
+                  controller: _nickname,
+                  invalid: _invalid,
+                  onSubmitted: (_) => _saveNickname(),
+                ),
+                const SizedBox(height: SpacingScale.md),
+                TtrButton(
+                  key: ProfileScreen.saveNicknameButtonKey,
+                  label: 'SAVE',
+                  onPressed: _saveNickname,
+                ),
+                const SizedBox(height: SpacingScale.xl),
+                _PaletteGrid(
+                  swatchKeyPrefix: ProfileScreen.swatchKeyPrefix,
+                  selectedIndex: profile.colorIndex,
+                  onSelect: widget.controller.selectColor,
+                ),
+                const SizedBox(height: SpacingScale.xl),
+                ProfileStatsRow(stats: widget.controller.stats),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -171,6 +181,9 @@ class _NicknameField extends StatelessWidget {
       onSubmitted: onSubmitted,
       maxLength: ProfileController.maxNicknameLength + 8,
       textAlign: TextAlign.center,
+      // Nicknames are names, not words — platform spell-check red
+      // squiggles under them are noise (ux-checklist).
+      spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
       style: TypeScale.title,
       decoration: InputDecoration(
         labelText: 'NICKNAME',
@@ -220,72 +233,6 @@ class _PaletteGrid extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-/// Stats cards row (matches / wins / 1st places): Fredoka numerals,
-/// staggered entrance (guide § 4, § 6).
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats});
-
-  final Stats stats;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (final (index, card) in <(String, int)>[
-          ('MATCHES', stats.matchesPlayed),
-          ('WINS', stats.wins),
-          ('1ST PLACES', stats.firstPlaces),
-        ].indexed)
-          Expanded(
-            child: TtrStaggeredEntrance(
-              index: index,
-              child: _StatCard(label: card.$1, value: card.$2),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.label, required this.value});
-
-  final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: ColorPalette.surface,
-      margin: const EdgeInsets.symmetric(horizontal: SpacingScale.sm / 2),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(RadiusScale.card),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(SpacingScale.md),
-        child: Column(
-          children: [
-            Text(
-              '$value',
-              style: TypeScale.displayNumeral.copyWith(
-                fontSize: TypeScale.headlineSize,
-              ),
-            ),
-            const SizedBox(height: SpacingScale.xs),
-            Text(
-              label,
-              style: TypeScale.bodyLabel.copyWith(
-                color: ColorPalette.neutral500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

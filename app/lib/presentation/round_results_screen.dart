@@ -65,52 +65,62 @@ class RoundResultsScreen extends StatelessWidget {
     if (result == null) {
       return const Center(child: Text('Waiting for results...'));
     }
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const TtrAmbientBackdrop(),
-        DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [ColorPalette.secondarySoft, ColorPalette.background],
+    // System back on the terminal screen = HOME (GDD § 5), never a
+    // silent app exit.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          onExitHome?.call();
+        }
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const TtrAmbientBackdrop(),
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [ColorPalette.secondarySoft, ColorPalette.background],
+              ),
             ),
-          ),
-          child: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(SpacingScale.lg),
-              children: [
-                Center(
-                  // The header pill is the screen's one pulsing
-                  // element (guide § 4): the "active round" badge.
-                  child: TtrPulse(
-                    child: _HeaderPill(text: _headerLabel(result)),
-                  ),
-                ),
-                const SizedBox(height: SpacingScale.lg),
-                TtrPlacementList(placements: result.placements),
-                if (standings.isNotEmpty) ...[
-                  const SizedBox(height: SpacingScale.xl),
-                  Text(
-                    'Standings',
-                    textAlign: TextAlign.center,
-                    style: TypeScale.bodyLabel.copyWith(
-                      color: ColorPalette.neutral500,
+            child: SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.all(SpacingScale.lg),
+                children: [
+                  Center(
+                    // The header pill is the screen's one pulsing
+                    // element (guide § 4): the "active round" badge.
+                    child: TtrPulse(
+                      child: _HeaderPill(text: _headerLabel(result)),
                     ),
                   ),
-                  TtrStandingsList(entries: standings),
+                  const SizedBox(height: SpacingScale.lg),
+                  TtrPlacementList(placements: result.placements),
+                  if (standings.isNotEmpty) ...[
+                    const SizedBox(height: SpacingScale.xl),
+                    Text(
+                      'Standings',
+                      textAlign: TextAlign.center,
+                      style: TypeScale.bodyLabel.copyWith(
+                        color: ColorPalette.neutral500,
+                      ),
+                    ),
+                    TtrStandingsList(entries: standings),
+                  ],
+                  const SizedBox(height: SpacingScale.xl),
+                  _ResultActions(
+                    onPlayAgain: onPlayAgain,
+                    onExitHome: onExitHome,
+                  ),
                 ],
-                const SizedBox(height: SpacingScale.xl),
-                _ResultActions(
-                  onPlayAgain: onPlayAgain,
-                  onExitHome: onExitHome,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

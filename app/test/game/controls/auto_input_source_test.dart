@@ -59,15 +59,11 @@ final class _JumpOnFirstTick implements SteeringPolicy {
 
   @override
   SteeringDecision sample(SteeringObservation obs) {
-    return SteeringDecision(
-      moveDir: Vector2(1, 0),
-      jumpPressed: obs.tick == 0,
-    );
+    return SteeringDecision(moveDir: Vector2(1, 0), jumpPressed: obs.tick == 0);
   }
 }
 
-PlayerPose pose(double x, double y) =>
-    (x: x, y: y, angle: 0, vx: 0, vy: 0);
+PlayerPose pose(double x, double y) => (x: x, y: y, angle: 0, vx: 0, vy: 0);
 
 void main() {
   const humanId = 'human';
@@ -122,9 +118,13 @@ void main() {
     );
 
     final state = source.sample();
-    expect(state.moveDir.x, greaterThan(0),
-        reason: 'bot-1 (near) drives the steering; '
-            'bot-2 at x=500 is filtered out');
+    expect(
+      state.moveDir.x,
+      greaterThan(0),
+      reason:
+          'bot-1 (near) drives the steering; '
+          'bot-2 at x=500 is filtered out',
+    );
   });
 
   test('missing human pose yields sanitized idle input', () {
@@ -157,8 +157,11 @@ void main() {
     );
 
     expect(source.sample().jumpPressed, isTrue);
-    expect(source.sample().jumpPressed, isFalse,
-        reason: 'internal tick advanced past the policy window');
+    expect(
+      source.sample().jumpPressed,
+      isFalse,
+      reason: 'internal tick advanced past the policy window',
+    );
   });
 }
 

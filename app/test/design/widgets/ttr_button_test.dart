@@ -107,9 +107,7 @@ void main() {
     expect(tester.widget<ScaleTransition>(scaleOf()).scale.value, 1);
   });
 
-  testWidgets('release springs back within the tap duration', (
-    tester,
-  ) async {
+  testWidgets('release springs back within the tap duration', (tester) async {
     await tester.pumpWidget(wrap(TtrButton(label: 'GO', onPressed: () {})));
 
     final gesture = await tester.startGesture(

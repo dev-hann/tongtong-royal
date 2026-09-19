@@ -36,6 +36,20 @@ abstract final class TtrIcons {
     fontPackage: 'phosphor_flutter',
   );
 
+  /// Left caret (top-left back affordance on pushed routes).
+  static const IconData caretLeft = IconData(
+    0xe138,
+    fontFamily: 'PhosphorFill',
+    fontPackage: 'phosphor_flutter',
+  );
+
+  /// Sign-out door (mid-round race quit).
+  static const IconData signOut = IconData(
+    0xe42a,
+    fontFamily: 'PhosphorFill',
+    fontPackage: 'phosphor_flutter',
+  );
+
   /// Speaker with waves (sound on).
   static const IconData speakerHigh = IconData(
     0xe44a,

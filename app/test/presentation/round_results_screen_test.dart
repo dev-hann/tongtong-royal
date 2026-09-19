@@ -110,4 +110,17 @@ void main() {
     );
     expect(find.text('Waiting for results...'), findsOneWidget);
   });
+
+  testWidgets('system back on results goes HOME, not app exit', (tester) async {
+    var exitHome = 0;
+    await tester.pumpWidget(wrap(build(onExitHome: () => exitHome++)));
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(exitHome, 1);
+    // The screen stays: back was consumed as the HOME action.
+    expect(find.byKey(RoundResultsScreen.playAgainButtonKey), findsOneWidget);
+  });
 }

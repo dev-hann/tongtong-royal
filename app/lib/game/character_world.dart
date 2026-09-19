@@ -13,7 +13,7 @@ class CharacterWorld {
   /// Creates the world with [standardGravity] unless [gravity] is
   /// given (tests may zero it).
   CharacterWorld({Vector2? gravity})
-      : forgeWorld = World(gravity ?? standardGravity);
+    : forgeWorld = World(gravity ?? standardGravity);
 
   /// Standard world gravity (1 unit = 1 meter, y up). Magnitude comes
   /// from [PhysicsConsts.gravityMagnitude].
@@ -44,9 +44,7 @@ class CharacterWorld {
     double friction = PhysicsConsts.playerGroundFriction,
     double restitution = PhysicsConsts.restitutionGround,
   }) {
-    final body = forgeWorld.createBody(
-      BodyDef(position: center.clone()),
-    );
+    final body = forgeWorld.createBody(BodyDef(position: center.clone()));
     final shape = PolygonShape()..setAsBoxXY(width / 2, height / 2);
     body.createFixture(
       FixtureDef(shape, friction: friction, restitution: restitution),

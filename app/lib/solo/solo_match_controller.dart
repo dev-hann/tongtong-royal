@@ -3,13 +3,15 @@ import 'dart:async';
 import 'package:app/game/bots/bot_brain.dart';
 import 'package:app/game/bots/bot_factory.dart';
 import 'package:app/game/course/course_map.dart';
-import 'package:app/game/round_simulation.dart';
 import 'package:app/net/host/round_simulation_factory.dart';
 import 'package:app/shell_controller.dart';
 import 'package:app/solo/solo_match_config.dart';
 import 'package:app/solo/solo_round_driver.dart';
+import 'package:app/solo/solo_round_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
+
+export 'package:app/solo/solo_round_session.dart';
 
 /// Delayed-callback seam: the controller's only clock. Production
 /// wires a [Timer]; tests drive a fake virtual clock.
@@ -17,43 +19,6 @@ typedef SoloScheduler = void Function(Duration delay, VoidCallback callback);
 
 /// GDD § 5 intro countdown, seconds.
 const int soloIntroSeconds = 3;
-
-/// One playable round handed to the play view: simulation, driver,
-/// map data and seat identities. Judging stays inside the driver's
-/// domain resolve; this record is pure plumbing.
-final class SoloRoundSession {
-  /// Creates the session.
-  const SoloRoundSession({
-    required this.driver,
-    required this.simulation,
-    required this.map,
-    required this.minigameId,
-    required this.humanId,
-    required this.rosterIds,
-  });
-
-  /// Per-tick glue over [simulation] (human + bot inputs, events,
-  /// samples, completion).
-  final SoloRoundDriver driver;
-
-  /// The round's simulation.
-  final RoundSimulation simulation;
-
-  /// Map data the simulation was built from (renderer + bot maps).
-  final Object map;
-
-  /// Minigame id of the round.
-  final MiniGameId minigameId;
-
-  /// The human seat.
-  final PlayerId humanId;
-
-  /// All seats (human first, then bots).
-  final List<PlayerId> rosterIds;
-
-  /// Whether the round already ended.
-  bool get isOver => driver.isRoundOver;
-}
 
 /// Orchestrates a solo match (human vs bots, GDD § 9) over a
 /// [ShellController]: plans the rounds ([planSoloRounds]), feeds the
@@ -185,6 +150,21 @@ final class SoloMatchController extends ChangeNotifier {
     _generation++;
     _replan();
     shell.toLobby();
+    notifyListeners();
+  }
+
+  /// ROUND_PLAY -> LOBBY with no result (GDD § 7.11 solo abandon):
+  /// releases the running round, replans a fresh match and returns
+  /// the shell to the lobby for its home screen. Abandoned races
+  /// never reach ROUND_RESULTS, so no stats are recorded.
+  void abandonMatch() {
+    if (shell.phase != RoundPhase.roundPlay) {
+      return;
+    }
+    _generation++;
+    _releaseRound();
+    _replan();
+    shell.abandonMatch();
     notifyListeners();
   }
 

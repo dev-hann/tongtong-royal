@@ -75,6 +75,8 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 | Countdown / big number | `TtrCountdown` (pops per second) | plain `Text` |
 | Minigame announce | `TtrRoundBanner` under a `ROUND n / N` pill | unlabelled banner |
 | Transient message | `TtrToast` | `SnackBar` |
+| Destructive confirm (quit race) | `TtrQuitDialog` (tokened AlertDialog + `TtrButton` actions) | raw `AlertDialog` with default styling |
+| Route back affordance | `TtrBackButton` (left caret, top-left header) | text-only "< Back" or bare edge swipe |
 | Podium finish | Pedestal row (2-1-3 heights, trophy pulse) | flat ranked list |
 
 **BAD**: `Text('2nd', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))` — no font token, no tracking, no entrance, spreadsheet numeral.
@@ -95,6 +97,8 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 ## 7. Fonts & Licensing
 
 Fredoka and Nunito are SIL OFL, bundled as `.ttf` assets in `app/assets/fonts/` (offline-first rule — no runtime font fetching). Every font file gets a row in `ATTRIBUTION.md` before it ships. New fonts must follow this guide's role table or the guide must change first (same commit).
+
+**Static instances only (hard rule)**: bundle one static `.ttf` per weight with pubspec `weight:` mappings. Variable-font TTFs are forbidden — Flutter does not drive the `wght` axis from `fontWeight` (flutter/flutter#74643), so all weights render as the default instance and the hierarchy collapses. Incident 2026-09-19.
 
 ## 8. Accessibility & Fullscreen Notes
 

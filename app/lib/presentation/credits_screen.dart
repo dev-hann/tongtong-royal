@@ -1,5 +1,6 @@
 import 'package:app/design/tokens.dart';
-import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
+import 'package:app/design/widgets/ttr_back_button.dart';
+import 'package:app/design/widgets/ttr_page_shell.dart';
 import 'package:flutter/material.dart';
 
 /// One attribution row: asset name, source, license.
@@ -18,11 +19,7 @@ const List<CreditRow> kCreditRows = <CreditRow>[
     source: 'github.com/google/fonts (ofl/nunito)',
     license: 'SIL OFL 1.1',
   ),
-  (
-    asset: 'Phosphor Icons (Fill)',
-    source: 'phosphoricons.com',
-    license: 'MIT',
-  ),
+  (asset: 'Phosphor Icons (Fill)', source: 'phosphoricons.com', license: 'MIT'),
 ];
 
 /// Scrollable attribution list mirroring `ATTRIBUTION.md` (legal § 3
@@ -33,38 +30,36 @@ class CreditsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const TtrAmbientBackdrop(),
-        SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(SpacingScale.lg),
-                child: Text(
+    return TtrPageShell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(SpacingScale.lg),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(alignment: Alignment.centerLeft, child: TtrBackButton()),
+                Text(
                   'CREDITS',
                   style: TypeScale.title,
                   textAlign: TextAlign.center,
                 ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingScale.xl,
-                  ),
-                  itemCount: kCreditRows.length,
-                  itemBuilder: (context, index) => _CreditRowCard(
-                    row: kCreditRows[index],
-                    rowKey: Key('credits_row_${kCreditRows[index].asset}'),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: SpacingScale.xl),
+              itemCount: kCreditRows.length,
+              itemBuilder: (context, index) => _CreditRowCard(
+                row: kCreditRows[index],
+                rowKey: Key('credits_row_${kCreditRows[index].asset}'),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

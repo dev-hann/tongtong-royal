@@ -24,6 +24,8 @@ TongTong Royal is a single-round one-button physics race vs bots (multiplayer in
 
 Never upgrade major dependencies mid-milestone. Dependency bumps are their own commit with their own test run.
 
+**Known SDK quirk (this machine)**: hand-installed Flutter SDK caches ship engine artifacts without execute permission — release builds fail with "lacked sufficient permissions to execute" on `gen_snapshot` / `font-subset`. Fix: `chmod +x ~/development/flutter/bin/cache/artifacts/engine/*/linux-x64/{gen_snapshot,font-subset}`. Re-run after SDK updates.
+
 ## 4. Strict TDD — Mandatory Cycle
 
 Every change to production code follows **Red → Green → Refactor**:

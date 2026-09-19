@@ -31,22 +31,22 @@ void main() {
     await tester.pump(const Duration(milliseconds: 60));
 
     var scale = tester.widget<ScaleTransition>(
-        find.descendant(
-          of: find.byType(TtrPopOnChange),
-          matching: find.byType(ScaleTransition),
-        ),
-      );
+      find.descendant(
+        of: find.byType(TtrPopOnChange),
+        matching: find.byType(ScaleTransition),
+      ),
+    );
     final mid = scale.scale.value;
     expect(mid, greaterThan(1));
     expect(mid, lessThanOrEqualTo(MotionScales.pop));
 
     await tester.pump(MotionDurations.countdownPop);
     scale = tester.widget<ScaleTransition>(
-        find.descendant(
-          of: find.byType(TtrPopOnChange),
-          matching: find.byType(ScaleTransition),
-        ),
-      );
+      find.descendant(
+        of: find.byType(TtrPopOnChange),
+        matching: find.byType(ScaleTransition),
+      ),
+    );
     expect(scale.scale.value, 1);
     expect(tester.hasRunningAnimations, isFalse);
   });
@@ -71,11 +71,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: Center(
-            child: TtrPopOnChange(
-              tag: 3,
-              initialPop: true,
-              child: Text('3'),
-            ),
+            child: TtrPopOnChange(tag: 3, initialPop: true, child: Text('3')),
           ),
         ),
       ),
@@ -83,11 +79,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 60));
 
     final scale = tester.widget<ScaleTransition>(
-        find.descendant(
-          of: find.byType(TtrPopOnChange),
-          matching: find.byType(ScaleTransition),
-        ),
-      );
+      find.descendant(
+        of: find.byType(TtrPopOnChange),
+        matching: find.byType(ScaleTransition),
+      ),
+    );
     expect(scale.scale.value, greaterThan(1));
   });
 }

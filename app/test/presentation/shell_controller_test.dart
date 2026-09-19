@@ -60,10 +60,7 @@ void main() {
       final rankings = controller.matchResult;
       expect(rankings, isNotNull);
       expect(rankings!.finalRankings.map((p) => p.playerId).toList(), players);
-      expect(
-        rankings.finalRankings.first.points,
-        4 * MatchRules.roundCount,
-      );
+      expect(rankings.finalRankings.first.points, 4 * MatchRules.roundCount);
       expect(rankings.finalRankings.map((p) => p.rank).toList(), [1, 2, 3, 4]);
 
       // Round results are exposed for HUD/standings computations.
@@ -108,6 +105,33 @@ void main() {
         ..toPodium();
       expect(controller.startMatch, throwsA(isA<InvalidTransitionException>()));
       expect(controller.phase, RoundPhase.podium);
+    });
+  });
+
+  group('ShellController abandon', () {
+    test('abandonMatch moves ROUND_PLAY to LOBBY clearing match state', () {
+      final controller = ShellController()
+        ..startMatch()
+        ..startPlay()
+        ..abandonMatch();
+
+      expect(controller.phase, RoundPhase.lobby);
+      expect(controller.roundIndex, 0);
+      expect(controller.latestRoundResult, isNull);
+      expect(controller.roundResults, isEmpty);
+      expect(controller.matchResult, isNull);
+      // The lobby can start a fresh match immediately.
+      controller.startMatch();
+      expect(controller.phase, RoundPhase.roundIntro);
+    });
+
+    test('abandonMatch outside ROUND_PLAY propagates the machine error', () {
+      final controller = ShellController();
+      expect(
+        controller.abandonMatch,
+        throwsA(isA<InvalidTransitionException>()),
+      );
+      expect(controller.phase, RoundPhase.lobby);
     });
   });
 

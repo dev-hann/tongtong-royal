@@ -10,11 +10,7 @@ import 'package:flutter/material.dart';
 /// snapping.
 class TtrPressScale extends StatefulWidget {
   /// Creates the squash wrapper.
-  const TtrPressScale({
-    required this.pressed,
-    required this.child,
-    super.key,
-  });
+  const TtrPressScale({required this.pressed, required this.child, super.key});
 
   /// Whether the wrapped control is currently pressed.
   final bool pressed;

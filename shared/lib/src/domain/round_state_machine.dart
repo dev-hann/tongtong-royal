@@ -72,7 +72,8 @@ class RoundStateMachine {
     return switch (_phase) {
       RoundPhase.lobby => to == RoundPhase.roundIntro,
       RoundPhase.roundIntro => to == RoundPhase.roundPlay,
-      RoundPhase.roundPlay => to == RoundPhase.roundResults,
+      RoundPhase.roundPlay =>
+        to == RoundPhase.roundResults || to == RoundPhase.lobby,
       RoundPhase.roundResults =>
         to == RoundPhase.podium ||
             (to == RoundPhase.lobby && isMatchComplete) ||
@@ -103,6 +104,17 @@ class RoundStateMachine {
 
   /// ROUND_PLAY -> ROUND_RESULTS; completes one round.
   void endRound() => transition(RoundPhase.roundResults);
+
+  /// ROUND_PLAY -> LOBBY; the local player quits the round mid-play
+  /// (GDD § 7.11 solo abandon). No result is recorded and the match
+  /// state resets for a fresh match. Rejected outside ROUND_PLAY
+  /// (the results screen exits via [toLobby]).
+  void abandon() {
+    if (_phase != RoundPhase.roundPlay) {
+      throw InvalidTransitionException(from: _phase, to: RoundPhase.lobby);
+    }
+    transition(RoundPhase.lobby);
+  }
 
   /// ROUND_RESULTS -> PODIUM.
   void toPodium() => transition(RoundPhase.podium);

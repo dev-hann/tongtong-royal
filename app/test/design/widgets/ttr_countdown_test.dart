@@ -20,9 +20,7 @@ void main() {
     expect(find.text('3'), findsNothing);
   });
 
-  testWidgets('numerals use the Fredoka SemiBold display role', (
-    tester,
-  ) async {
+  testWidgets('numerals use the Fredoka SemiBold display role', (tester) async {
     await tester.pumpWidget(wrap(const TtrCountdown(value: 3)));
 
     final style = tester.widget<Text>(find.text('3')).style!;

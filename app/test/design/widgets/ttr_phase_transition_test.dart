@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget host(Widget child) =>
-      MaterialApp(home: Scaffold(body: TtrPhaseTransition(child: child)));
+  Widget host(Widget child) => MaterialApp(
+    home: Scaffold(body: TtrPhaseTransition(child: child)),
+  );
 
   testWidgets('shows the current child', (tester) async {
     await tester.pumpWidget(host(const Text('first')));
@@ -12,14 +13,12 @@ void main() {
   });
 
   testWidgets('swaps children with fade+slide transition', (tester) async {
-    await tester.pumpWidget(host(const KeyedSubtree(
-      key: ValueKey('a'),
-      child: Text('first'),
-    )));
-    await tester.pumpWidget(host(const KeyedSubtree(
-      key: ValueKey('b'),
-      child: Text('second'),
-    )));
+    await tester.pumpWidget(
+      host(const KeyedSubtree(key: ValueKey('a'), child: Text('first'))),
+    );
+    await tester.pumpWidget(
+      host(const KeyedSubtree(key: ValueKey('b'), child: Text('second'))),
+    );
 
     // Mid-transition both children exist (AnimatedSwitcher cross-fade).
     await tester.pump(const Duration(milliseconds: 120));
@@ -35,14 +34,12 @@ void main() {
   testWidgets('entering screen slides UP from below (guide § 4)', (
     tester,
   ) async {
-    await tester.pumpWidget(host(const KeyedSubtree(
-      key: ValueKey('a'),
-      child: Text('first'),
-    )));
-    await tester.pumpWidget(host(const KeyedSubtree(
-      key: ValueKey('b'),
-      child: Text('second'),
-    )));
+    await tester.pumpWidget(
+      host(const KeyedSubtree(key: ValueKey('a'), child: Text('first'))),
+    );
+    await tester.pumpWidget(
+      host(const KeyedSubtree(key: ValueKey('b'), child: Text('second'))),
+    );
 
     // Mid-transition the incoming child's slide offset starts below
     // its resting slot (positive dy) and travels toward zero.

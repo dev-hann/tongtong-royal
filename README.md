@@ -40,6 +40,7 @@ Read in this order. These documents are the project's code of conduct; they supe
 | 7 | [`docs/06-release-legal.md`](docs/06-release-legal.md) | Store rating, privacy, asset licensing |
 | 8 | [`docs/07-design-guide.md`](docs/07-design-guide.md) | Visual language: typography, color usage, motion/juice, screen patterns |
 | 9 | [`docs/08-roadmap.md`](docs/08-roadmap.md) | Post-launch candidates with start triggers, non-goals |
+| 10 | [`docs/09-ux-checklist.md`](docs/09-ux-checklist.md) | Usability criteria: navigation/escape, inputs, surfaces, orientation, device typography |
 
 **Conflict resolution order: `AGENTS.md` > `docs/*` > `README.md`.** If two documents disagree, the higher-priority one wins, and you must fix the lower one in the same commit.
 
@@ -57,6 +58,18 @@ dart test
 ```
 
 CI (`.github/workflows/ci.yml`) runs the same gates on every push and pull request. A red CI blocks merge, no exceptions.
+
+## Device Build & Install (Android, wireless)
+
+Operational notes from this machine (see also AGENTS § 3 for the SDK `chmod` quirk):
+
+```bash
+flutter build apk --release
+adb install -r app/build/app/outputs/flutter-apk/app-release.apk
+```
+
+- **Wireless pairing**: pair over the phone's LAN IP (discover via `adb mdns services`) — VPN-range IPs (100.x) refuse pairing even when pingable. Pairing ports are one-shot; the pairing dialog must stay open.
+- **Orientation lock**: enforced in the AndroidManifest (survives fold/unfold activity recreation) plus re-asserted on resume — ux-checklist § 4.
 
 ## Roadmap
 

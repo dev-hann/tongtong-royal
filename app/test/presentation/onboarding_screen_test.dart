@@ -10,13 +10,21 @@ void main() {
   late FakeKeyValueStorage storage;
   late ProfileController controller;
 
-  Future<void> pumpScreen(WidgetTester tester, VoidCallback onStart) async {
+  Future<void> pumpScreen(
+    WidgetTester tester,
+    VoidCallback onStart, {
+    VoidCallback? onSkip,
+  }) async {
     controller = ProfileController(store: ProfileStore(storage: storage));
     await controller.load();
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: OnboardingScreen(controller: controller, onStart: onStart),
+          body: OnboardingScreen(
+            controller: controller,
+            onStart: onStart,
+            onSkip: onSkip ?? onStart,
+          ),
         ),
       ),
     );
@@ -73,5 +81,28 @@ void main() {
     await reloaded.load();
     expect(reloaded.onboarded, isTrue);
     expect(reloaded.profile.nickname, Profile.defaultNickname);
+  });
+
+  testWidgets('SKIP completes onboarding storing the default profile', (
+    tester,
+  ) async {
+    var skipped = false;
+    await pumpScreen(tester, () {}, onSkip: () => skipped = true);
+
+    // Typed-but-abandoned input must not persist through SKIP.
+    await tester.enterText(
+      find.byKey(OnboardingScreen.nicknameFieldKey),
+      'TYPED',
+    );
+    await tester.tap(find.byKey(OnboardingScreen.skipButtonKey));
+    await tester.pump();
+    await tester.pump();
+
+    expect(skipped, isTrue);
+    final reloaded = ProfileStore(storage: storage);
+    await reloaded.load();
+    expect(reloaded.onboarded, isTrue);
+    expect(reloaded.profile.nickname, Profile.defaultNickname);
+    expect(reloaded.profile.colorIndex, 0);
   });
 }
