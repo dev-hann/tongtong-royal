@@ -9,6 +9,7 @@ import 'package:app/game/controls/auto_input_source.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/view/race_game_view.dart';
+import 'package:app/infra/sound_service.dart';
 import 'package:app/solo/solo_match_controller.dart';
 import 'package:flame/game.dart' show Game, GameWidget;
 import 'package:flutter/material.dart';
@@ -27,9 +28,12 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 /// § 2), timers only here in the widget layer.
 final class SoloPlayView extends StatefulWidget {
   /// Creates the view over [session].
+  /// Creates the view over [session]. [sound] (optional) plays the
+  /// jump cue on button press — the design button stays audio-free.
   const SoloPlayView({
     required this.session,
     this.humanColorIndex = 0,
+    this.sound,
     this.onQuit,
     super.key,
   });
@@ -50,6 +54,9 @@ final class SoloPlayView extends StatefulWidget {
   /// Palette index of the human's persisted profile color; the
   /// local body renders with it (GDD § 8.1).
   final int humanColorIndex;
+
+  /// Sound cue hook for the action button (null in tests).
+  final SoundService? sound;
 
   @override
   State<SoloPlayView> createState() => _SoloPlayViewState();
@@ -103,6 +110,12 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
     }
     widget.session.driver.dispose();
     super.dispose();
+  }
+
+  /// The one-button press: jump cue + input edge (GDD § 3).
+  void _pressAction() {
+    widget.sound?.play(Sfx.jump);
+    _controller.press();
   }
 
   /// Quit confirm (GDD § 7.11): QUIT fires [SoloPlayView.onQuit];
@@ -159,7 +172,7 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
                     GameVerb.jump => 'JUMP',
                     GameVerb.dash => 'DASH',
                   },
-                  onPressed: _controller.press,
+                  onPressed: _pressAction,
                   onReleased: _controller.release,
                 ),
               ),

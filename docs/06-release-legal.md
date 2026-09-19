@@ -36,6 +36,7 @@ Pre-build sanity (learned from the 2026-09 icon incident — Material icon font 
 
 - [ ] `app/pubspec.yaml` contains `flutter: uses-material-design: true`
 - [ ] All bundled assets listed in `ATTRIBUTION.md` (fonts, icons, art, sound) **and rendered in the in-app credits**
+- [ ] Generated placeholder SFX (ATTRIBUTION "PLACEHOLDER" rows) replaced with a sourced CC0 pack (Kenney) — placeholders must not ship
 - [ ] GDD core-loop diagram + design-guide screen patterns match the implemented flow (post-scope-change drift check)
 - [ ] Fonts are **static weight instances** with pubspec weight mappings (no variable TTFs — ux-checklist § 6)
 - [ ] Pushed screens use `TtrPageShell` (opaque background — ux-checklist § 3)

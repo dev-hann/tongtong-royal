@@ -15,6 +15,8 @@ void main() {
     expect(find.text('Fredoka font'), findsOneWidget);
     expect(find.text('Nunito font'), findsOneWidget);
     expect(find.text('Phosphor Icons (Fill)'), findsOneWidget);
+    expect(find.text('Sound effects'), findsOneWidget);
+    expect(find.textContaining('generated placeholders'), findsOneWidget);
     expect(find.textContaining('SIL OFL 1.1'), findsNWidgets(2));
     expect(find.textContaining('MIT'), findsOneWidget);
     expect(find.byKey(const Key('credits_row_Fredoka font')), findsOneWidget);
@@ -22,6 +24,7 @@ void main() {
       find.byKey(const Key('credits_row_Phosphor Icons (Fill)')),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('credits_row_Sound effects')), findsOneWidget);
   });
 
   testWidgets('form law: fixed header over one assets card group', (

@@ -9,6 +9,9 @@ environment:
 
 flutter:
   uses-material-design: true
+  assets:
+    # Short one-shot sound effects (GDD § 8.1 sound engine).
+    - assets/sfx/
   fonts:
     # Static weight instances (NOT the variable TTFs): Flutter does
     # not drive the wght axis of variable fonts from fontWeight
@@ -35,6 +38,7 @@ flutter:
           weight: 800
 
 dependencies:
+  audioplayers: ^6.1.0
   flame: ^1.18.0
   flutter:
     sdk: flutter
@@ -66,7 +70,7 @@ flutter_launcher_icons:
   android: true
   ios: false
   image_path: assets/brand/icon_1024.png
-  adaptive_icon_background: "0xFFFF8C42"
+  adaptive_icon_background: "#FFFF8C42"
   adaptive_icon_foreground: assets/brand/adaptive_fg_1024.png
 
 flutter_native_splash:

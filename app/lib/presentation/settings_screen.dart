@@ -8,6 +8,7 @@ import 'package:app/design/widgets/ttr_page_header.dart';
 import 'package:app/design/widgets/ttr_page_shell.dart';
 import 'package:app/design/widgets/ttr_settings_row.dart';
 import 'package:app/design/widgets/ttr_switch.dart';
+import 'package:app/infra/sound_service.dart';
 import 'package:app/presentation/credits_screen.dart';
 import 'package:app/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,9 @@ import 'package:flutter/material.dart';
 /// and forwards taps.
 class SettingsScreen extends StatelessWidget {
   /// Creates the settings screen.
-  const SettingsScreen({required this.controller, super.key});
+  /// Creates the settings screen. [sound] (optional) plays the UI
+  /// tap cue on toggle — the design widgets stay audio-free.
+  const SettingsScreen({required this.controller, this.sound, super.key});
 
   /// Key of the sound toggle (tests).
   static const Key soundToggleKey = Key('settings_sound_toggle');
@@ -29,6 +32,9 @@ class SettingsScreen extends StatelessWidget {
 
   /// Owns the persisted settings state.
   final ProfileController controller;
+
+  /// Sound cue hook (null in tests without audio wiring).
+  final SoundService? sound;
 
   @override
   Widget build(BuildContext context) {
@@ -56,11 +62,13 @@ class SettingsScreen extends StatelessWidget {
                           trailing: TtrSwitch(
                             key: soundToggleKey,
                             value: controller.soundEnabled,
-                            onChanged: (value) =>
-                                // Local-only persistence; UI flipped.
-                                unawaited(
-                                  controller.setSoundEnabled(value: value),
-                                ),
+                            onChanged: (value) {
+                              sound?.play(Sfx.uiTap);
+                              // Local-only persistence; UI flipped.
+                              unawaited(
+                                controller.setSoundEnabled(value: value),
+                              );
+                            },
                           ),
                         ),
                       ],

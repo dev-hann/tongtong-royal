@@ -21,6 +21,11 @@ const List<CreditRow> kCreditRows = <CreditRow>[
     license: 'SIL OFL 1.1',
   ),
   (asset: 'Phosphor Icons (Fill)', source: 'phosphoricons.com', license: 'MIT'),
+  (
+    asset: 'Sound effects',
+    source: 'generated placeholders (ffmpeg synthesis)',
+    license: 'CC0-equivalent',
+  ),
 ];
 
 /// Scrollable attribution list mirroring `ATTRIBUTION.md` (legal § 3
