@@ -106,3 +106,74 @@ Flow asserted: install → launch → (onboarding SKIP if first launch) → home
 - Text anchors come from real widget strings (`PLAY SOLO`, `First to the finish line`, `JUMP`, `Quit the race`, `KEEP RUNNING`, `QUIT`, `SKIP`) — if a label changes, the script and this list change in the same commit.
 - The smoke runs on every connected test device (phone today; the LineageOS Pi rig when enrolled).
 - Failure output includes the last fatal exceptions for triage.
+
+## 10. Strict Test-Writing Law (applies to EVERY test in this repo)
+
+Hard rules. A test that breaks any of them does not merge — no exceptions, no waivers. Reviewers grade violations as blockers (AGENTS § 10).
+
+### 10.1 Structure & naming
+
+1. **One behavior per test.** A test name that needs "and" to describe itself must be split. `points_scale_to_ranked_players`, not `points_and_ranks_and_ties`.
+2. **Name = behavior sentence**: `<subject>_<expected-behavior>[_<condition>]` in snake_case. Spec-reference tests prefix `gdd_<section>_`, network-doc tests `net_<section>_`, ux-checklist `ux_<section>_`.
+3. **AAA layout**: Arrange, Act, Assert — separated by blank lines or comments. An assert before the final act block is a structural defect.
+4. **File per subject**: test files mirror the unit under test (`placements.dart` → `placements_test.dart`). Cross-subject suites need a documented reason in the file header.
+
+### 10.2 Determinism & isolation
+
+5. **Zero wall-clock.** No `Future.delayed`, `sleep`, `DateTime.now` in test bodies. Time is injected (clock/stepper/manual ticker). A test that passes "after a while" is banned.
+6. **Zero shared mutable state.** Every test builds its own fixture; no test-order dependence, no static caches mutated by tests. Running any single file alone must pass.
+7. **Randomness only seeded.** Every `Random` in a test carries an explicit seed; a flaky-by-randomness test is a blocker.
+8. **No I/O in unit tests.** File, socket, platform channel, prefs — fake the boundary (`KeyValueStorage`, `FakeConnection` precedents). Real I/O belongs to integration tests only.
+9. **No network.** Loopback in-process sockets are integration scope; anything else is forbidden.
+
+### 10.3 Assertions
+
+10. **Assert the behavior, exactly once logically.** Multiple expects are fine when they verify facets of ONE outcome; asserting two different behaviors belongs in two tests.
+11. **Precise matchers.** No `isNotNull` where `equals(x)` is possible; no `greaterThan(0)` where the exact value is specified. Doubles: `closeTo` with an epsilon that has a stated reason (comment).
+12. **Failure messages must be self-explanatory**: every `expect` on a loop or with non-obvious subject carries a `reason:`.
+13. **Expected values are literals with meaning** — expected `4` points is fine inline; expected computed values (`x + 1`) that mirror the implementation under test are forbidden (tautology smell).
+14. **Exceptions**: assert type AND payload fields (`having(...)`), not just `throws`.
+
+### 10.4 Coverage & cases
+
+15. **Boundary + failure mandatory.** Every rule-level behavior ships: the normal case, each boundary (0, 1, N, max, exactly-at-threshold), and at least one failure path (invalid input, missing data, wrong state). A suite with only happy paths is incomplete — reviewers reject.
+16. **Every spec edge case has a named test** (GDD § 7, network doc § 5/§ 8, ux-checklist rows). The doc table and the test list are cross-checked in review.
+17. **Domain tests need no mocks** (existing rule § 6) — needing one is a design alarm raised to the architect (main thread), not silently worked around.
+18. **Regression law**: every bug fix adds a test that fails on the pre-fix code. The fix PR contains both.
+
+### 10.5 Hygiene
+
+19. **Tests are code**: same lint gates (`dart analyze` zero), same 80-col, same language. Test files are NOT exempt from style.
+20. **No `skip:` without a linked issue note in the same line**; skipped tests are tracked, not forgotten.
+21. **No test-only production code.** `@visibleForTesting` exposure is allowed; behavior existing only so a test can reach it is forbidden.
+22. **Deleting a test requires a reason in the commit body** — replaced-by-X, spec-changed (with doc diff), or duplicate.
+
+## 11. Patrol (device E2E)
+
+Patrol runs the app on real devices and drives the real Flutter widget tree — it sees what uiautomator cannot (LineageOS Pi precedent). It is the ONLY sanctioned device-UI automation layer; raw adb UI scripting is a thin launcher wrapper at most.
+
+### 11.1 Position & rules
+
+- Location: `app/integration_test/*.dart`, naming `smoke_<flow>.dart` / `e2e_<flow>.dart`. One flow per file, ≤ 300 lines.
+- Pyramid top: Patrol suites are regression gates for user-visible flows. They never replace unit/widget/domain tests; asserting game RULES here (points math etc.) is a layer violation — rules are domain-test territory. Patrol asserts **what is on screen**.
+- Selectors: public text anchors (§ 9 list — same list, same commit when labels change) first; `Key` finds for dynamic content. Never index-based (`texts[2]`) or coordinate taps.
+- Waiting: `patrolTester.waitUntilVisible/...` only. `Future.delayed`/sleeps are banned (Law § 10.2.5 applies here too).
+- Native interactions: `native.pressBack()` for system back; no raw `adb shell input` inside Patrol tests.
+- Determinism: solo flows with bots use a fixed match seed injected via test config; screenshots may be captured but never asserted pixel-by-pixel (token colors vary by theme drift).
+- Every new user-visible flow adds its Patrol case in the same PR (DoD link, `docs/05` § 6).
+- Runs: `patrol test -s <serial>` per enrolled device (Pi rig `192.168.0.5:5555`, phone when enrolled); all enrolled devices pass = release checklist condition. CI emulator hosting is backlog.
+
+### 11.2 Required cases (minimum standing suite)
+
+| # | Case (`smoke_*.dart`) | Steps | Hard asserts |
+|---|----------------------|-------|--------------|
+| 1 | `smoke_first_launch` | cold start, first-launch | onboarding shows; SKIP tap lands on Home (`PLAY SOLO` visible) |
+| 2 | `smoke_solo_match` | Home → PLAY SOLO | intro shows rule line; countdown ends in play (`JUMP` visible); 3 jumps complete without exception |
+| 3 | `smoke_quit_dialog` | in play → `native.pressBack()` | dialog `Quit the race` shows; KEEP RUNNING returns to play (`JUMP` visible) |
+| 4 | `smoke_quit_to_home` | in play → back → QUIT | Home visible (`PLAY SOLO`); app process alive |
+| 5 | `smoke_race_finish` (seeded fast course) | play to completion | results screen shows placements; PLAY AGAIN restarts intro; HOME returns |
+| 6 | `smoke_profile_flow` | Home → profile avatar | profile screen opens; nickname edit persists; color swatch changes avatar; back returns Home |
+| 7 | `smoke_settings_flow` | Home → gear | settings opens; sound toggle flips; credits lists every ATTRIBUTION row; back returns |
+| 8 | `smoke_orientation_lock` | rotate device (native) | portrait enforced — world renders unchanged |
+
+Standing suite must stay green on every enrolled device; a red case blocks release exactly like CI.
