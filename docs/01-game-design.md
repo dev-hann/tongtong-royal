@@ -40,9 +40,10 @@ One button per game; each game has its own verb (auto-movement otherwise). The v
 |-------|------|---------|---------------------|
 | 1 | Trap Race (`docs/games/trap-race.md` § R1) | 4 | top 3 finishers/rankers |
 | 2 | Hammer Dodge (`docs/games/hammer-dodge.md`) | 3 | last 2 alive |
-| FINAL | Trap Race — Final variant (narrow course) | 2 — or 3 if R2 over-qualifies via § 7.1 / timeout | last 1 (champion) |
+| FINAL | Trap Race — Final variant (narrow course) | 2 — up to 4 via § 7.1 chains (R1 four-way tie → R2 timeout) | last 1 (champion) |
 
 - Eliminated players never re-enter the show.
+- Shared qualification can cascade: every spec tolerates one extra starter beyond its nominal row (R2 accepts 4; FINAL accepts 2–4).
 - If the human is eliminated, remaining rounds resolve instantly (simulation summary, § 7.3).
 
 ## 5. Round Flow States
