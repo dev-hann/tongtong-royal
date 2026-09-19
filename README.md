@@ -38,6 +38,7 @@ Read in this order. These documents are the project's code of conduct; they supe
 | 5 | [`docs/04-network-edge-cases.md`](docs/04-network-edge-cases.md) | Netcode edge cases, adversarial input, netcode anti-patterns |
 | 6 | [`docs/05-conventions.md`](docs/05-conventions.md) | Code style, Git workflow, versioning, Definition of Done |
 | 7 | [`docs/06-release-legal.md`](docs/06-release-legal.md) | Store rating, privacy, asset licensing |
+| 8 | [`docs/07-design-guide.md`](docs/07-design-guide.md) | Visual language: typography, color usage, motion/juice, screen patterns |
 
 **Conflict resolution order: `AGENTS.md` > `docs/*` > `README.md`.** If two documents disagree, the higher-priority one wins, and you must fix the lower one in the same commit.
 

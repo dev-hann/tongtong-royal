@@ -7,6 +7,15 @@ version: 0.1.0
 environment:
   sdk: ^3.13.0
 
+flutter:
+  fonts:
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/Fredoka.ttf
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito.ttf
+
 dependencies:
   flame: ^1.18.0
   flutter:
