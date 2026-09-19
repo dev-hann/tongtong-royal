@@ -27,6 +27,26 @@ void main() {
       expect(PlayerPalette.forIndex(5), PlayerPalette.two);
     });
 
+    test('forSeat gives seat 0 the chosen local color', () {
+      expect(PlayerPalette.forSeat(0, localIndex: 2), PlayerPalette.three);
+      expect(PlayerPalette.forSeat(0), PlayerPalette.one);
+    });
+
+    test('forSeat never collides with the local color', () {
+      for (var local = 0; local < PlayerPalette.all.length; local++) {
+        final used = <Color>{PlayerPalette.forSeat(0, localIndex: local)};
+        for (var seat = 1; seat < PlayerPalette.all.length; seat++) {
+          final color = PlayerPalette.forSeat(seat, localIndex: local);
+          expect(
+            color,
+            isNot(used.contains(color)),
+            reason: 'local $local, seat $seat',
+          );
+          used.add(color);
+        }
+      }
+    });
+
     test('every seat color contrasts with arena platform and background', () {
       const arena = ArenaPalette();
       for (final player in PlayerPalette.all) {

@@ -119,6 +119,19 @@ abstract final class PlayerPalette {
 
   /// Seat color for [index]; cycles every 4 seats.
   static Color forIndex(int index) => all[index % all.length];
+
+  /// Seat color for [seat] when the local human holds palette index
+  /// [localIndex] on seat 0 (GDD § 8.1 persisted profile color): the
+  /// human keeps the chosen color; the other seats take the
+  /// remaining palette colors in order, so no two seats collide.
+  static Color forSeat(int seat, {int localIndex = 0}) {
+    final local = localIndex % all.length;
+    if (seat == 0) {
+      return all[local];
+    }
+    final k = seat - 1;
+    return all[(k >= local ? k + 1 : k) % all.length];
+  }
 }
 
 /// Type scale (guide § 2): per-role [TextStyle]s carrying the role's
@@ -128,35 +141,49 @@ abstract final class PlayerPalette {
 abstract final class TypeScale {
   /// Display size (countdown numbers, logo).
   static const double displaySize = 64;
+
   /// Medium display size.
   static const double displayMediumSize = 48;
+
   /// Small display size.
   static const double displaySmallSize = 40;
+
   /// Screen/card titles (minigame names).
   static const double titleSize = 28;
+
   /// Headline size (section headers, HUD numerals).
   static const double headlineSize = 24;
+
   /// Large body size.
   static const double bodyLargeSize = 18;
+
   /// Body copy (rules, messages).
   static const double bodySize = 16;
+
   /// Labels, buttons, badges.
   static const double labelSize = 14;
+
   /// Small labels (compact chips).
   static const double labelSmallSize = 12;
+
   /// Large button label size.
   static const double buttonLargeSize = 20;
+
   /// Display weight (logo, big headings).
   static const int displayWeight = 700;
+
   /// Numeral weight — Fredoka SemiBold (guide § 2: HUD/podium
   /// numbers are always display-face SemiBold, never body-face).
   static const int numeralWeight = 600;
+
   /// Label weight.
   static const int labelWeight = 600;
+
   /// Letter spacing for uppercase labels: ~0.057em at 14px — wide
   /// enough to read as deliberate tracking on the rounded display
   /// face without scattering two-letter button verbs.
   static const double labelTracking = 0.8;
+
   /// Logo / hero display: Fredoka Bold.
   static const TextStyle display = TextStyle(
     fontFamily: FontTokens.display,
@@ -164,6 +191,7 @@ abstract final class TypeScale {
     fontWeight: FontWeight.w700,
     fontFamilyFallback: FontTokens.hangulFallback,
   );
+
   /// Countdown / big numerals: Fredoka SemiBold (guide § 2).
   static const TextStyle displayNumeral = TextStyle(
     fontFamily: FontTokens.display,
@@ -171,6 +199,7 @@ abstract final class TypeScale {
     fontWeight: FontWeight.w600,
     fontFamilyFallback: FontTokens.hangulFallback,
   );
+
   /// Screen/card titles and rank labels: Fredoka SemiBold.
   static const TextStyle title = TextStyle(
     fontFamily: FontTokens.display,
@@ -178,6 +207,7 @@ abstract final class TypeScale {
     fontWeight: FontWeight.w600,
     fontFamilyFallback: FontTokens.hangulFallback,
   );
+
   /// Button/badge labels: Fredoka SemiBold, tracked. Content-side
   /// rule: the caller passes the text already UPPERCASE.
   static const TextStyle label = TextStyle(
@@ -187,6 +217,7 @@ abstract final class TypeScale {
     letterSpacing: labelTracking,
     fontFamilyFallback: FontTokens.hangulFallback,
   );
+
   /// Large button labels (lobby primary actions).
   static const TextStyle labelLarge = TextStyle(
     fontFamily: FontTokens.display,
@@ -195,12 +226,14 @@ abstract final class TypeScale {
     letterSpacing: labelTracking,
     fontFamilyFallback: FontTokens.hangulFallback,
   );
+
   /// Body copy: Nunito Regular.
   static const TextStyle body = TextStyle(
     fontFamily: FontTokens.body,
     fontSize: bodySize,
     fontFamilyFallback: FontTokens.hangulFallback,
   );
+
   /// Emphasized body (player names on cards): Nunito Bold.
   static const TextStyle bodyEmphasis = TextStyle(
     fontFamily: FontTokens.body,
@@ -208,6 +241,7 @@ abstract final class TypeScale {
     fontWeight: FontWeight.w700,
     fontFamilyFallback: FontTokens.hangulFallback,
   );
+
   /// Status/helper labels in the body face: Nunito SemiBold,
   /// tracked ("Ready", "Not ready", helper chips).
   static const TextStyle bodyLabel = TextStyle(
@@ -218,6 +252,7 @@ abstract final class TypeScale {
     fontFamilyFallback: FontTokens.hangulFallback,
   );
 }
+
 /// 4-based spacing scale (logical px).
 abstract final class SpacingScale {
   /// 4 — hairline gaps, chip innards.

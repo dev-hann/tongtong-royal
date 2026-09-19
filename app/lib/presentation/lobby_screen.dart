@@ -45,6 +45,7 @@ class LobbyScreen extends StatelessWidget {
     required this.canStart,
     this.onStart,
     this.onSolo,
+    this.localColorIndex = 0,
     super.key,
   });
 
@@ -66,6 +67,10 @@ class LobbyScreen extends StatelessWidget {
   /// Invoked when the player starts a solo match vs bots; when null
   /// (default) no solo button is shown.
   final VoidCallback? onSolo;
+
+  /// Palette index of the local player's persisted profile color
+  /// (GDD § 8.1); seat 0 renders it and the other seats avoid it.
+  final int localColorIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -91,9 +96,11 @@ class LobbyScreen extends StatelessWidget {
                           index: index,
                           child: TtrSeatCard(
                             nickname: player.displayName,
-                            playerColor: PlayerPalette.forIndex(index),
-                            isReady:
-                                player.isReady && !player.isDisconnected,
+                            playerColor: PlayerPalette.forSeat(
+                              index,
+                              localIndex: localColorIndex,
+                            ),
+                            isReady: player.isReady && !player.isDisconnected,
                             isBot: player.isBot,
                             isLocal: player.isLocal,
                           ),

@@ -53,4 +53,39 @@ void main() {
 
     expect(find.byType(SafeArea), findsOneWidget);
   });
+
+  testWidgets('top-left avatar entry shows profile color and initial', (
+    tester,
+  ) async {
+    var opened = false;
+    await tester.pumpWidget(
+      wrap(
+        HomeScreen(
+          nickname: 'HANN',
+          colorIndex: 2,
+          onOpenProfile: () => opened = true,
+        ),
+      ),
+    );
+
+    expect(find.byKey(HomeScreen.profileButtonKey), findsOneWidget);
+    expect(find.text('H'), findsOneWidget);
+
+    await tester.tap(find.byKey(HomeScreen.profileButtonKey));
+    await tester.pump();
+    expect(opened, isTrue);
+  });
+
+  testWidgets('top-right settings gear opens the settings screen', (
+    tester,
+  ) async {
+    var opened = false;
+    await tester.pumpWidget(
+      wrap(HomeScreen(onOpenSettings: () => opened = true)),
+    );
+
+    await tester.tap(find.byKey(HomeScreen.settingsButtonKey));
+    await tester.pump();
+    expect(opened, isTrue);
+  });
 }

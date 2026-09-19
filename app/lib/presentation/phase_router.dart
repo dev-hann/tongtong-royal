@@ -21,6 +21,7 @@ class PhaseRouter extends StatelessWidget {
   const PhaseRouter({
     required this.controller,
     this.lobbyPlayers = const [],
+    this.lobbyLocalColorIndex = 0,
     this.canStart = false,
     this.onStart,
     this.onSolo,
@@ -44,6 +45,10 @@ class PhaseRouter extends StatelessWidget {
 
   /// Lobby view data (players currently in the room).
   final List<LobbyPlayer> lobbyPlayers;
+
+  /// Palette index of the local player's profile color; forwarded to
+  /// the lobby seat grid (seat 0 renders it, others avoid it).
+  final int lobbyLocalColorIndex;
 
   /// Whether the lobby Start button is enabled.
   final bool canStart;
@@ -101,6 +106,7 @@ class PhaseRouter extends StatelessWidget {
           RoundPhase.lobby => LobbyScreen(
             players: lobbyPlayers,
             canStart: canStart,
+            localColorIndex: lobbyLocalColorIndex,
             onStart: onStart,
             onSolo: onSolo,
           ),

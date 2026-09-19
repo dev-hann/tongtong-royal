@@ -54,6 +54,36 @@ void main() {
     );
   });
 
+  testWidgets('localColorIndex colors the local seat and avoids collisions', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        const LobbyScreen(
+          players: players,
+          canStart: false,
+          localColorIndex: 2,
+        ),
+      ),
+    );
+
+    final localAvatar = tester.widget<DecoratedBox>(
+      find.byKey(TtrSeatCard.avatarKey).at(0),
+    );
+    expect(
+      (localAvatar.decoration as BoxDecoration).color,
+      PlayerPalette.three,
+    );
+
+    final botAvatar = tester.widget<DecoratedBox>(
+      find.byKey(TtrSeatCard.avatarKey).at(1),
+    );
+    expect(
+      (botAvatar.decoration as BoxDecoration).color,
+      isNot(PlayerPalette.three),
+    );
+  });
+
   testWidgets('PLAY SOLO is the large primary action and fires onSolo', (
     tester,
   ) async {

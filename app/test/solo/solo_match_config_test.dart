@@ -12,6 +12,13 @@ void main() {
     expect(config.rounds, MatchRules.roundCount);
   });
 
+  test('config carries the human nickname and color index', () {
+    const config = SoloMatchConfig(humanNickname: 'HANN', humanColorIndex: 2);
+    expect(config.humanNickname, 'HANN');
+    expect(config.humanColorIndex, 2);
+    expect(const SoloMatchConfig().humanColorIndex, 0);
+  });
+
   test('plan is deterministic for the same seed and generation', () {
     final a = planSoloRounds(
       rounds: 3,

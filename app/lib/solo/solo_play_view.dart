@@ -1,4 +1,6 @@
+import 'package:app/design/arena_palette.dart';
 import 'package:app/design/game_hud/ttr_action_button.dart';
+import 'package:app/design/tokens.dart';
 import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/controls/action_input_controller.dart';
 import 'package:app/game/controls/auto_input_source.dart';
@@ -26,13 +28,21 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 /// in the widget layer.
 final class SoloPlayView extends StatefulWidget {
   /// Creates the view over [session].
-  const SoloPlayView({required this.session, super.key});
+  const SoloPlayView({
+    required this.session,
+    this.humanColorIndex = 0,
+    super.key,
+  });
 
   /// Key of the one-button action control (tests).
   static const Key actionButtonKey = Key('solo_action_button');
 
   /// The round to mount (from [SoloMatchController.currentRound]).
   final SoloRoundSession session;
+
+  /// Palette index of the human's persisted profile color; the
+  /// local body renders with it (GDD § 8.1).
+  final int humanColorIndex;
 
   @override
   State<SoloPlayView> createState() => _SoloPlayViewState();
@@ -60,6 +70,9 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
   Game? _buildGame(SoloRoundSession session) {
     final simulation = session.simulation;
     final map = session.map;
+    final palette = ArenaPalette(
+      playerLocal: PlayerPalette.forIndex(widget.humanColorIndex),
+    );
     if (simulation is RaceSimulation && map is CourseMap) {
       return RaceGameView(
         simulation: simulation,
@@ -68,6 +81,7 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
         playerIds: session.rosterIds,
         tickInputsProvider: session.driver.buildInputs,
         tickEnabled: () => !session.isOver,
+        palette: palette,
       )..onStep = session.driver.postTick;
     }
     if (map is HammerArenaMap) {
@@ -78,6 +92,7 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
         playerIds: session.rosterIds,
         tickInputsProvider: session.driver.buildInputs,
         tickEnabled: () => !session.isOver,
+        palette: palette,
       )..onStep = session.driver.postTick;
     }
     // Unexpected archetype pairing: run headlessly instead of
@@ -110,8 +125,9 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
             child: Center(
               child: TtrActionButton(
                 key: SoloPlayView.actionButtonKey,
-                label: switch (
-                    ActionInputController.verbFor(widget.session.minigameId)) {
+                label: switch (ActionInputController.verbFor(
+                  widget.session.minigameId,
+                )) {
                   GameVerb.jump => 'JUMP',
                   GameVerb.dash => 'DASH',
                 },

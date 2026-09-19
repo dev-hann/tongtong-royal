@@ -15,6 +15,7 @@ final class SoloMatchConfig {
   const SoloMatchConfig({
     this.humanId = 'solo-player',
     this.humanNickname = 'You',
+    this.humanColorIndex = 0,
     this.rounds = MatchRules.roundCount,
     this.matchSeed = 0,
   });
@@ -24,6 +25,11 @@ final class SoloMatchConfig {
 
   /// Lobby nickname of the human seat.
   final String humanNickname;
+
+  /// PlayerPalette index (0..3) of the human seat's color
+  /// (GDD § 8.1 persisted profile color; injected by the shell
+  /// wiring, the controller never reads storage).
+  final int humanColorIndex;
 
   /// Rounds per match (GDD § 2: 3).
   final int rounds;
