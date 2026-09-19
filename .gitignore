@@ -34,3 +34,5 @@ ios/Pods/
 ios/.symlinks/
 android/.gradle/
 android/local.properties
+**/test_bundle.dart
+.patrol.env
