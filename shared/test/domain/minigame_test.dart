@@ -101,4 +101,27 @@ void main() {
     expect(sample.playerId, 'a');
     expect(sample.seconds, 12.5);
   });
+
+  test('round_events_carry_quota_roster_and_final_flag', () {
+    const events = RoundEvents(
+      roundIndex: 1,
+      events: [PlayerFinished(tick: 5, playerId: 'a')],
+      quota: 3,
+      isFinal: true,
+      roster: {'a', 'b'},
+    );
+
+    expect(events.quota, 3);
+    expect(events.isFinal, isTrue);
+    expect(events.roster, {'a', 'b'});
+  });
+
+  test('round_events_v1_defaults_keep_legacy_callsites_valid', () {
+    const events = RoundEvents(roundIndex: 0);
+
+    expect(events.quota, isNull);
+    expect(events.isFinal, isFalse);
+    expect(events.roster, isEmpty);
+    expect(events.events, isEmpty);
+  });
 }

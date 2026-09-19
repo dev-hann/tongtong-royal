@@ -56,15 +56,37 @@ final class HoldTimeSample extends RoundEvent {
 }
 
 /// Ordered raw events of one round, plus the round the events belong to.
+///
+/// v2 event channel (arch § 3): the show-level judgment context —
+/// [quota], [isFinal], [roster] — travels on the events so every
+/// resolver receives it through one input. All three default to
+/// legacy values, keeping v1 `resolve` call sites valid.
 final class RoundEvents {
   /// Creates the event log for round [roundIndex].
-  const RoundEvents({required this.roundIndex, this.events = const []});
+  const RoundEvents({
+    required this.roundIndex,
+    this.events = const [],
+    this.quota,
+    this.isFinal = false,
+    this.roster = const {},
+  });
 
   /// Zero-based index of the round inside the match.
   final int roundIndex;
 
   /// Events in emission (simulation) order.
   final List<RoundEvent> events;
+
+  /// Qualification quota of this round (GDD § 4); null on v1
+  /// placement-era calls.
+  final int? quota;
+
+  /// Whether this round is the FINAL (crown round, GDD § 4).
+  final bool isFinal;
+
+  /// Players fielded into this round, including players that emit
+  /// no events at all (idle bodies).
+  final Set<PlayerId> roster;
 
   /// Distinct players mentioned by the events, in first-appearance order.
   List<PlayerId> get players {

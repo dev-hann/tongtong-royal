@@ -52,6 +52,7 @@ Run-right, jump at gaps/obstacles within look-ahead 2.5 m (map-data driven), stu
 - A fall during the qualifying instant still counts: the finish sensor order at that tick is final.
 - FINAL shared-fall: both bodies get elimination events on one tick → crown shared (GDD § 7.2), both get `crownsWon`.
 - Hammer contact = elimination in FINAL (vs. checkpoint respawn in R1) — variant rule, not physics change.
+- FINAL counts every elimination-class event (`PlayerFell` AND `PlayerEliminated`) as out — no-respawn means all falls are final.
 
 ## PATROL anchors
 

@@ -14,6 +14,7 @@ The show's survival archetype: ROUND 2 (3 players, quota: last 2 alive). Fall Gu
 ## Qualification
 
 - **Quota (nominal 3 players → 2; tolerates 4 starters** when R1 over-qualifies, GDD § 4 note): the round ends the instant only 2 players remain alive; survivors qualify, everyone eliminated before that instant is out.
+- **Qualified order** (crossing case): survivors first (in life order), then the crossing event's victims in elimination order.
 - **Boundary rule**: GDD § 7.1 applies literally — if one event eliminates multiple players crossing the quota (3 alive → 1 in one tick), the victims of that event ALSO qualify (shared qualification). The FINAL then starts with 3 runners (see `trap-race.md` § FINAL: supports 2–3 starters; quota always 1).
 - **Timeout (60 s)**: all remaining survivors qualify (shared) — survival IS the qualification.
 - Elimination: hammer contact or falling off the platform. No respawn, no second chances.

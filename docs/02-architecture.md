@@ -63,11 +63,15 @@ final class QualificationResult {
   final bool isFinal;               // FINAL rounds crown champions
   final List<PlayerId> champions;   // empty unless isFinal; exactly 1,
                                     // or 2 for a shared crown (GDD 7.2 —
-                                    // both get crownsWon)
+                                    // both get crownsWon). In FINAL rounds
+                                    // qualified == champions (the champion
+                                    // IS the qualifier).
 }
 ```
 
 The quota is a property of the SHOW SCHEDULE (GDD § 4), not the game: resolvers receive the quota via the event/input channel and apply it. The show state machine chains rounds `4 → 3 → 2 (or 3 via shared qualification) → crown` (domain-owned; `QUALIFY_FLASH` replaces the v1 `ROUND_RESULTS` phase; `toPodium` is the reachable ending).
+
+**Transition shape (until the app wave migrates the v1 shell):** the code carries both eras side by side. `MiniGame.resolve` keeps returning v1 placements (the live v1 shell depends on it); the v2 contract is `QualificationGame.resolveQualification(events, [input])` returning `QualificationResult`. Quota, `isFinal`, and the roster travel ON `RoundEvents` (this section's event channel); the optional input parameter carries per-minigame continuous data (`TrapRaceInput.progressSamples`) and must be the game's own input type. When the v1 shell retires, `resolve` is deleted and `resolveQualification` moves onto `MiniGame`.
 
 **Event channels (concrete):** `RoundEvents` carries ordered discrete events (`PlayerFinished`, `PlayerFell`, `PlayerEliminated`, ... — sealed set) + quota + roster. Continuous data (e.g. race progress samples) travels via an optional per-minigame input parameter (e.g. `TrapRaceInput { roster, progressSamples }`). Last progress sample per player wins.
 

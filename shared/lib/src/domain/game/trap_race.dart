@@ -1,6 +1,8 @@
+import 'package:tongtong_shared/src/domain/game/trap_race_qualification.dart';
 import 'package:tongtong_shared/src/domain/minigame.dart';
 import 'package:tongtong_shared/src/domain/models.dart';
 import 'package:tongtong_shared/src/domain/placements.dart';
+import 'package:tongtong_shared/src/domain/qualification.dart';
 import 'package:tongtong_shared/src/domain/race_rules.dart';
 
 /// A forward-progress distance sample of one racer (GDD § 7.4).
@@ -46,7 +48,7 @@ final class TrapRaceInput {
 /// (GDD § 7.6); unfinished players place below all finishers by last
 /// progress distance, furthest first (GDD § 7.4). Falls only respawn,
 /// they never affect ranking.
-final class TrapRace implements MiniGame {
+final class TrapRace implements QualificationGame {
   /// Creates the game.
   const TrapRace();
 
@@ -100,4 +102,8 @@ final class TrapRace implements MiniGame {
       ),
     );
   }
+
+  @override
+  QualificationResult resolveQualification(RoundEvents events,
+      [Object? input]) => TrapRaceQualification.resolve(events, input);
 }
