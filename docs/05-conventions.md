@@ -86,7 +86,7 @@ GOOD: feat(game): checkpoint respawn on fall (GDD § 4.1)
 
 ### M4 — Minigame expansion *(superseded 2026-09-19)*
 
-Originally "Hammer Dodge + King of the Hill + selection rule". The scope reset (GDD § 8.2) deleted those games; this milestone is re-scoped by `docs/08-roadmap.md` (trigger-gated). Historical record; no current DoD items.
+Originally "Hammer Dodge + King of the Hill + selection rule". Superseded twice: first by the single-game scope reset, then by **GDD v2 (show era)**. The active game work is defined by `docs/games/*.md` specs — current: Hammer Dodge revival (R2) + Trap Race FINAL variant. DoD: every game doc section implemented + tested; show structure (4→3→2→1) green in domain; crown stats recorded; PATROL anchors per game doc present on the Pi rig.
 
 ### M5 — Release
 

@@ -1,150 +1,110 @@
-# 01 — Game Design Document (GDD)
+# 01 — Game Design Document (GDD) v2
 
-TongTong Royal: 2-4 player real-time physics minigame collection. Fall Guys-scale fun, pocket-scale scope.
+TongTong Royal: a Fall Guys-benchmarked show of qualification rounds. 4 players (1 human + 3 bots in MVP), three rounds, one crown.
+
+Game-level specs live in `docs/games/*.md` (per-game documents, `_template.md` defines the schema). This document owns SHOW-level rules only.
 
 ---
 
 ## 1. Core Loop
 
 ```
-Home → ROUND_INTRO (3s, rule one-liner)
-     → ROUND_PLAY (one Trap Race, ≤90s)
-     → ROUND_RESULTS (terminal: placements)
-        ├─ PLAY AGAIN → ROUND_INTRO (fresh mapSeed)
-        └─ HOME → Home
+Home → SHOW [
+  ROUND 1 (race)   → intro → play → qualifier flash
+  ROUND 2 (survival) → intro → play → qualifier flash
+  FINAL  (race variant) → intro → play → crown moment
+] → Podium (crown ceremony) → Home
 ```
 
-## 2. Round Structure & Scoring
+- One show = exactly **3 rounds** with player attrition `4 → 3 → 2 → 1`.
+- The show runs uninterrupted — no home between rounds.
+- The player's own elimination ends their view immediately (§ 7.3): summary with the simulated outcome, straight to Home or rematch.
 
-- **A match = ONE round** (single-shot flow, MVP simplification 2026-09-19). The race's finishing order IS the final ranking.
-- Ranking = placement in the round. **No cumulative points, no multi-round tie-breaks.** Placement points exist only for stats/HUD display:
+## 2. Judgment & Rewards (Fall Guys principle)
 
-| Players in round | 1st | 2nd | 3rd | 4th |
-|------------------|-----|-----|-----|-----|
-| 4 | 4 | 3 | 2 | 1 |
-| 3 | 3 | 2 | 1 | — |
-| 2 | 2 | 1 | — | — |
+- **Qualification is binary.** Each round has a quota; players either qualify or are eliminated. **No points, no scores, no accumulation** (the v1 placement-points system is repealed).
+- The champion of the FINAL wins the **crown** — the only reward that matters.
+- Profile stats (crown-centered, replacing v1 stats):
+  - `crownsWon` — finals won
+  - `finalsReached` — times the player reached the FINAL round
+  - `showsPlayed` — shows started
+- Best race time remains as a side record (finishers only, per `docs/games/trap-race.md`); it never affects show outcomes.
 
-- **Shared ranks** (e.g. same-tick finish, § 7.6): players share the rank; the next rank is skipped. A shared 1st means two winners.
+## 3. Controls
 
-## 3. Controls (one button, fully automatic movement)
+One button per game; each game has its own verb (auto-movement otherwise). The verb table per game lives in its game doc. MVP games are both JUMP.
 
-One-button with automatic movement (hyper-casual standard):
+## 4. The Show Structure
 
-| Minigame | Button | Automatic behavior |
-|----------|--------|--------------------|
-| Trap Race | Jump | Auto-run: constant rightward movement |
+| Round | Game | Players | Qualification quota |
+|-------|------|---------|---------------------|
+| 1 | Trap Race (`docs/games/trap-race.md` § R1) | 4 | top 3 finishers/rankers |
+| 2 | Hammer Dodge (`docs/games/hammer-dodge.md`) | 3 | last 2 alive |
+| FINAL | Trap Race — Final variant (narrow course) | 2 | last 1 (champion) |
 
-Rules:
-
-- **One button.** No joystick, no d-pad, no second button.
-- Movement is **fully automatic** — the player only times the jump.
-- Internal representation: clients translate (auto-steering + button edges) into the `PlayerInputState` vector. Protocol, server, netcode, and bots are unaffected.
-- Bot opponents (§ 9) are unaffected: they already produce input vectors directly.
-- The dash verb remains in the input vocabulary (`GameVerb.dash`) for future minigames; no MVP game uses it.
-
-## 4. MVP Minigame
-
-One minigame (one archetype, the race; more are planned post-MVP § 8.2 / roadmap 08). Maps are data. The minigame implements the shared `MiniGame` interface (see `docs/02-architecture.md` § Minigame Interface).
-
-### 4.1 Trap Race (archetype: race)
-
-- **Goal**: first to the finish line. Placement = finish order.
-- **Course**: static platforms, rotating hammers (kinematic bodies), moving platforms, fall zones (kill volumes → respawn at last checkpoint).
-- **Checkpoints**: crossing a checkpoint sets respawn point. Respawn keeps you in the race (no elimination).
-- **Round end**: when all players finish, or timeout (90s) — see §7.4.
+- Eliminated players never re-enter the show.
+- If the human is eliminated, remaining rounds resolve instantly (simulation summary, § 7.3).
 
 ## 5. Round Flow States
 
 ```
-LOBBY(Home) → ROUND_INTRO (3s, rule one-liner)
-            → ROUND_PLAY (≤90s)
-            → ROUND_RESULTS (placements, no auto-advance)
-            → LOBBY(Home)      [PLAY AGAIN re-enters ROUND_INTRO with a fresh seed]
-
-ROUND_PLAY → LOBBY(Home)  [ABANDON: solo quit mid-round — § 7.11]
+LOBBY(Home) → SHOW_INTRO (3 s, round name + verb reminder)
+            → ROUND_PLAY (per-game duration cap)
+            → QUALIFY_FLASH (qualified/eliminated reveal, 4 s)
+            → [next SHOW_INTRO | PODIUM]
+PODIUM → LOBBY (crown ceremony + PLAY AGAIN / HOME)
 ```
 
-State machine is owned by `shared/domain`. With the single-round match, `ROUND_RESULTS → LOBBY` is the ending transition (`toPodium` remains available to the machine for compatibility but the MVP shell does not route through PODIUM).
+State machine owned by `shared/domain` (architecture doc § 3). The v1 `ROUND_RESULTS` screen is superseded by `QUALIFY_FLASH`; `toPodium` becomes the reachable show ending.
 
-## 6. Round Seeding
+## 6. Difficulty & Seeds
 
-Each play generates a fresh `mapSeed` (host/solo side); identical seed = identical course variant for every participant (network doc § Sequencing). No selection rule — there is one minigame.
+- Difficulty is a function of **round position**, not escalation tiers: the FINAL uses a harder variant (narrow course) by design. No infinite-run or tier systems (repealed).
+- Every round generates a fresh `mapSeed` from `showSeed + roundIndex`; identical seed = identical course for all participants.
 
-## 7. Game-Rule Edge Cases (exhaustive — do not improvise beyond this list)
+## 7. Show-Level Edge Cases (exhaustive)
 
-### 7.1 Start conditions
+### 7.1 Qualification boundary
 
-- Round 1 starts only when **all present players are ready** AND the **host presses Start**.
-- Minimum 2 players to start a match. Below that, the room stays in lobby.
+The round ends at the **first instant** the alive/finished count reaches quota; everyone qualified at that instant is in. If a single event takes the field from above-quota to below-quota simultaneously (multi-elimination on one tick), the victims of that event **also qualify** (shared qualification) — the quota never silently shrinks.
 
-### 7.2 Player leaves mid-round (online rooms; infra preserved)
+### 7.2 Simultaneous final elimination
 
-- The round **continues** with remaining players; ranking scales to players ranked at round end (table §2).
-- The leaver is **excluded from the results ranking** (forfeit).
-- Their physics body stays in the world, idle (no input), for the rest of the round. See network doc § Player Disconnect.
+If both finalists are eliminated on the same tick, the crown is **shared** (both get `crownsWon`).
 
-### 7.3 One player remains (everyone else left)
+### 7.3 The human is eliminated mid-show
 
-- The round **ends immediately**. The remaining player **wins**.
+Remaining rounds resolve instantly: the summary shows the simulated show outcome (which bot wins) and the player's stats record the elimination (`showsPlayed` +1; `finalsReached` only if eliminated in the FINAL). Buttons: PLAY AGAIN / HOME.
 
-### 7.4 Race: nobody finishes by timeout
+### 7.4 Show abandonment
 
-- At timeout, unfinished players are ranked by **forward progress distance** (furthest first), below all finishers.
+System back (or the exit control) during any round → confirm dialog (`TtrQuitDialog`) → on QUIT the show is abandoned: **no stats recorded** (not even `showsPlayed`), back to Home. Back at PODIUM/Home behaves per the ux-checklist matrix.
 
-### 7.6 Simultaneous finish (same tick)
+### 7.5 Backgrounding
 
-- Players finishing on the same simulation tick **share the rank**; the next rank is skipped (two players share 1st → next finisher is 3rd).
+The player's body goes idle; the round continues; auto-rejoin within the reconnect grace (network doc § 5.3 applies to future online shows; solo: the sim pauses nothing — bots keep playing).
 
-### 7.8 AFK players
+### 7.6 One-player edge
 
-- **MVP: no AFK detection or handling.** Explicitly out of scope (backlog). Do not implement idle kicks or auto-ready.
-
-### 7.9 Rejoining mid-round (online rooms)
-
-- A leaver may rejoin within the reconnect grace window (network doc § Reconnect); they resume as an idle-body seat for the rest of the round and re-enter play on the next round start. They cannot rejoin after the results screen.
-
-### 7.10 Host starts a round, then a player readies/unreadies
-
-- Once `ROUND_INTRO` begins, ready state is frozen. Late/absent players are spectators until the next round.
-
-### 7.11 Solo abandon (quit mid-round)
-
-- Solo (vs bots) only: the local player may quit during `ROUND_PLAY` — an exit button top-right or the system back gesture, both behind a confirm dialog ("Quit the race?").
-- Transition: `ROUND_PLAY → LOBBY` directly (machine `abandon`). No `ROUND_RESULTS`, **no result recorded, no stats recorded** (abandoned races never reach the results screen, which is the single stats trigger).
-- The bots' virtual outcome is discarded; starting solo again begins a fresh match with a fresh seed.
+Solo show always starts with bot fill to 4 seats (§ 9). If every bot is eliminated before the human, the show continues normally (quota rules don't depend on who the survivors are).
 
 ## 8. Scope
 
 ### 8.1 MVP (in)
 
-- **Single-round solo play vs bots** (1 human + 3 bots): Home → intro → one Trap Race → results → Home. This is the MVP release flow.
-- **Multiplayer infra preserved but not user-facing yet**: rooms/invite codes/netcode remain in the repo (server, protocol, host/remote client code) for the planned rebuild — do not delete, do not wire into the shell.
-- **Bot fill** (§ 9).
-- **Local profile** (no accounts, no server sync): nickname (first-launch onboarding, default `PLAYER`, editable), player color (persisted; drives seat color + in-game local rendering), stats (races played, wins, first-place finishes — recorded at the results screen, stored locally only).
-- **Best record**: the fastest finish time (ms) among COMPLETED races. Finishers only — timeout-ranked rounds (§ 7.4) never set records; an equal time does not beat the record.
-- **Settings**: sound toggle (mutes the SFX engine instantly; persisted), credits (asset attribution view — legal § 3 duty), app version.
-- **Sound effects**: five one-shot cues — UI tap, jump, finish, fanfare (rank 1), fail (quiet, timed-out human) — gated by the sound flag. Best-score persistence (the best record above) and simple character customization (color) complete the loop.
+- Solo shows vs 3 bots, 3-round structure, qualification + crown, podium ceremony.
+- Crown stats (`crownsWon` / `finalsReached` / `showsPlayed`) + best-race-time side record.
+- Local profile/settings/onboarding as shipped (v1 meta shell unchanged).
+- **Multiplayer infra preserved but not user-facing** (server, protocol, host/remote code) — do not delete, do not wire.
 
-### 8.2 Backlog (explicitly out — do not build)
+### 8.2 Backlog (explicitly out)
 
-- Random matchmaking, AFK handling, spectator mode, cosmetics beyond color, chat, seasons, ranked, bot difficulty tiers.
-- Achievements/quests, progression/rewards, levels, replay history.
-- **Hammer Dodge** and **King of the Hill** — removed from MVP (2026-09-19 scope reset to single-game single-round; gameplay internals to be re-approached post-reset). The race engine remains the archetype base.
+- Random matchmaking, team games (Fall Guys mid-show team rounds), point-collection rounds (egg-hunt archetypes), spectator mode, chat, seasons, ranked, bot difficulty tiers.
+- King of the Hill (occupancy archetype) — dormant design, revisit per roadmap.
+- A third competitive archetype (the show uses two games + a variant for MVP; a third full game is trigger-gated per `docs/08-roadmap.md`).
 
-## 9. Bot Players
+## 9. Bots
 
-### 9.1 Fill policy
-
-- Solo play fills to 4 seats with bots (never displacing humans).
-- A bot's identity: `playerId` = `bot-1`..`bot-3`, nickname = `BOT 1`..`BOT 3`.
-- Bots are auto-ready; they never block start conditions.
-- Bots participate fully: placements, results — identical to humans, marked via nickname.
-- Disconnect rules do not apply to bots.
-- Bots run **host-side**: the simulating client generates their inputs each tick. Nothing bot-related crosses the wire.
-
-### 9.2 Behavior (difficulty: basic)
-
-- Heuristic steering. No pathfinding, no learning — predictable, fair-ish, occasionally clumsy (beatable by an average human).
-- Common: bots act on their own pose + map data + tick only (no omniscience; contact-level awareness of nearby bodies is allowed).
-- Race: run toward the finish, jump when obstructed or at gaps (map-data driven), occasional dash.
+- Solo shows fill to 4 seats: `bot-1..bot-3` / `BOT 1..3`, auto-ready, full participation — bots can qualify, eliminate the human, and win crowns.
+- Behavior profiles per game live in the game docs (`docs/games/*.md` § Bot profile). Basic difficulty: beatable but not free.
+- Bots never disconnect; nothing bot-related crosses the wire (host-side inputs).

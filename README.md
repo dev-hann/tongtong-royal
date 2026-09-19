@@ -32,7 +32,7 @@ Read in this order. These documents are the project's code of conduct; they supe
 | Priority | Document | Content |
 |----------|----------|---------|
 | 1 | [`AGENTS.md`](AGENTS.md) | Working rules for AI/human contributors. TDD cycle, prohibitions, gates |
-| 2 | [`docs/01-game-design.md`](docs/01-game-design.md) | Game rules, minigame specs, game-rule edge cases |
+| 2 | [`docs/01-game-design.md`](docs/01-game-design.md) | Show rules (v2: qualification, crown), show-level edge cases — per-game specs in [`docs/games/`](docs/games/) |
 | 3 | [`docs/02-architecture.md`](docs/02-architecture.md) | Layers, ownership, physics standards, layer anti-patterns |
 | 4 | [`docs/03-testing-strategy.md`](docs/03-testing-strategy.md) | Test pyramid, coverage gates, test smells |
 | 5 | [`docs/04-network-edge-cases.md`](docs/04-network-edge-cases.md) | Netcode edge cases, adversarial input, netcode anti-patterns |

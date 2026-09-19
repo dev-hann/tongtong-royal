@@ -42,28 +42,39 @@
 
 **Judging rule (critical):** Flame components, widgets, and server code must never compute points, placements, or winners. They feed raw events (`PlayerFinished(tick, playerId)`) into domain functions and display/relay the result.
 
-## 3. Minigame Interface
+## 3. Minigame Interface (v2 — qualification era)
 
-Every minigame implements the domain-level interface (defined in `shared/domain`):
+Every minigame implements the domain-level interface (defined in `shared/domain`). Since GDD v2, rounds produce **qualification verdicts**, not placement scores:
 
 ```dart
 abstract class MiniGame {
   MiniGameId get id;
-  // Domain-side: given ordered events for one round, produce placements.
-  RoundResult resolve(RoundEvents events); // events carry roundIndex
-  // Metadata for UI (names, rule one-liner, timeout duration).
-  MiniGameSpec get spec;
+  // Domain-side: given ordered events for one round, decide who
+  // QUALIFIES (GDD 2/7.1) — not who scores.
+  QualificationResult resolve(RoundEvents events); // events carry roundIndex
+  MiniGameSpec get spec; // names, verb, rule one-liner, timeout
+}
+
+/// Per-round verdict: qualifiers (+ shared-qualification groups per
+/// GDD 7.1), eliminated, and champion when this round is the FINAL.
+final class QualificationResult {
+  final List<PlayerId> qualified;   // order matters within (finish order)
+  final List<PlayerId> eliminated;  // elimination order
+  final bool isFinal;               // FINAL rounds crown a champion
+  final PlayerId? champion;         // null unless isFinal; shared-crown
+                                    // (GDD 7.2) yields BOTH in qualified
+                                    // with champion recorded per rules
 }
 ```
 
-The round state machine exposes transition helpers: `beginRound` (LOBBY → ROUND_INTRO), `startPlay` (ROUND_INTRO → ROUND_PLAY), `endRound` (ROUND_PLAY → ROUND_RESULTS), `toPodium`, `toLobby`. Invalid transitions throw `InvalidTransitionException`; `canTransition(to)` queries legality.
+The quota is a property of the SHOW SCHEDULE (GDD § 4), not the game: resolvers receive the quota via the event/input channel and apply it. The show state machine chains rounds `4 → 3 → 2 → crown` (domain-owned; `QUALIFY_FLASH` replaces the v1 `ROUND_RESULTS` phase; `toPodium` is the reachable ending).
 
-**Event channels (concrete):** `RoundEvents` carries ordered discrete events (`PlayerFinished`, `PlayerFell`, ... — sealed set). Continuous data (e.g. race progress samples) and the **round roster** (present players incl. idle/disconnected bodies that emit no events, GDD § 7.2) travel via an optional per-minigame input parameter (e.g. `TrapRaceInput { roster, progressSamples }`). Last progress sample per player wins; players with no events rank last by zero progress.
+**Event channels (concrete):** `RoundEvents` carries ordered discrete events (`PlayerFinished`, `PlayerFell`, `PlayerEliminated`, ... — sealed set) + quota + roster. Continuous data (e.g. race progress samples) travels via an optional per-minigame input parameter (e.g. `TrapRaceInput { roster, progressSamples }`). Last progress sample per player wins.
 
-- Rules live in `shared/domain` (resolving placements from events).
-- Physics construction (bodies, obstacles, map layout) lives in `app/game`, driven by **map data (JSON)** + the round seed.
+- Rules live in `shared/domain` (qualification from events). Show schedule (which game at which slot, quotas) is also domain: a `ShowSchedule` value object, not shell logic.
+- Physics construction (bodies, obstacles, map layout) lives in `app/game`, driven by **map data (JSON)** per `docs/games/*.md` schema + `mapSeed = f(showSeed, roundIndex)`.
 - The host runtime is minigame-agnostic: it drives any arena/course simulation through the `RoundSimulation` seam (`app/game/round_simulation.dart`) and dispatches per-minigame glue in `app/net/host/` (simulation factory + resolve-input packing).
-- Adding a new course variant of an existing archetype = new map data + renderer. No engine change. A new archetype additionally adds one case to each glue switch (`defaultRoundSimulationFactory`, `resolveRound`).
+- Adding a variant of an existing archetype = new map data + renderer + a game-doc spec (`docs/games/*.md`). A new archetype additionally adds one case to each glue switch (`defaultRoundSimulationFactory`, `resolveRound`) — and a new doc from `_template.md`.
 
 ## 4. Host-Authoritative Netcode (summary)
 

@@ -13,8 +13,10 @@ Usability criteria for every user-facing change. Joins the compliance review gat
   | Home | default app exit |
   | Pushed route (Profile/Settings/Credits) | pop the route |
   | ROUND_INTRO | abandon to Home (no dialog — nothing at stake in a 3 s countdown) |
-  | ROUND_PLAY | quit-confirm dialog (never silent app exit) |
-  | ROUND_RESULTS | go HOME |
+  | SHOW_INTRO / ROUND_PLAY (any round) | quit-confirm dialog (`TtrQuitDialog`) — abandoning the show records nothing |
+  | QUALIFY_FLASH (human qualified) | auto-advance to next round intro |
+  | QUALIFY_FLASH (human eliminated) | show summary with simulated outcome + PLAY AGAIN / HOME |
+  | PODIUM | PLAY AGAIN / HOME |
   | Onboarding (first launch) | default app exit (no route stack yet) |
 - [ ] **No trapped states**: from any screen, the user can reach Home within ≤ 2 interactions without killing the app. Long-running flows (a race) expose an explicit exit with a confirm dialog (`TtrQuitDialog`).
 - [ ] **Destructive actions confirm**: quit mid-race, anything that discards progress → dialog with clear verbs (QUIT / KEEP RUNNING).

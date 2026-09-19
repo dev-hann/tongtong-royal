@@ -115,3 +115,28 @@ Fredoka and Nunito are SIL OFL, bundled as `.ttf` assets in `app/assets/fonts/` 
 - Contrast: player colors are WCAG-checked against arena background (tokens test enforces).
 - Touch targets ≥ 88px for the action button, ≥ 56px standard buttons.
 - Reduced-motion support: backlog (not in MVP).
+
+## 9. Game Art & Audio (jelly-casual, vector-first)
+
+**Direction**: the game world speaks the same toy-box language as the shell — jelly blobs with faces, chunky hazards with attitude. **Vector-first hard rule**: all in-game art is code-drawn (Flame canvas painters in `design/game_art/`); raster sprites ship only when a future decision says so (then `assets/art/` + ATTRIBUTION law applies).
+
+### 9.1 Character language
+
+- Players are **jelly blobs**: `PlayerPalette` body color, two-dot eyes (blink state), squash-and-stretch on jump/land (motion § 4 scales), ragdoll spin on elimination. The local player keeps the white ring from the shell.
+- Hazards have **faces**: hammers/mallets carry simple angry-brow eyes; menace reads from shape + face, never gore.
+- Faces are 2–4 primitives max — readable at thumbnail size.
+
+### 9.2 Palette & shape law
+
+- All art colors come from `ArenaPalette` (or `PlayerPalette`) — the same tokens the shell uses. No free colors in painters.
+- Shapes: rounded everything (radius scale); hazard edges may go chunky-jagged only for the kill/void language (dark aura gradients, warning stripes on pit lips).
+
+### 9.3 Feedback art
+
+- Every game event gets a visual: elimination = pop + puff particles, qualification = burst at the player, crown = podium ceremony (guide § 6 patterns).
+- Motion smear arcs on sweeping hazards (cheap, legible speed).
+
+### 9.4 Audio
+
+- Cue table per game doc (`docs/games/*.md` § Art & Audio); shared ids: `ui_tap`, `jump`, `finish`, `fanfare`, `fail` (+ per-game loops).
+- Current SFX are ffmpeg-synthesized placeholders (release checklist row: swap for CC0 before store); every audio file carries an ATTRIBUTION row — synthesized or sourced, no exceptions.

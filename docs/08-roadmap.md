@@ -28,3 +28,8 @@ Direction, not commitment. Every item names its **trigger** — the observation 
 2. One milestone at a time; DoD gates apply (`docs/05-conventions.md` § 6).
 3. Bible rules are not suspended for new features — new mechanics get GDD rules first, same commit as implementation (AGENTS § 6.8).
 4. Protocol changes ride the N/N-1 rule; never force-update clients for a game-content addition.
+
+## 4. Design Eras (record)
+
+- **v1 (2026-09 early)**: multi-minigame point matches → scope reset to single-game single-round solo (2026-09-19).
+- **v2 (2026-09-19, ratified same day)**: Fall Guys-benchmarked shows — qualification rounds 4→3→2→1, crown-only rewards, per-game spec docs (`docs/games/`). The preserved multiplayer infra maps 1:1 onto the show model (host relays rounds; qualification verdicts travel as round results). Code for v2 starts only after the doc wave lands (user directive: docs first).
