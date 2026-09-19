@@ -21,6 +21,7 @@ dependencies:
   flutter:
     sdk: flutter
   forge2d: ^0.13.0
+  shared_preferences: ^2.3.0
   tongtong_shared:
     path: ../shared
   web_socket_channel: ^3.0.0
