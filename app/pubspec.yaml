@@ -46,8 +46,11 @@ dependencies:
   web_socket_channel: ^3.0.0
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.14.0
+  flutter_native_splash: ^2.4.0
   flutter_test:
     sdk: flutter
+  image: ^4.2.0
   integration_test:
     sdk: flutter
   patrol: "3.20.0"
@@ -58,3 +61,19 @@ patrol:
   test_directory: integration_test
   android:
     package_name: com.tongtongroyal.app
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/brand/icon_1024.png
+  adaptive_icon_background: "0xFFFF8C42"
+  adaptive_icon_foreground: assets/brand/adaptive_fg_1024.png
+
+flutter_native_splash:
+  color: "#F7F9FC"
+  color_dark: "#101820"
+  image: assets/brand/adaptive_fg_1024.png
+  android_12:
+    color: "#FF8C42"
+    icon_background_color: "#FF8C42"
+    image: assets/brand/adaptive_fg_1024.png
