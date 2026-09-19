@@ -56,17 +56,28 @@ class TtrQuitDialog extends StatelessWidget {
         'Your race will not be recorded.',
         style: TypeScale.body.copyWith(color: ColorPalette.neutral500),
       ),
+      // Dialog actions fill the row evenly (guide § 5): two equal
+      // stretched buttons, never right-clustered OverflowBar output.
       actions: <Widget>[
-        TtrButton(
-          key: confirmButtonKey,
-          label: 'QUIT',
-          variant: TtrButtonVariant.secondary,
-          onPressed: () => Navigator.of(context).pop(true),
-        ),
-        TtrButton(
-          key: keepRunningButtonKey,
-          label: 'KEEP RUNNING',
-          onPressed: () => Navigator.of(context).pop(false),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: TtrButton(
+                key: confirmButtonKey,
+                label: 'QUIT',
+                variant: TtrButtonVariant.secondary,
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ),
+            const SizedBox(width: SpacingScale.sm),
+            Expanded(
+              child: TtrButton(
+                key: keepRunningButtonKey,
+                label: 'KEEP RUNNING',
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+            ),
+          ],
         ),
       ],
     );
