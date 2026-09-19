@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/ttr_icons.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:flutter/material.dart';
 
@@ -6,6 +7,11 @@ import 'package:flutter/material.dart';
 /// abandon): tokened AlertDialog — TypeScale + ColorPalette +
 /// RadiusScale only. Completes `true` on QUIT, `false`/`null`
 /// (dismiss) otherwise.
+///
+/// Button emphasis is deliberate: the SAFE action (KEEP RUNNING)
+/// carries primary, the destructive QUIT stays secondary — the
+/// anti-misclick convention (guide § 3: destructive energy is never
+/// primary; danger color is reserved for status, not buttons).
 class TtrQuitDialog extends StatelessWidget {
   /// Creates the dialog.
   const TtrQuitDialog({super.key});
@@ -37,7 +43,15 @@ class TtrQuitDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(RadiusScale.card),
       ),
-      title: const Text('Quit the race?', style: TypeScale.title),
+      title: const Row(
+        children: [
+          Icon(TtrIcons.signOut, color: ColorPalette.neutral700, size: 24),
+          SizedBox(width: SpacingScale.sm),
+          Expanded(
+            child: Text('Quit the race?', style: TypeScale.title),
+          ),
+        ],
+      ),
       content: Text(
         'Your race will not be recorded.',
         style: TypeScale.body.copyWith(color: ColorPalette.neutral500),

@@ -75,7 +75,7 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 | Countdown / big number | `TtrCountdown` (pops per second) | plain `Text` |
 | Minigame announce | `TtrRoundBanner` under a `ROUND n / N` pill | unlabelled banner |
 | Transient message | `TtrToast` | `SnackBar` |
-| Destructive confirm (quit race) | `TtrQuitDialog` (tokened AlertDialog + `TtrButton` actions) | raw `AlertDialog` with default styling |
+| Destructive confirm (quit race) | `TtrQuitDialog` (tokened AlertDialog + `TtrButton` actions; **safe action carries primary, destructive stays secondary — anti-misclick convention**) | raw `AlertDialog` with default styling; danger-colored destructive buttons |
 | Route back affordance | `TtrBackButton` (left caret, top-left header) | text-only "< Back" or bare edge swipe |
 | Podium finish | Pedestal row (2-1-3 heights, trophy pulse) | flat ranked list |
 
