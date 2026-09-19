@@ -40,6 +40,7 @@ Pre-build sanity (learned from the 2026-09 icon incident — Material icon font 
 - [ ] Fonts are **static weight instances** with pubspec weight mappings (no variable TTFs — ux-checklist § 6)
 - [ ] Pushed screens use `TtrPageShell` (opaque background — ux-checklist § 3)
 - [ ] `AndroidManifest.xml` activity has `android:screenOrientation="portrait"` (ux-checklist § 4)
+- [ ] Device smoke passed on every connected test device (`scripts/smoke_device.sh`, testing doc § 9)
 
 ### Google Play
 

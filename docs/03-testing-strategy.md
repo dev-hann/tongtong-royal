@@ -92,3 +92,17 @@ Scope: create room → join 3 fake clients → ready → 1 short round → resul
 ## 8. CI Gates
 
 On every push/PR: `dart analyze` (zero warnings), `dart test` (all green), coverage ≥ floor for `shared/`. CI configuration: `.github/workflows/ci.yml`. Red CI blocks merge — no overrides without the user's explicit instruction.
+
+## 9. On-Device Smoke Test
+
+Every release candidate APK passes the device smoke before install/deploy (release checklist refs this):
+
+```bash
+scripts/smoke_device.sh <adb-serial>   # USB or network adb device
+```
+
+Flow asserted: install → launch → (onboarding SKIP if first launch) → home renders → PLAY SOLO → intro countdown → play (JUMP present, tapped ×3) → system back → quit dialog → KEEP RUNNING resumes → back → QUIT → home → process alive → **zero FATAL EXCEPTIONS** in logcat.
+
+- Text anchors come from real widget strings (`PLAY SOLO`, `First to the finish line`, `JUMP`, `Quit the race`, `KEEP RUNNING`, `QUIT`, `SKIP`) — if a label changes, the script and this list change in the same commit.
+- The smoke runs on every connected test device (phone today; the LineageOS Pi rig when enrolled).
+- Failure output includes the last fatal exceptions for triage.
