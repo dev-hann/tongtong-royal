@@ -84,7 +84,7 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 
 ## 6. Screen Layout Patterns
 
-**The Non-Game Form Law (absolute — violations are review blockers, AGENTS § 10).** Every screen outside the game world (HUD/play rendering) follows EXACTLY ONE of two archetypes. No third layouts, no per-screen improvisation:
+**The Non-Game Form Law (absolute — violations are review blockers, AGENTS § 10).** Every screen outside the game world (HUD/play rendering) follows EXACTLY ONE of two archetypes. No third layouts, no per-screen improvisation. **One exemption: Results is a terminal list screen** (staggered placement list + terminal actions) — its body is exempt from the FORM skeleton by design.
 
 - **A. FOCUSED** (single-purpose, no chrome): centered vertical column, no header, no scroll. Applies to: **Home, Round Intro, Results header zone**.
 - **B. FORM** (meta pages with content): `TtrPageHeader` (fixed, back + centered title, `SpacingScale.lg` padding — never inside the scroll area) + ONE scrollable body (`horizontal: SpacingScale.xl`) whose content appears ONLY inside `TtrCardGroup` sections (section label + card rows), actions full-width (`CrossAxisAlignment.stretch`), optional bottom-pinned footer. Applies to: **Profile, Settings, Credits, Onboarding** — and every future meta page.

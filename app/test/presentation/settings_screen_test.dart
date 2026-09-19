@@ -1,3 +1,4 @@
+import 'package:app/app_config.dart';
 import 'package:app/design/ttr_icons.dart';
 import 'package:app/design/widgets/ttr_back_button.dart';
 import 'package:app/design/widgets/ttr_card_group.dart';
@@ -96,7 +97,7 @@ void main() {
   testWidgets('version footer shows the app version const', (tester) async {
     await pumpScreen(tester);
 
-    expect(find.textContaining('0.1.0'), findsOneWidget);
+    expect(find.text('v$appVersion'), findsOneWidget);
   });
 
   testWidgets('form law: fixed header over two card sections', (

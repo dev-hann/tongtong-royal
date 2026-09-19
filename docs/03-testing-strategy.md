@@ -117,7 +117,7 @@ Hard rules. A test that breaks any of them does not merge — no exceptions, no 
 ### 10.1 Structure & naming
 
 1. **One behavior per test.** A test name that needs "and" to describe itself must be split. `points_scale_to_ranked_players`, not `points_and_ranks_and_ties`.
-2. **Name = behavior sentence**: `<subject>_<expected-behavior>[_<condition>]` in snake_case. Spec-reference tests prefix `gdd_<section>_`, network-doc tests `net_<section>_`, ux-checklist `ux_<section>_`.
+2. **Name = behavior sentence**: unit/domain/integration tests use `<subject>_<expected-behavior>[_<condition>]` in snake_case. Spec-reference tests prefix `gdd_<section>_`, network-doc tests `net_<section>_`, ux-checklist `ux_<section>_`. **Widget tests use prose sentences with spaces** (widget-test corpus convention; `testWidgets('shows the typographic logo')`) — snake_case is not required there.
 3. **AAA layout**: Arrange, Act, Assert — separated by blank lines or comments. An assert before the final act block is a structural defect.
 4. **File per subject**: test files mirror the unit under test (`placements.dart` → `placements_test.dart`). Cross-subject suites need a documented reason in the file header.
 

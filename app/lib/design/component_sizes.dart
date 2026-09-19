@@ -8,4 +8,12 @@
 abstract final class ComponentSizes {
   /// Avatar circle diameter on the profile/onboarding identity cards.
   static const double avatar = 96;
+
+  /// Home corner entry button (avatar / settings gear) — thumb-sized
+  /// circular target, SafeArea-protected corners (guide § 6 Home).
+  static const double homeEntry = 56;
+
+  /// Icon glyph inside home corner entries (24 = rows per § 2.1,
+  /// 28 = home entries per § 2.1 — kept as tokens, not literals).
+  static const double homeEntryIcon = 28;
 }

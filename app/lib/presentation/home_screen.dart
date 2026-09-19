@@ -77,7 +77,7 @@ class HomeScreen extends StatelessWidget {
                       icon: const Icon(
                         TtrIcons.gear,
                         color: ColorPalette.neutral700,
-                        size: 28,
+                        size: ComponentSizes.homeEntryIcon,
                       ),
                     ),
                   ],
@@ -162,8 +162,8 @@ class _ProfileEntryButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          width: 56,
-          height: 56,
+          width: ComponentSizes.homeEntry,
+          height: ComponentSizes.homeEntry,
           decoration: BoxDecoration(
             color: PlayerPalette.forIndex(colorIndex),
             shape: BoxShape.circle,

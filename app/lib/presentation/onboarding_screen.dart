@@ -2,6 +2,7 @@ import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/design/widgets/ttr_card_group.dart';
 import 'package:app/design/widgets/ttr_color_swatch.dart';
+import 'package:app/design/widgets/ttr_identity_fields.dart';
 import 'package:app/design/widgets/ttr_page_header.dart';
 import 'package:app/design/widgets/ttr_page_shell.dart';
 import 'package:app/infra/profile_store.dart';
@@ -132,50 +133,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               color: ColorPalette.neutral500,
                             ),
                           ),
-                          _AvatarBlock(
+                          TtrAvatar(
                             colorIndex: profile.colorIndex,
                             nickname: profile.nickname,
                           ),
-                          TextField(
+                          TtrNicknameField(
                             key: OnboardingScreen.nicknameFieldKey,
                             controller: _nickname,
+                            invalid: _invalid,
                             onSubmitted: (_) => _start(),
-                            maxLength: 20,
-                            textAlign: TextAlign.center,
-                            // Nicknames are names, not words — no
-                            // spell-check squiggles (ux-checklist).
-                            spellCheckConfiguration:
-                                const SpellCheckConfiguration.disabled(),
-                            style: TypeScale.title,
-                            decoration: InputDecoration(
-                              labelText: 'NICKNAME',
-                              labelStyle: TypeScale.bodyLabel,
-                              helperText: '1-12 characters',
-                              helperStyle: TypeScale.body.copyWith(
-                                color: ColorPalette.neutral500,
-                              ),
-                              errorText: _invalid
-                                  ? '1-12 characters after trimming'
-                                  : null,
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  RadiusScale.button,
-                                ),
-                                borderSide: const BorderSide(
-                                  color: ColorPalette.neutral200,
-                                  width: SpacingScale.xs,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  RadiusScale.button,
-                                ),
-                                borderSide: const BorderSide(
-                                  color: ColorPalette.primary,
-                                  width: SpacingScale.xs,
-                                ),
-                              ),
-                            ),
                           ),
                           TtrButton(
                             key: OnboardingScreen.startButtonKey,
@@ -203,31 +169,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _AvatarBlock extends StatelessWidget {
-  const _AvatarBlock({required this.colorIndex, required this.nickname});
-
-  final int colorIndex;
-  final String nickname;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: ComponentSizes.avatar,
-      height: ComponentSizes.avatar,
-      decoration: BoxDecoration(
-        color: PlayerPalette.forIndex(colorIndex),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          nickname.isEmpty ? '?' : nickname.characters.first.toUpperCase(),
-          style: TypeScale.title.copyWith(color: ColorPalette.onPrimary),
-        ),
       ),
     );
   }

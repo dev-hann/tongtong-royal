@@ -2,6 +2,7 @@ import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/design/widgets/ttr_card_group.dart';
 import 'package:app/design/widgets/ttr_color_swatch.dart';
+import 'package:app/design/widgets/ttr_identity_fields.dart';
 import 'package:app/design/widgets/ttr_page_header.dart';
 import 'package:app/design/widgets/ttr_page_shell.dart';
 import 'package:app/presentation/profile_stats.dart';
@@ -85,12 +86,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'IDENTITY',
                         staggerIndex: 0,
                         children: [
-                          _AvatarBlock(
+                          TtrAvatar(
+                            avatarKey: ProfileScreen.avatarKey,
                             colorIndex: profile.colorIndex,
                             nickname: profile.nickname,
-                            avatarKey: ProfileScreen.avatarKey,
                           ),
-                          _NicknameField(
+                          TtrNicknameField(
                             key: ProfileScreen.nicknameFieldKey,
                             controller: _nickname,
                             invalid: _invalid,
@@ -130,91 +131,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _AvatarBlock extends StatelessWidget {
-  const _AvatarBlock({
-    required this.colorIndex,
-    required this.nickname,
-    required this.avatarKey,
-  });
-
-  final int colorIndex;
-  final String nickname;
-  final Key avatarKey;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          key: avatarKey,
-          width: ComponentSizes.avatar,
-          height: ComponentSizes.avatar,
-          decoration: BoxDecoration(
-            color: PlayerPalette.forIndex(colorIndex),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              nickname.isEmpty ? '?' : nickname.characters.first.toUpperCase(),
-              style: TypeScale.title.copyWith(color: ColorPalette.onPrimary),
-            ),
-          ),
-        ),
-        const SizedBox(height: SpacingScale.md),
-        Text(nickname, style: TypeScale.bodyEmphasis),
-      ],
-    );
-  }
-}
-
-class _NicknameField extends StatelessWidget {
-  const _NicknameField({
-    required this.controller,
-    required this.invalid,
-    required this.onSubmitted,
-    super.key,
-  });
-
-  final TextEditingController controller;
-  final bool invalid;
-  final ValueChanged<String> onSubmitted;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onSubmitted: onSubmitted,
-      maxLength: ProfileController.maxNicknameLength + 8,
-      textAlign: TextAlign.center,
-      // Nicknames are names, not words — platform spell-check red
-      // squiggles under them are noise (ux-checklist).
-      spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
-      style: TypeScale.title,
-      decoration: InputDecoration(
-        labelText: 'NICKNAME',
-        labelStyle: TypeScale.bodyLabel,
-        helperText: '1-12 characters',
-        helperStyle: TypeScale.body.copyWith(color: ColorPalette.neutral500),
-        errorText: invalid ? '1-12 characters after trimming' : null,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(RadiusScale.button),
-          borderSide: const BorderSide(
-            color: ColorPalette.neutral200,
-            width: SpacingScale.xs,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(RadiusScale.button),
-          borderSide: const BorderSide(
-            color: ColorPalette.primary,
-            width: SpacingScale.xs,
-          ),
-        ),
       ),
     );
   }
