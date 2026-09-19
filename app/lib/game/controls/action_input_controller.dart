@@ -1,9 +1,9 @@
 import 'package:app/game/controls/steering.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
-/// The single button's verb for one minigame (GDD § 3).
+/// The single button's verb for the minigame (GDD § 3).
 enum GameVerb {
-  /// Trap Race, Hammer Dodge: the button jumps.
+  /// Trap Race: the button jumps.
   jump,
 
   /// Reserved for future minigames (GDD § 3: the dash verb stays in
@@ -13,9 +13,6 @@ enum GameVerb {
 
 /// Minigame id for Trap Race (shared domain `TrapRace.id`).
 const String trapRaceId = 'trap_race';
-
-/// Minigame id for Hammer Dodge (shared domain `HammerDodge.id`).
-const String hammerDodgeId = 'hammer_dodge';
 
 /// One-button input controller (GDD § 3): owns the physical button
 /// state (press/release edges) and combines it with the game's
@@ -28,14 +25,10 @@ const String hammerDodgeId = 'hammer_dodge';
 /// button widgets drive this through [press]/[release].
 final class ActionInputController {
   /// Creates a controller. [policies] overrides or extends the
-  /// built-in per-game steering (race and hammer defaults are
-  /// stateless; a future map-bound policy would register here).
+  /// built-in per-game steering (the race default is stateless; a
+  /// future map-bound policy would register here).
   ActionInputController({Map<String, SteeringPolicy> policies = const {}})
-    : _policies = {
-        trapRaceId: const RaceSteering(),
-        hammerDodgeId: const HammerSteering(),
-        ...policies,
-      };
+    : _policies = {trapRaceId: const RaceSteering(), ...policies};
 
   final Map<String, SteeringPolicy> _policies;
   bool _pressed = false;
@@ -46,7 +39,6 @@ final class ActionInputController {
   static GameVerb verbFor(String gameId) {
     switch (gameId) {
       case trapRaceId:
-      case hammerDodgeId:
         return GameVerb.jump;
       default:
         throw ArgumentError.value(gameId, 'gameId', 'unknown minigame id');

@@ -8,7 +8,7 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 typedef SoloRoundPlan = ({MiniGameId minigameId, int mapSeed});
 
 /// Configuration of a solo match: one human seat plus bot fill (GDD
-/// § 9.1), a fixed round count, and the seed family all randomness
+/// § 9.1), the round count, and the seed family all randomness
 /// derives from. Pure data — no rules here.
 final class SoloMatchConfig {
   /// Creates a config.
@@ -31,36 +31,38 @@ final class SoloMatchConfig {
   /// wiring, the controller never reads storage).
   final int humanColorIndex;
 
-  /// Rounds per match (GDD § 2: 3).
+  /// Rounds per match (GDD § 2: one).
   final int rounds;
 
-  /// Root seed of the match; every shuffle and map seed derives from
-  /// it, so a seed replays a whole match deterministically.
+  /// Root seed of the match; every map seed derives from it, so a
+  /// seed replays a whole match deterministically.
   final int matchSeed;
 }
 
 /// Large odd mixer so plan generations never reuse an rng stream.
 const int _generationStride = 1000003;
 
-/// Offset keeping the selector seed and the map-seed seed apart.
+/// Offset keeping the map-seed rng streams of generations apart.
 const int _mapSeedStreamOffset = 987654321;
 
-/// Plans the rounds of one solo match: minigames come from
-/// [MinigameSelector.planMatch] (GDD § 6 shuffled cycle) and each
-/// round's map seed from a dedicated rng stream, both keyed by
-/// `(matchSeed, generation)` — a rematch (higher [generation]) replans
-/// with fresh seeds from the same match seed family.
+/// Plans the rounds of one solo match (GDD § 6: no selection rule —
+/// the pool is dealt in registration order) with each round's map
+/// seed from a dedicated rng stream keyed by `(matchSeed,
+/// generation)` — a replay (higher [generation]) replans with fresh
+/// seeds from the same match seed family.
 List<SoloRoundPlan> planSoloRounds({
   required int rounds,
   required List<MiniGameId> pool,
   required int matchSeed,
   required int generation,
 }) {
-  final games = MinigameSelector.planMatch(
-    rounds,
-    pool,
-    matchSeed + generation * _generationStride,
-  );
+  if (pool.isEmpty) {
+    throw ArgumentError.value(pool, 'pool', 'must not be empty');
+  }
+  if (rounds < 0) {
+    throw ArgumentError.value(rounds, 'rounds', 'must not be negative');
+  }
+  final games = [for (var i = 0; i < rounds; i++) pool[i % pool.length]];
   final rng = math.Random(
     matchSeed + _mapSeedStreamOffset + generation * _generationStride,
   );

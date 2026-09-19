@@ -1,5 +1,3 @@
-import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hammer/hammer_simulation.dart';
 import 'package:app/game/bots/bot_factory.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
@@ -7,7 +5,6 @@ import 'package:app/net/host/round_simulation_factory.dart';
 import 'package:app/solo/solo_match_controller.dart';
 import 'package:app/solo/solo_play_view.dart';
 import 'package:app/solo/solo_round_driver.dart';
-import 'package:flame/game.dart' show GameWidget;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
@@ -19,7 +16,6 @@ void main() {
   SoloRoundSession buildSession(MiniGameId minigameId, int mapSeed) {
     final game = const MinigameRegistry().byId(minigameId);
     final map = switch (minigameId) {
-      BotFactory.hammerDodgeId => HammerArenaMap.hammerArena(mapSeed),
       _ => CourseMap.trapRace(mapSeed),
     };
     final simulation = defaultRoundSimulationFactory(
@@ -54,12 +50,6 @@ void main() {
     );
   }
 
-  int tickCountOf(Object simulation) => switch (simulation) {
-    final RaceSimulation race => race.currentTick,
-    final HammerSimulation hammer => hammer.currentTick,
-    _ => throw ArgumentError('unknown simulation'),
-  };
-
   testWidgets('race session pumps frames, ticks bots, stays healthy', (
     tester,
   ) async {
@@ -78,34 +68,10 @@ void main() {
     }
 
     // The Flame loop stepped the simulation (human + bot inputs fed).
-    expect(tickCountOf(session.simulation), greaterThan(0));
+    expect(session.simulation, isA<RaceSimulation>());
+    expect((session.simulation as RaceSimulation).currentTick, greaterThan(0));
     expect(tester.takeException(), isNull);
   });
-
-  for (final entry in {'hammer': BotFactory.hammerDodgeId}.entries) {
-    testWidgets('arena session (${entry.key}) mounts ArenaGameView', (
-      tester,
-    ) async {
-      final session = buildSession(entry.value, 3);
-      addTearDown(session.driver.dispose);
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: SoloPlayView(session: session)),
-        ),
-      );
-      await tester.pump();
-
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 50));
-      }
-
-      // Arena rounds render through the real Flame loop too.
-      expect(find.byType(GameWidget), findsOneWidget);
-      expect(session.driver.tickCount, greaterThan(0));
-      expect(tester.takeException(), isNull);
-    });
-  }
 
   testWidgets('race: one button labeled JUMP auto-runs the human', (
     tester,
@@ -126,18 +92,13 @@ void main() {
     }
 
     // Auto-steering feeds the sim: constant rightward movement.
-    expect(
-      session.simulation.poseOf(humanId)!.x,
-      greaterThan(startX),
-    );
+    expect(session.simulation.poseOf(humanId)!.x, greaterThan(startX));
     expect(find.text('JUMP'), findsOneWidget);
     expect(find.byKey(SoloPlayView.actionButtonKey), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('action button respects the bottom view padding', (
-    tester,
-  ) async {
+  testWidgets('action button respects the bottom view padding', (tester) async {
     final session = buildSession(BotFactory.trapRaceId, 1);
     addTearDown(session.driver.dispose);
 

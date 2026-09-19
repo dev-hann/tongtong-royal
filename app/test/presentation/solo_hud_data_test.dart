@@ -10,9 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 /// Minimal scripted [RoundSimulation]: each tick retires one player
-/// (emitting both `PlayerFinished` for race judging and
-/// `PlayerEliminated` for survival judging) and completes once every
-/// roster player retired.
+/// (emitting `PlayerFinished` for race judging) and completes once
+/// every roster player retired.
 class _ScriptedRaceSim implements RoundSimulation {
   _ScriptedRaceSim({required this.roster});
 
@@ -37,7 +36,6 @@ class _ScriptedRaceSim implements RoundSimulation {
   void tickInputs(Map<PlayerId, PlayerInputState> inputs) {
     final playerId = roster[_ticks % roster.length];
     _sink.add(PlayerFinished(tick: _ticks, playerId: playerId));
-    _sink.add(PlayerEliminated(tick: _ticks, playerId: playerId));
     _ticks++;
   }
 
@@ -82,14 +80,9 @@ void main() {
     clock = _ManualClock();
     solo = SoloMatchController(
       shell: shell,
-      config: const SoloMatchConfig(
-        humanId: 'you',
-        rounds: 2,
-        matchSeed: 7,
-      ),
-      simulationFactory: (id, seed, roster) => _ScriptedRaceSim(
-        roster: roster.toList(),
-      ),
+      config: const SoloMatchConfig(humanId: 'you', matchSeed: 7),
+      simulationFactory: (id, seed, roster) =>
+          _ScriptedRaceSim(roster: roster.toList()),
       scheduler: clock.schedule,
     );
   });
@@ -106,7 +99,6 @@ void main() {
     while (!session.driver.isRoundOver) {
       session.driver.tick();
     }
-    clock.elapseSeconds(6); // results dwell -> next phase
   }
 
   test('standings empty before any completed round', () {
@@ -116,9 +108,9 @@ void main() {
     expect(solo.resultsMinigameName, isNull);
   });
 
-  test('standings reflect completed rounds via domain rankings', () {
+  test('standings reflect the completed round via domain rankings', () {
     playRound();
-    expect(shell.phase, RoundPhase.roundIntro); // advanced past results
+    expect(shell.phase, RoundPhase.roundResults); // terminal phase
 
     final standings = solo.standings;
     expect(standings, hasLength(4)); // human + 3 bot seats.
@@ -128,16 +120,6 @@ void main() {
 
   test('standingsAfterLatestRound exposes totals and round deltas', () {
     playRound();
-    // Still in results dwell? playRound already advanced; rewind check:
-    // deltas are only meaningful during results, so re-run to results.
-    expect(shell.phase, RoundPhase.roundIntro);
-
-    // Drive to the results phase of round 2 and inspect there.
-    clock.elapseSeconds(3); // intro -> play
-    final session = solo.currentRound!;
-    while (!session.driver.isRoundOver) {
-      session.driver.tick();
-    }
     expect(shell.phase, RoundPhase.roundResults);
 
     final rows = solo.standingsAfterLatestRound;
@@ -145,13 +127,11 @@ void main() {
     final deltaSum = rows.fold<int>(0, (sum, e) => sum + e.roundDelta);
     expect(deltaSum, 10); // this round awarded 4+3+2+1.
     for (final row in rows) {
-      expect(row.totalPoints, greaterThanOrEqualTo(row.roundDelta));
+      // Single round: totals equal the round's placement points.
+      expect(row.totalPoints, row.roundDelta);
     }
     // Domain ordering: best total first.
-    expect(
-      rows.map((e) => e.totalPoints).toList(),
-      isSortedDescending,
-    );
+    expect(rows.map((e) => e.totalPoints).toList(), isSortedDescending);
   });
 
   test('remainingSeconds derives from the driver timeout budget', () {
@@ -160,9 +140,9 @@ void main() {
     final session = solo.currentRound!;
     final timeoutTicks = session.driver.timeoutTicks;
 
-    final expected = ((timeoutTicks - session.driver.tickCount) *
-            PhysicsConsts.fixedDt)
-        .ceil();
+    final expected =
+        ((timeoutTicks - session.driver.tickCount) * PhysicsConsts.fixedDt)
+            .ceil();
     expect(solo.remainingSeconds, expected);
 
     // The scripted sim finishes after `roster.length` ticks; tick to
@@ -171,35 +151,24 @@ void main() {
     for (var i = 0; i < 3; i++) {
       session.driver.tick();
     }
-    final afterTicks = ((timeoutTicks - session.driver.tickCount) *
-            PhysicsConsts.fixedDt)
-        .ceil();
+    final afterTicks =
+        ((timeoutTicks - session.driver.tickCount) * PhysicsConsts.fixedDt)
+            .ceil();
     expect(solo.remainingSeconds, afterTicks);
   });
 
-  test('resultsMinigameName resolves the latest round display name', () {
-    solo.startSolo();
-    clock.elapseSeconds(3);
-    final session = solo.currentRound!;
-    while (!session.driver.isRoundOver) {
-      session.driver.tick();
-    }
+  test('resultsMinigameName resolves the round display name', () {
+    playRound();
     expect(shell.phase, RoundPhase.roundResults);
-    expect(
-      solo.resultsMinigameName,
-      anyOf('Trap Race', 'Hammer Dodge'),
-    );
+    expect(solo.resultsMinigameName, 'Trap Race');
   });
 }
 
-final isSortedDescending = predicate<List<int>>(
-  (values) {
-    for (var i = 1; i < values.length; i++) {
-      if (values[i - 1] < values[i]) {
-        return false;
-      }
+final isSortedDescending = predicate<List<int>>((values) {
+  for (var i = 1; i < values.length; i++) {
+    if (values[i - 1] < values[i]) {
+      return false;
     }
-    return true;
-  },
-  'sorted descending',
-);
+  }
+  return true;
+}, 'sorted descending');

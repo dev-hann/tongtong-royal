@@ -8,8 +8,8 @@ void main() {
   Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   const result = RoundResult(
-    roundIndex: 1,
-    minigameId: 'hammer_dodge',
+    roundIndex: 0,
+    minigameId: 'trap_race',
     placements: [
       Placement(playerId: 'p1', rank: 1, points: 4),
       Placement(playerId: 'p2', rank: 2, points: 3),
@@ -17,17 +17,21 @@ void main() {
     ],
   );
 
-  RoundResultsScreen build({int? autoAdvanceSeconds}) => RoundResultsScreen(
+  RoundResultsScreen build({
+    VoidCallback? onPlayAgain,
+    VoidCallback? onExitHome,
+  }) => RoundResultsScreen(
     result: result,
-    roundNumber: 2,
-    totalRounds: 3,
-    minigameName: 'Hammer Dodge',
+    roundNumber: 1,
+    totalRounds: 1,
+    minigameName: 'Trap Race',
     standings: const [
-      StandingEntry(playerId: 'p1', totalPoints: 7, roundDelta: 4),
+      StandingEntry(playerId: 'p1', totalPoints: 4, roundDelta: 4),
       StandingEntry(playerId: 'p2', totalPoints: 3, roundDelta: 3),
       StandingEntry(playerId: 'p3', totalPoints: 2, roundDelta: 2),
     ],
-    autoAdvanceSeconds: autoAdvanceSeconds,
+    onPlayAgain: onPlayAgain,
+    onExitHome: onExitHome,
   );
 
   testWidgets('shows header pill with round, total and minigame name', (
@@ -35,14 +39,11 @@ void main() {
   ) async {
     await tester.pumpWidget(wrap(build()));
 
-    expect(
-      find.byKey(RoundResultsScreen.headerKey),
-      findsOneWidget,
-    );
-    expect(find.text('ROUND 2 / 3 · HAMMER DODGE'), findsOneWidget);
+    expect(find.byKey(RoundResultsScreen.headerKey), findsOneWidget);
+    expect(find.text('ROUND 1 / 1 · TRAP RACE'), findsOneWidget);
   });
 
-  testWidgets('shows round placements and cumulative standings with deltas', (
+  testWidgets('shows round placements and standings with deltas', (
     tester,
   ) async {
     await tester.pumpWidget(wrap(build()));
@@ -53,56 +54,46 @@ void main() {
     expect(find.text('+4'), findsOneWidget);
     expect(find.text('+3'), findsOneWidget);
     expect(find.text('+2'), findsOneWidget);
-    expect(find.text('7'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
   });
 
-  testWidgets('auto-advance progress bar fills over the dwell window', (
+  testWidgets('terminal screen: PLAY AGAIN and HOME buttons fire', (
     tester,
   ) async {
-    await tester.pumpWidget(wrap(build(autoAdvanceSeconds: 6)));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    final bar = tester.widget<LinearProgressIndicator>(
-      find.byKey(RoundResultsScreen.autoAdvanceKey),
+    var playAgain = 0;
+    var exitHome = 0;
+    await tester.pumpWidget(
+      wrap(build(onPlayAgain: () => playAgain++, onExitHome: () => exitHome++)),
     );
-    final early = bar.value ?? 0;
-    expect(early, lessThan(0.3));
 
-    await tester.pump(const Duration(seconds: 3));
-    final mid = tester.widget<LinearProgressIndicator>(
-      find.byKey(RoundResultsScreen.autoAdvanceKey),
-    ).value!;
-    expect(mid, greaterThan(early));
-    expect(mid, lessThan(1));
+    await tester.tap(find.byKey(RoundResultsScreen.playAgainButtonKey));
+    await tester.pump();
+    expect(playAgain, 1);
 
-    await tester.pump(const Duration(seconds: 3));
-    final done = tester.widget<LinearProgressIndicator>(
-      find.byKey(RoundResultsScreen.autoAdvanceKey),
-    ).value;
-    expect(done, isNull); // completed controller reports null value
+    await tester.tap(find.byKey(RoundResultsScreen.exitHomeButtonKey));
+    await tester.pump();
+    expect(exitHome, 1);
   });
 
-  testWidgets('no progress bar when autoAdvanceSeconds is null', (
-    tester,
-  ) async {
+  testWidgets('no auto-advance progress bar (terminal screen)', (tester) async {
     await tester.pumpWidget(wrap(build()));
-    expect(find.byKey(RoundResultsScreen.autoAdvanceKey), findsNothing);
+    await tester.pump(const Duration(seconds: 10));
+
+    expect(find.byType(LinearProgressIndicator), findsNothing);
   });
 
   testWidgets('renders placement rows verbatim in domain order', (
     tester,
   ) async {
     const unsorted = RoundResult(
-      roundIndex: 2,
-      minigameId: 'hammer_dodge',
+      roundIndex: 0,
+      minigameId: 'trap_race',
       placements: [
         Placement(playerId: 'p2', rank: 2, points: 3),
         Placement(playerId: 'p1', rank: 1, points: 4),
       ],
     );
-    await tester.pumpWidget(
-      wrap(const RoundResultsScreen(result: unsorted)),
-    );
+    await tester.pumpWidget(wrap(const RoundResultsScreen(result: unsorted)));
 
     final texts = tester
         .widgetList<Text>(find.byType(Text))
@@ -115,7 +106,7 @@ void main() {
 
   testWidgets('waiting placeholder when result is null', (tester) async {
     await tester.pumpWidget(
-      wrap(const RoundResultsScreen(roundNumber: 1, totalRounds: 3)),
+      wrap(const RoundResultsScreen(roundNumber: 1, totalRounds: 1)),
     );
     expect(find.text('Waiting for results...'), findsOneWidget);
   });

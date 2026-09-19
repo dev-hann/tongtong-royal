@@ -1,7 +1,7 @@
 /// Match-level game rules from the GDD (docs/01-game-design.md § 2, § 7.1).
 abstract final class MatchRules {
-  /// A match is 3 rounds (GDD § 2).
-  static const int roundCount = 3;
+  /// A match is one round (GDD § 2, single-round scope reset 2026-09-19).
+  static const int roundCount = 1;
 
   /// Minimum players to start a match (GDD § 7.1).
   static const int minPlayers = 2;

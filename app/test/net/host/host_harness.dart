@@ -1,4 +1,3 @@
-import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/player_character.dart';
@@ -30,22 +29,6 @@ CourseMap flatCourse(int mapSeed, {double finishX = 2}) => CourseMap(
 );
 
 const double _spawnClearance = 0.01;
-
-/// Deterministic Hammer Dodge arena: the factory variant without
-/// hammer arms, so eliminations are input-driven only (fixture
-/// parity with the HammerSimulation suite).
-HammerArenaMap hammerlessArena(int mapSeed) {
-  final base = HammerArenaMap.hammerArena(mapSeed);
-  return HammerArenaMap(
-    mapSeed: base.mapSeed,
-    platformRadius: base.platformRadius,
-    platformSegmentCount: base.platformSegmentCount,
-    platformThickness: base.platformThickness,
-    killRadius: base.killRadius,
-    spawnPoints: base.spawnPoints,
-    hammers: const [],
-  );
-}
 
 PlayerInputMessage inputSample({
   required int seq,

@@ -1,18 +1,16 @@
-import 'package:tongtong_shared/src/domain/game/hammer_dodge.dart';
 import 'package:tongtong_shared/src/domain/game/trap_race.dart';
 import 'package:tongtong_shared/src/domain/minigame.dart';
 import 'package:tongtong_shared/src/domain/models.dart';
 
 /// Dumb id-to-instance lookup over registered minigames.
 ///
-/// Holds no rules: selection belongs to `MinigameSelector`, judging to
-/// each [MiniGame]. `pool` feeds `MinigameSelector.planMatch`.
+/// Holds no rules: judging belongs to each [MiniGame]. `pool` feeds
+/// round planning (GDD § 6: one minigame, no selection rule).
 final class MinigameRegistry {
-  /// Creates the registry over [games], which defaults to every
-  /// built-in minigame.
-  const MinigameRegistry([
-    List<MiniGame> games = const [TrapRace(), HammerDodge()],
-  ]) : _games = games;
+  /// Creates the registry over [games], which defaults to the single
+  /// built-in MVP minigame (GDD § 4).
+  const MinigameRegistry([List<MiniGame> games = const [TrapRace()]])
+    : _games = games;
 
   final List<MiniGame> _games;
 

@@ -22,7 +22,7 @@ void main() {
     expect(sm.roundsCompleted, 0);
   });
 
-  test('gdd_5_after_fifth_results_only_podium_is_allowed', () {
+  test('gdd_5_after_final_results_podium_and_lobby_are_allowed', () {
     final sm = RoundStateMachine();
     for (var i = 0; i < MatchRules.roundCount; i++) {
       sm
@@ -32,12 +32,40 @@ void main() {
     }
 
     expect(sm.canTransition(RoundPhase.podium), isTrue);
+    expect(sm.canTransition(RoundPhase.lobby), isTrue);
     expect(sm.canTransition(RoundPhase.roundIntro), isFalse);
     expect(sm.beginRound, throwsA(isA<InvalidTransitionException>()));
   });
 
-  test('gdd_5_before_fifth_results_round_intro_is_allowed', () {
-    final sm = RoundStateMachine()
+  test('gdd_5_results_to_lobby_resets_the_round_counter', () {
+    final sm = RoundStateMachine();
+    for (var i = 0; i < MatchRules.roundCount; i++) {
+      sm
+        ..beginRound()
+        ..startPlay()
+        ..endRound();
+    }
+
+    sm.toLobby(); // single-round ending (GDD § 5)
+    expect(sm.phase, RoundPhase.lobby);
+    expect(sm.roundsCompleted, 0);
+  });
+
+  test('gdd_5_results_to_lobby_is_illegal_before_match_complete', () {
+    final sm = RoundStateMachine(maxRounds: 3)
+      ..beginRound()
+      ..startPlay()
+      ..endRound();
+
+    expect(sm.canTransition(RoundPhase.lobby), isFalse);
+    expect(
+      () => sm.transition(RoundPhase.lobby),
+      throwsA(isA<InvalidTransitionException>()),
+    );
+  });
+
+  test('gdd_5_before_final_results_round_intro_is_allowed', () {
+    final sm = RoundStateMachine(maxRounds: 3)
       ..beginRound()
       ..startPlay()
       ..endRound();
@@ -46,8 +74,8 @@ void main() {
     expect(sm.canTransition(RoundPhase.roundIntro), isTrue);
   });
 
-  test('gdd_7_3_podium_is_reachable_before_five_rounds', () {
-    final sm = RoundStateMachine()
+  test('gdd_7_3_podium_is_reachable_before_max_rounds', () {
+    final sm = RoundStateMachine(maxRounds: 3)
       ..beginRound()
       ..startPlay()
       ..endRound();

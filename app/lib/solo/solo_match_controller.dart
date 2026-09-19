@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/bots/bot_brain.dart';
 import 'package:app/game/bots/bot_factory.dart';
 import 'package:app/game/course/course_map.dart';
@@ -18,9 +17,6 @@ typedef SoloScheduler = void Function(Duration delay, VoidCallback callback);
 
 /// GDD § 5 intro countdown, seconds.
 const int soloIntroSeconds = 3;
-
-/// GDD § 5 results dwell before auto-advance, seconds.
-const int soloResultsSeconds = 6;
 
 /// One playable round handed to the play view: simulation, driver,
 /// map data and seat identities. Judging stays inside the driver's
@@ -40,7 +36,7 @@ final class SoloRoundSession {
   /// samples, completion).
   final SoloRoundDriver driver;
 
-  /// The round's simulation (any archetype).
+  /// The round's simulation.
   final RoundSimulation simulation;
 
   /// Map data the simulation was built from (renderer + bot maps).
@@ -63,9 +59,12 @@ final class SoloRoundSession {
 /// [ShellController]: plans the rounds ([planSoloRounds]), feeds the
 /// intro/results screens their data, builds each round's simulation
 /// and bot brains, and hands results to the shell after the domain
-/// resolves them. Owns no rules — placements and points come from
-/// the domain via [SoloRoundDriver.finish]; timers only through the
-/// injected [SoloScheduler].
+/// resolves them. Single-round flow (GDD § 2): ROUND_RESULTS is
+/// terminal — [playAgain] starts a fresh match (fresh seeds,
+/// ROUND_RESULTS -> LOBBY -> ROUND_INTRO), [exitToHome] returns to
+/// the lobby for the shell's home screen. Owns no rules — placements
+/// and points come from the domain via [SoloRoundDriver.finish];
+/// timers only through the injected [SoloScheduler].
 final class SoloMatchController extends ChangeNotifier {
   /// Creates the controller for [shell].
   SoloMatchController({
@@ -115,7 +114,7 @@ final class SoloMatchController extends ChangeNotifier {
   /// The human seat id.
   PlayerId get humanId => config.humanId;
 
-  /// Current match plan (regenerated per rematch).
+  /// Current match plan (regenerated per replay).
   List<SoloRoundPlan> get rounds => List.unmodifiable(_rounds);
 
   /// The round currently set up or running; null outside ROUND_PLAY.
@@ -141,8 +140,10 @@ final class SoloMatchController extends ChangeNotifier {
     if (driver == null) {
       return null;
     }
-    final left = (driver.timeoutTicks - driver.tickCount)
-        .clamp(0, driver.timeoutTicks);
+    final left = (driver.timeoutTicks - driver.tickCount).clamp(
+      0,
+      driver.timeoutTicks,
+    );
     return (left * PhysicsConsts.fixedDt).ceil();
   }
 
@@ -161,14 +162,29 @@ final class SoloMatchController extends ChangeNotifier {
     shell.startMatch();
   }
 
-  /// PODIUM -> LOBBY with a regenerated plan (rematch).
-  void rematch() {
-    if (shell.phase != RoundPhase.podium) {
+  /// ROUND_RESULTS -> LOBBY -> ROUND_INTRO with a regenerated plan
+  /// (fresh map seed, GDD § 5 PLAY AGAIN). Illegal-transitions
+  /// propagate (nothing swallowed).
+  void playAgain() {
+    if (shell.phase != RoundPhase.roundResults) {
       return;
     }
     shell.toLobby();
     _generation++;
     _replan();
+    shell.startMatch();
+    notifyListeners();
+  }
+
+  /// ROUND_RESULTS -> LOBBY; the shell shows its home screen (GDD §
+  /// 5 HOME). Illegal transitions propagate.
+  void exitToHome() {
+    if (shell.phase != RoundPhase.roundResults) {
+      return;
+    }
+    _generation++;
+    _replan();
+    shell.toLobby();
     notifyListeners();
   }
 
@@ -188,8 +204,6 @@ final class SoloMatchController extends ChangeNotifier {
       case RoundPhase.roundPlay:
         _startRound();
       case RoundPhase.roundResults:
-        _releaseRound();
-        _scheduleResultsAdvance();
       case RoundPhase.podium:
         _releaseRound();
       case RoundPhase.lobby:
@@ -256,25 +270,11 @@ final class SoloMatchController extends ChangeNotifier {
     _session = null;
   }
 
-  void _scheduleResultsAdvance() {
-    scheduler(const Duration(seconds: soloResultsSeconds), () {
-      if (shell.phase != RoundPhase.roundResults) {
-        return; // stale timer
-      }
-      if (shell.roundIndex < config.rounds) {
-        shell.beginRound();
-      } else {
-        shell.toPodium();
-      }
-    });
-  }
-
   /// Map binding mirroring [defaultRoundSimulationFactory] (the
   /// factory builds sims from these same constructors; bots and the
   /// renderer need the map data alongside the simulation).
   Object _mapFor(MiniGameId minigameId, int mapSeed) => switch (minigameId) {
     'trap_race' => CourseMap.trapRace(mapSeed),
-    'hammer_dodge' => HammerArenaMap.hammerArena(mapSeed),
     _ => throw ArgumentError.value(
       minigameId,
       'minigameId',

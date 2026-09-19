@@ -35,12 +35,14 @@ final class InvalidTransitionException implements Exception {
 
 /// Owns the round flow of a match (GDD § 5):
 /// LOBBY -> ROUND_INTRO -> ROUND_PLAY -> ROUND_RESULTS
-/// -> (next ROUND_INTRO | PODIUM) -> LOBBY.
+/// -> (next ROUND_INTRO | PODIUM | LOBBY).
 ///
-/// After [maxRounds] completed rounds the only exit from ROUND_RESULTS is
-/// PODIUM. Reaching PODIUM earlier is allowed so a match can end
-/// immediately when one player remains (GDD § 7.3). Returning to LOBBY
-/// resets the round counter for a rematch.
+/// After [maxRounds] completed rounds the exits from ROUND_RESULTS are
+/// PODIUM (kept for compatibility with multi-round flows) and LOBBY —
+/// the single-round ending transition (GDD § 5). Reaching PODIUM
+/// earlier is allowed so a match can end immediately when one player
+/// remains (GDD § 7.3). Returning to LOBBY resets the round counter
+/// for a rematch.
 class RoundStateMachine {
   /// Creates a machine starting in [initialPhase].
   RoundStateMachine({
@@ -73,6 +75,7 @@ class RoundStateMachine {
       RoundPhase.roundPlay => to == RoundPhase.roundResults,
       RoundPhase.roundResults =>
         to == RoundPhase.podium ||
+            (to == RoundPhase.lobby && isMatchComplete) ||
             (to == RoundPhase.roundIntro && !isMatchComplete),
       RoundPhase.podium => to == RoundPhase.lobby,
     };
@@ -86,7 +89,7 @@ class RoundStateMachine {
     if (_phase == RoundPhase.roundPlay && to == RoundPhase.roundResults) {
       _roundsCompleted++;
     }
-    if (_phase == RoundPhase.podium && to == RoundPhase.lobby) {
+    if (to == RoundPhase.lobby) {
       _roundsCompleted = 0;
     }
     _phase = to;
@@ -104,6 +107,7 @@ class RoundStateMachine {
   /// ROUND_RESULTS -> PODIUM.
   void toPodium() => transition(RoundPhase.podium);
 
-  /// PODIUM -> LOBBY; resets the match for a rematch.
+  /// PODIUM or ROUND_RESULTS (match complete) -> LOBBY; resets the
+  /// match for a rematch.
   void toLobby() => transition(RoundPhase.lobby);
 }

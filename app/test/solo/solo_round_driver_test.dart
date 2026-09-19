@@ -1,5 +1,5 @@
-import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/bots/bot_brain.dart';
+import 'package:app/game/course/course_map.dart';
 import 'package:app/game/view/race_game_view.dart';
 import 'package:app/solo/solo_round_driver.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,10 +107,10 @@ void main() {
     expect(others, hasLength(2));
   });
 
-  test('hammer hazards come from map kinematics and advance per tick', () {
-    final map = HammerArenaMap.hammerArena(5);
-    final sim = FakeSoloSim(minigameId: 'hammer_dodge', roster: roster)
-      ..poses['bot-1'] = (x: 2, y: 1, angle: 0, vx: 0, vy: 0);
+  test('course hammer hazards advance per tick', () {
+    final map = CourseMap.trapRace(5);
+    final sim = FakeSoloSim(minigameId: 'trap_race', roster: roster)
+      ..poses['bot-1'] = (x: 5, y: 2, angle: 0, vx: 0, vy: 0);
     final bot = _RecordingBrain();
     buildDriver(sim, brains: {'bot-1': bot}, map: map)
       ..tick()
@@ -195,15 +195,11 @@ void main() {
     expect(result.placements.last.playerId, 'bot-3');
   });
 
-  test('progress sampling is skipped for arena sims (no anchor)', () {
-    final sim = FakeSoloSim(minigameId: 'hammer_dodge', roster: roster);
+  test('progress sampling is skipped for sims without an anchor', () {
+    final sim = FakeSoloSim(minigameId: 'trap_race', roster: roster);
     var completions = 0;
-    final driver = buildDriver(
-      sim,
-      game: const HammerDodge(),
-      onComplete: (_) => completions++,
-    );
-    sim.emit(const PlayerEliminated(tick: 1, playerId: 'bot-1'));
+    final driver = buildDriver(sim, onComplete: (_) => completions++);
+    sim.emit(const PlayerFinished(tick: 1, playerId: 'bot-1'));
 
     driver
       ..tick()

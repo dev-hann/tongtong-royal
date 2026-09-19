@@ -1,5 +1,3 @@
-import 'package:app/game/arenas/hammer/hammer_map.dart';
-import 'package:app/game/arenas/hammer/hammer_simulation.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/round_simulation.dart';
@@ -24,10 +22,6 @@ RoundSimulation defaultRoundSimulationFactory(
 ) => switch (minigameId) {
   'trap_race' => RaceSimulation(
     map: CourseMap.trapRace(mapSeed),
-    playerIds: roster,
-  ),
-  'hammer_dodge' => HammerSimulation(
-    map: HammerArenaMap.hammerArena(mapSeed),
     playerIds: roster,
   ),
   _ => throw ArgumentError.value(

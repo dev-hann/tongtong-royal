@@ -1,13 +1,10 @@
-import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/bots/bot_factory.dart';
 import 'package:app/game/bots/race_bot.dart';
-import 'package:app/game/bots/survival_bot.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   final raceMap = CourseMap.trapRace(1);
-  final hammerMap = HammerArenaMap.hammerArena(1);
 
   group('buildBotRoster (GDD 9.1 fill policy)', () {
     test('fills empty seats to the seat target, capped by identity pool', () {
@@ -42,14 +39,10 @@ void main() {
   });
 
   group('forGame dispatch', () {
-    test('maps each minigame id to its archetype brain', () {
+    test('maps the race minigame id to the race brain', () {
       expect(
         BotFactory.forGame('trap_race', seed: 1, map: raceMap),
         isA<RaceBot>(),
-      );
-      expect(
-        BotFactory.forGame('hammer_dodge', seed: 1, map: hammerMap),
-        isA<SurvivalBot>(),
       );
     });
 
@@ -67,9 +60,16 @@ void main() {
       );
     });
 
+    test('removed hammer_dodge id: ArgumentError', () {
+      expect(
+        () => BotFactory.forGame('hammer_dodge', seed: 1, map: raceMap),
+        throwsArgumentError,
+      );
+    });
+
     test('map type mismatched with the minigame: ArgumentError', () {
       expect(
-        () => BotFactory.forGame('trap_race', seed: 1, map: hammerMap),
+        () => BotFactory.forGame('trap_race', seed: 1, map: 'not a map'),
         throwsArgumentError,
       );
     });

@@ -16,12 +16,12 @@ void main() {
     expect(() => registry.byId('no_such_game'), throwsArgumentError);
   });
 
-  test('pool_contains_every_builtin_game', () {
-    expect(registry.pool, containsAll(<String>['trap_race', 'hammer_dodge']));
+  test('removed_hammer_dodge_id_throws_like_any_unknown_id', () {
+    expect(() => registry.byId('hammer_dodge'), throwsArgumentError);
   });
 
-  test('pool_is_exactly_the_two_mvp_games', () {
-    expect(registry.pool, ['trap_race', 'hammer_dodge']);
+  test('pool_is_exactly_the_single_mvp_game', () {
+    expect(registry.pool, ['trap_race']);
   });
 
   test('registry_looks_up_injected_games', () {

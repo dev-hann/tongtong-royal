@@ -16,9 +16,9 @@ typedef BotHazard = ({
 /// Full single-axis joystick deflection (unit input).
 const double fullMoveInput = 1;
 
-/// How far a bot perceives the world, meters. Sized to the arena
-/// scale: HammerArenaMap's platform radius is 7 m, so 8 m covers a
-/// standing player's whole view of an arena. Hosts should
+/// How far a bot perceives the world, meters. Sized to the course
+/// scale (a race course spans tens of meters; 8 m covers a standing
+/// player's whole forward view). Hosts should
 /// pre-filter [BotObservation.nearbyPlayers] and
 /// [BotObservation.nearbyHazards] to this radius around the bot;
 /// brains defensively re-filter as well (GDD 9.2: contact-level

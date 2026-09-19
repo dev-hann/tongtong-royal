@@ -9,9 +9,9 @@ typedef PlayerPose = ({double x, double y, double angle, double vx, double vy});
 /// Common round-simulation seam across minigame archetypes
 /// (architecture doc § 2: the host simulates, the domain judges).
 ///
-/// The host runtime drives whichever arena/course simulation the
-/// round's minigame maps to through this interface alone; archetype
-/// specifics (courses, arenas, crowns) stay behind it.
+/// The host runtime drives whichever course simulation the round's
+/// minigame maps to through this interface alone; archetype
+/// specifics stay behind it.
 abstract interface class RoundSimulation {
   /// Raw round events in emission order (synchronous broadcast).
   Stream<RoundEvent> get events;

@@ -1,6 +1,7 @@
 import 'package:app/infra/profile_store.dart';
 
-/// Records local match statistics at podium confirm (GDD § 8.1).
+/// Records local match statistics when the results screen appears
+/// (GDD § 8.1).
 ///
 /// Thin presentation-side logic over [ProfileStore]: matchesPlayed
 /// +1 per confirmed match; wins and firstPlaces +1 iff the final

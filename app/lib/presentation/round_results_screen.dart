@@ -1,20 +1,21 @@
 import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
+import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/design/widgets/ttr_placement_list.dart';
 import 'package:app/design/widgets/ttr_pulse.dart';
 import 'package:app/design/widgets/ttr_standings_list.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
-/// ROUND_RESULTS phase screen: header pill, round placements,
-/// cumulative standings with this round's deltas, and an auto-advance
-/// progress bar over the dwell window.
+/// ROUND_RESULTS phase screen (terminal, GDD § 5): header pill,
+/// round placements, standings with this round's deltas, and the
+/// two ending actions — PLAY AGAIN (fresh match) and HOME.
 ///
 /// Pure renderer: rows are displayed exactly as delivered by the
 /// domain [RoundResult], standings exactly as computed by the
-/// controller (domain [Rankings] calls) — no sorting, no re-scoring.
-/// The progress bar mirrors the host-owned auto-advance timer; it
-/// never triggers the transition itself.
+/// controller (domain [Rankings] calls) — no sorting, no re-scoring,
+/// no timers: the single-round match ends here and the buttons
+/// carry the shell transitions.
 class RoundResultsScreen extends StatelessWidget {
   /// Creates the results screen.
   const RoundResultsScreen({
@@ -23,15 +24,19 @@ class RoundResultsScreen extends StatelessWidget {
     this.totalRounds,
     this.minigameName,
     this.standings = const [],
-    this.autoAdvanceSeconds,
+    this.onPlayAgain,
+    this.onExitHome,
     super.key,
   });
 
   /// Key of the header pill (for tests and integration finds).
   static const Key headerKey = Key('round_results_header');
 
-  /// Key of the auto-advance progress bar (for tests).
-  static const Key autoAdvanceKey = Key('round_results_auto_advance');
+  /// Key of the PLAY AGAIN button (for tests and integration finds).
+  static const Key playAgainButtonKey = Key('round_results_play_again');
+
+  /// Key of the HOME button (for tests and integration finds).
+  static const Key exitHomeButtonKey = Key('round_results_exit_home');
 
   /// The domain-judged result of the finished round, if delivered yet.
   final RoundResult? result;
@@ -45,12 +50,14 @@ class RoundResultsScreen extends StatelessWidget {
   /// Display name of the round's minigame; hidden when empty.
   final String? minigameName;
 
-  /// Cumulative standings (controller-computed), best first.
+  /// Standings (controller-computed), best first.
   final List<StandingEntry> standings;
 
-  /// Dwell window the host uses before auto-advancing; drives the
-  /// progress bar. `null` hides the bar.
-  final int? autoAdvanceSeconds;
+  /// Starts a fresh match (new map seed).
+  final VoidCallback? onPlayAgain;
+
+  /// Returns to the shell's home screen.
+  final VoidCallback? onExitHome;
 
   @override
   Widget build(BuildContext context) {
@@ -94,10 +101,11 @@ class RoundResultsScreen extends StatelessWidget {
                   ),
                   TtrStandingsList(entries: standings),
                 ],
-                if (autoAdvanceSeconds case final seconds?) ...[
-                  const SizedBox(height: SpacingScale.lg),
-                  _AutoAdvanceBar(seconds: seconds),
-                ],
+                const SizedBox(height: SpacingScale.xl),
+                _ResultActions(
+                  onPlayAgain: onPlayAgain,
+                  onExitHome: onExitHome,
+                ),
               ],
             ),
           ),
@@ -138,43 +146,29 @@ class _HeaderPill extends StatelessWidget {
   }
 }
 
-/// One-shot progress bar over the auto-advance dwell window.
-class _AutoAdvanceBar extends StatefulWidget {
-  const _AutoAdvanceBar({required this.seconds});
+class _ResultActions extends StatelessWidget {
+  const _ResultActions({this.onPlayAgain, this.onExitHome});
 
-  final int seconds;
-
-  @override
-  State<_AutoAdvanceBar> createState() => _AutoAdvanceBarState();
-}
-
-class _AutoAdvanceBarState extends State<_AutoAdvanceBar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _progress = AnimationController(
-    vsync: this,
-    duration: Duration(seconds: widget.seconds),
-  )..forward();
-
-  @override
-  void dispose() {
-    _progress.dispose();
-    super.dispose();
-  }
+  final VoidCallback? onPlayAgain;
+  final VoidCallback? onExitHome;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _progress,
-      builder: (context, _) => LinearProgressIndicator(
-        key: RoundResultsScreen.autoAdvanceKey,
-        value: _progress.isCompleted ? null : _progress.value,
-        minHeight: SpacingScale.sm,
-        borderRadius: BorderRadius.circular(RadiusScale.pill),
-        backgroundColor: ColorPalette.neutral200,
-        valueColor: const AlwaysStoppedAnimation<Color>(
-          ColorPalette.primary,
+    return Column(
+      children: [
+        TtrButton(
+          key: RoundResultsScreen.playAgainButtonKey,
+          label: 'PLAY AGAIN',
+          onPressed: onPlayAgain,
         ),
-      ),
+        const SizedBox(height: SpacingScale.md),
+        TtrButton(
+          key: RoundResultsScreen.exitHomeButtonKey,
+          label: 'HOME',
+          variant: TtrButtonVariant.secondary,
+          onPressed: onExitHome,
+        ),
+      ],
     );
   }
 }

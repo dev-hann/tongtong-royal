@@ -38,7 +38,7 @@ void main() {
   });
 
   test('gdd_2_match_constants_match_the_gdd', () {
-    expect(MatchRules.roundCount, 3);
+    expect(MatchRules.roundCount, 1);
     expect(MatchRules.minPlayers, 2);
     expect(MatchRules.maxPlayers, 4);
   });

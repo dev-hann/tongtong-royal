@@ -1,7 +1,6 @@
 import 'package:app/design/widgets/ttr_standings_list.dart';
 import 'package:app/presentation/game_screen.dart';
 import 'package:app/presentation/lobby_screen.dart';
-import 'package:app/presentation/podium_screen.dart';
 import 'package:app/presentation/round_intro_screen.dart';
 import 'package:app/presentation/round_results_screen.dart';
 import 'package:app/shell_controller.dart';
@@ -13,9 +12,11 @@ export 'package:app/design/game_hud/score_entry.dart' show ScoreEntry;
 /// Builds the screen matching the [ShellController] phase (GDD § 5).
 ///
 /// Dumb switch (architecture doc § 10): the router only maps phase to
-/// screen and forwards injected view data; round results and final
-/// rankings come from the controller (domain-computed), everything
-/// else is passed in by the app shell.
+/// screen and forwards injected view data; round results come from
+/// the controller (domain-computed), everything else is passed in by
+/// the app shell. The single-round shell never routes through
+/// [RoundPhase.podium] (GDD § 5: the machine keeps the transition,
+/// the MVP shell ends at ROUND_RESULTS).
 class PhaseRouter extends StatelessWidget {
   /// Creates the phase router.
   const PhaseRouter({
@@ -32,11 +33,8 @@ class PhaseRouter extends StatelessWidget {
     this.timeRemaining = '',
     this.resultsMinigameName,
     this.resultsStandings = const [],
-    this.resultsAutoAdvanceSeconds,
-    this.podiumNicknames = const {},
-    this.podiumPlayerColors = const {},
-    this.onRematch,
-    this.onExitToHome,
+    this.onPlayAgain,
+    this.onExitHome,
     super.key,
   });
 
@@ -78,24 +76,16 @@ class PhaseRouter extends StatelessWidget {
   /// Display name of the finished round's minigame (results header).
   final String? resultsMinigameName;
 
-  /// Cumulative standings (controller-computed) for the results
-  /// screen.
+  /// Standings (controller-computed) for the results screen.
   final List<StandingEntry> resultsStandings;
 
-  /// Host auto-advance dwell in seconds for the results progress bar.
-  final int? resultsAutoAdvanceSeconds;
+  /// Invoked when the player chooses PLAY AGAIN on the results
+  /// screen (fresh match, GDD § 5).
+  final VoidCallback? onPlayAgain;
 
-  /// Display names by player id on the podium.
-  final Map<String, String> podiumNicknames;
-
-  /// Seat colors by player id on the podium.
-  final Map<String, Color> podiumPlayerColors;
-
-  /// Invoked when the players choose a rematch on the podium.
-  final VoidCallback? onRematch;
-
-  /// Invoked when the players exit the podium to the home screen.
-  final VoidCallback? onExitToHome;
+  /// Invoked when the player exits the results screen to home
+  /// (GDD § 5).
+  final VoidCallback? onExitHome;
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +104,6 @@ class PhaseRouter extends StatelessWidget {
             minigameName: minigameName,
             ruleLine: minigameRule,
             countdownValue: countdownValue,
-            roundNumber: controller.roundIndex + 1,
-            totalRounds: controller.totalRounds,
           ),
           RoundPhase.roundPlay => GameScreen(
             scoreboard: scoreboard,
@@ -129,14 +117,13 @@ class PhaseRouter extends StatelessWidget {
             totalRounds: controller.totalRounds,
             minigameName: resultsMinigameName,
             standings: resultsStandings,
-            autoAdvanceSeconds: resultsAutoAdvanceSeconds,
+            onPlayAgain: onPlayAgain,
+            onExitHome: onExitHome,
           ),
-          RoundPhase.podium => PodiumScreen(
-            rankings: controller.matchResult?.finalRankings ?? const [],
-            nicknames: podiumNicknames,
-            playerColors: podiumPlayerColors,
-            onRematch: onRematch,
-            onExit: onExitToHome,
+          // The single-round shell never routes through PODIUM
+          // (GDD § 5); reaching it here is a wiring bug, not a flow.
+          RoundPhase.podium => throw UnsupportedError(
+            'phase router does not route through podium',
           ),
         };
       },

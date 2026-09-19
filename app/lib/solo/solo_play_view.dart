@@ -1,12 +1,10 @@
 import 'package:app/design/arena_palette.dart';
 import 'package:app/design/game_hud/ttr_action_button.dart';
 import 'package:app/design/tokens.dart';
-import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/controls/action_input_controller.dart';
 import 'package:app/game/controls/auto_input_source.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
-import 'package:app/game/view/arena/arena_game_view.dart';
 import 'package:app/game/view/race_game_view.dart';
 import 'package:app/solo/solo_match_controller.dart';
 import 'package:flame/game.dart' show Game, GameWidget;
@@ -16,16 +14,14 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 
 /// ROUND_PLAY widget for a solo match: mounts the session's
 /// simulation with the human on the one-button controls (GDD § 3:
-/// automatic movement + a single JUMP/DASH button) and the
-/// session's bot brains feeding the game view's tick-inputs
-/// provider.
+/// automatic movement + a single JUMP button) and the session's
+/// bot brains feeding the game view's tick-inputs provider.
 ///
-/// Race rounds render through [RaceGameView], arena rounds (Hammer
-/// Dodge) through [ArenaGameView]; unexpected sim/map combinations
-/// fall back to a headless status pane (same accumulator policy,
-/// driven by a frame `Ticker`). Wiring only — judging stays in the
-/// driver's domain resolve (architecture doc § 2), timers only here
-/// in the widget layer.
+/// Race rounds render through [RaceGameView]; an unexpected
+/// sim/map pairing falls back to a headless status pane (same
+/// accumulator policy, driven by a frame `Ticker`). Wiring only —
+/// judging stays in the driver's domain resolve (architecture doc
+/// § 2), timers only here in the widget layer.
 final class SoloPlayView extends StatefulWidget {
   /// Creates the view over [session].
   const SoloPlayView({
@@ -84,17 +80,6 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
         palette: palette,
       )..onStep = session.driver.postTick;
     }
-    if (map is HammerArenaMap) {
-      return ArenaGameView.hammer(
-        simulation: simulation,
-        map: map,
-        localPlayerId: session.humanId,
-        playerIds: session.rosterIds,
-        tickInputsProvider: session.driver.buildInputs,
-        tickEnabled: () => !session.isOver,
-        palette: palette,
-      )..onStep = session.driver.postTick;
-    }
     // Unexpected archetype pairing: run headlessly instead of
     // crashing (defensive fallback, kept from the pre-renderer pane).
     return null;
@@ -139,23 +124,23 @@ final class _SoloPlayViewState extends State<SoloPlayView> {
         ],
       );
     }
-    return _ArenaRoundPane(session: widget.session);
+    return _HeadlessRoundPane(session: widget.session);
   }
 }
 
 /// Fallback for rounds whose sim/map types have no renderer yet: a
 /// frame ticker drives the session's fixed-dt ticks headlessly (same
-/// accumulator policy as the game views) and shows a status pane.
-final class _ArenaRoundPane extends StatefulWidget {
-  const _ArenaRoundPane({required this.session});
+/// accumulator policy as the game view) and shows a status pane.
+final class _HeadlessRoundPane extends StatefulWidget {
+  const _HeadlessRoundPane({required this.session});
 
   final SoloRoundSession session;
 
   @override
-  State<_ArenaRoundPane> createState() => _ArenaRoundPaneState();
+  State<_HeadlessRoundPane> createState() => _HeadlessRoundPaneState();
 }
 
-final class _ArenaRoundPaneState extends State<_ArenaRoundPane>
+final class _HeadlessRoundPaneState extends State<_HeadlessRoundPane>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
   Duration _lastElapsed = Duration.zero;
@@ -213,7 +198,7 @@ final class _ArenaRoundPaneState extends State<_ArenaRoundPane>
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Bots are playing — arena rendering is upcoming.'),
+            const Text('Bots are playing — rendering unavailable.'),
             const SizedBox(height: 8),
             Text('tick ${session.driver.tickCount}'),
           ],

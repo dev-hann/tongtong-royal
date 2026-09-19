@@ -6,7 +6,7 @@ import 'package:app/design/widgets/ttr_phase_transition.dart';
 import 'package:app/infra/profile_store.dart';
 import 'package:app/presentation/game_screen.dart';
 import 'package:app/presentation/home_screen.dart';
-import 'package:app/presentation/lobby_screen.dart';
+import 'package:app/presentation/lobby_screen.dart' show LobbyPlayer;
 import 'package:app/presentation/onboarding_screen.dart';
 import 'package:app/presentation/phase_router.dart';
 import 'package:app/presentation/profile_screen.dart';
@@ -56,7 +56,7 @@ class TongTongApp extends StatelessWidget {
 /// once at startup, gates first launch behind onboarding, injects
 /// the stored nickname + color into the solo match config (the
 /// solo controller stays pure — no storage reads), and records
-/// stats at podium confirm.
+/// stats once when the (terminal) results screen appears.
 class ShellScaffold extends StatefulWidget {
   /// Creates the shell.
   const ShellScaffold({super.key});
@@ -75,16 +75,18 @@ class _ShellScaffoldState extends State<ShellScaffold> {
   String _lastNickname = '';
   int _lastColorIndex = -1;
   bool _atHome = true;
-  bool _podiumRecorded = false;
+  bool _resultsRecorded = false;
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadProfile());
+    _controller.addListener(_onPhaseChanged);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onPhaseChanged);
     _solo?.dispose();
     _profile?.dispose();
     _controller.dispose();
@@ -138,36 +140,45 @@ class _ShellScaffoldState extends State<ShellScaffold> {
     });
   }
 
+  /// Stats recording (GDD § 8.1): the single-round match's final
+  /// rank fires once when the results screen appears — the results
+  /// screen is the match's terminal state.
+  void _onPhaseChanged() {
+    if (_controller.phase != RoundPhase.roundResults) {
+      return;
+    }
+    final solo = _solo;
+    final recorder = _recorder;
+    if (_resultsRecorded || solo == null || recorder == null) {
+      return;
+    }
+    final human = Rankings.finalRanking(
+      _controller.roundResults,
+      const {},
+    ).finalRankings.where((p) => p.playerId == solo.humanId).toList();
+    if (human.isEmpty) {
+      return;
+    }
+    _resultsRecorded = true;
+    unawaited(recorder.recordMatch(finalRank: human.first.rank));
+  }
+
   void _startSoloFromHome() {
     setState(() {
       _atHome = false;
-      _podiumRecorded = false;
+      _resultsRecorded = false;
     });
     _solo?.startSolo();
   }
 
-  /// Records the confirmed podium result (GDD § 8.1) once per match,
-  /// then runs the chosen follow-up (rematch or exit).
-  void _confirmPodium(VoidCallback action) {
-    final solo = _solo;
-    final recorder = _recorder;
-    final result = _controller.matchResult;
-    if (!_podiumRecorded && solo != null && recorder != null) {
-      final human = result?.finalRankings
-          .where((p) => p.playerId == solo.humanId)
-          .toList(growable: false);
-      if (human != null && human.isNotEmpty) {
-        _podiumRecorded = true;
-        unawaited(recorder.recordMatch(finalRank: human.first.rank));
-      }
-    }
-    action();
+  void _playAgain() {
+    setState(() => _resultsRecorded = false);
+    _solo?.playAgain();
   }
 
   void _exitToHome() {
-    // Podium -> lobby (replans for the next match), then home.
-    if (_controller.phase == RoundPhase.podium) {
-      _solo?.rematch();
+    if (_controller.phase == RoundPhase.roundResults) {
+      _solo?.exitToHome();
     }
     setState(() => _atHome = true);
   }
@@ -237,8 +248,6 @@ class _ShellScaffoldState extends State<ShellScaffold> {
                 scoreboard: solo.standings,
                 timeRemaining: '',
                 remainingSeconds: solo.remainingSeconds,
-                roundNumber: _controller.roundIndex + 1,
-                totalRounds: _controller.totalRounds,
                 // ROUND_PLAY mounts the solo round (human + bots) into
                 // the GameScreen viewport slot.
                 gameView: session == null
@@ -273,22 +282,8 @@ class _ShellScaffoldState extends State<ShellScaffold> {
                 countdownValue: solo.countdownValue,
                 resultsMinigameName: solo.resultsMinigameName,
                 resultsStandings: solo.standingsAfterLatestRound,
-                resultsAutoAdvanceSeconds: soloResultsSeconds,
-                podiumNicknames: {
-                  for (final seat in solo.seats) seat.id: seat.nickname,
-                },
-                podiumPlayerColors: {
-                  for (final (i, seat) in solo.seats.indexed)
-                    seat.id: PlayerPalette.forSeat(
-                      i,
-                      localIndex: solo.config.humanColorIndex,
-                    ),
-                },
-                onRematch: () => _confirmPodium(() {
-                  _podiumRecorded = false;
-                  solo.rematch();
-                }),
-                onExitToHome: () => _confirmPodium(_exitToHome),
+                onPlayAgain: _playAgain,
+                onExitHome: _exitToHome,
               ),
             );
           }

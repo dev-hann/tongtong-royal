@@ -34,8 +34,6 @@ RoundResult resolveRound(MiniGame game, RoundEvents events, RoundData data) {
         events,
         TrapRaceInput(roster: data.roster, samples: data.progressSamples),
       );
-    case final HammerDodge hammer:
-      return hammer.resolve(events, HammerDodgeInput(roster: data.roster));
     default:
       throw ArgumentError.value(game.id, 'game', 'no resolve input binding');
   }

@@ -1,9 +1,7 @@
-import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_standings_list.dart';
 import 'package:app/presentation/game_screen.dart';
 import 'package:app/presentation/lobby_screen.dart';
 import 'package:app/presentation/phase_router.dart';
-import 'package:app/presentation/podium_screen.dart';
 import 'package:app/presentation/round_intro_screen.dart';
 import 'package:app/presentation/round_results_screen.dart';
 import 'package:app/shell_controller.dart';
@@ -21,7 +19,11 @@ void main() {
     ],
   );
 
-  Widget host(ShellController controller) => MaterialApp(
+  Widget host(
+    ShellController controller, {
+    VoidCallback? onPlayAgain,
+    VoidCallback? onExitHome,
+  }) => MaterialApp(
     home: Scaffold(
       body: PhaseRouter(
         controller: controller,
@@ -34,11 +36,10 @@ void main() {
         timeRemaining: '42',
         resultsMinigameName: 'Trap Race',
         resultsStandings: const [
-          StandingEntry(playerId: 'p1', totalPoints: 7, roundDelta: 4),
+          StandingEntry(playerId: 'p1', totalPoints: 4, roundDelta: 4),
         ],
-        resultsAutoAdvanceSeconds: 6,
-        podiumNicknames: const {'p1': 'Winner'},
-        podiumPlayerColors: const {'p1': PlayerPalette.one},
+        onPlayAgain: onPlayAgain,
+        onExitHome: onExitHome,
       ),
     ),
   );
@@ -56,18 +57,16 @@ void main() {
     expect(find.text('Host'), findsOneWidget);
   });
 
-  testWidgets('ROUND_INTRO renders RoundIntroScreen', (tester) async {
+  testWidgets('ROUND_INTRO renders RoundIntroScreen without round count', (
+    tester,
+  ) async {
     controller.startMatch();
     await tester.pumpWidget(host(controller));
     expect(find.byType(RoundIntroScreen), findsOneWidget);
     expect(find.text('Trap Race'), findsOneWidget);
     expect(find.byType(LobbyScreen), findsNothing);
-    // Round badge derives from the controller's round counter.
-    expect(find.byKey(RoundIntroScreen.roundBadgeKey), findsOneWidget);
-    expect(
-      find.text('ROUND 1 / ${MatchRules.roundCount}'),
-      findsOneWidget,
-    );
+    // Single-round match: no round-count badge (GDD § 2).
+    expect(find.textContaining('ROUND'), findsNothing);
   });
 
   testWidgets('ROUND_PLAY renders GameScreen', (tester) async {
@@ -94,29 +93,36 @@ void main() {
     expect(find.text('p1'), findsNWidgets(2));
     expect(find.text('p2'), findsOneWidget);
     expect(find.byType(GameScreen), findsNothing);
-    // Header pill, standings deltas and auto-advance bar forwarded.
+    // Header pill, standings deltas and ending buttons forwarded.
     expect(find.byKey(RoundResultsScreen.headerKey), findsOneWidget);
-    expect(find.text('ROUND 1 / ${MatchRules.roundCount} · TRAP RACE'),
-        findsOneWidget);
+    expect(find.text('ROUND 1 / 1 · TRAP RACE'), findsOneWidget);
     expect(find.text('+4'), findsOneWidget);
-    expect(find.byKey(RoundResultsScreen.autoAdvanceKey), findsOneWidget);
+    expect(find.byKey(RoundResultsScreen.playAgainButtonKey), findsOneWidget);
+    expect(find.byKey(RoundResultsScreen.exitHomeButtonKey), findsOneWidget);
   });
 
-  testWidgets('PODIUM renders PodiumScreen from controller rankings', (
-    tester,
-  ) async {
+  testWidgets('results buttons fire the injected callbacks', (tester) async {
+    var playAgain = 0;
+    var exitHome = 0;
     controller
       ..startMatch()
       ..startPlay()
-      ..endRound(roundResult(0))
-      ..toPodium();
-    await tester.pumpWidget(host(controller));
-    expect(find.byType(PodiumScreen), findsOneWidget);
-    // Nickname map wins over the raw player id on the podium.
-    expect(find.text('Winner'), findsOneWidget);
-    expect(find.byType(RoundResultsScreen), findsNothing);
-    // Podium receives the injected nickname.
-    expect(find.text('Winner'), findsOneWidget);
+      ..endRound(roundResult(0));
+    await tester.pumpWidget(
+      host(
+        controller,
+        onPlayAgain: () => playAgain++,
+        onExitHome: () => exitHome++,
+      ),
+    );
+
+    await tester.tap(find.byKey(RoundResultsScreen.playAgainButtonKey));
+    await tester.pump();
+    expect(playAgain, 1);
+
+    await tester.tap(find.byKey(RoundResultsScreen.exitHomeButtonKey));
+    await tester.pump();
+    expect(exitHome, 1);
   });
 
   testWidgets('router rebuilds on controller transitions', (tester) async {

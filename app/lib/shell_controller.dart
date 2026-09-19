@@ -7,8 +7,9 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 /// forwards phase transitions to the state machine, stores the
 /// domain-provided [RoundResult]s, and asks the domain
 /// ([Rankings.finalRanking]) for final standings when the podium is
-/// reached. Invalid transitions propagate the machine's
-/// [InvalidTransitionException] — nothing is swallowed.
+/// reached (compatibility path — the single-round shell ends at
+/// ROUND_RESULTS, GDD § 5). Invalid transitions propagate the
+/// machine's [InvalidTransitionException] — nothing is swallowed.
 class ShellController extends ChangeNotifier {
   /// Creates a controller wrapping [stateMachine] (or a fresh machine).
   ShellController({RoundStateMachine? stateMachine})
@@ -58,6 +59,8 @@ class ShellController extends ChangeNotifier {
   }
 
   /// ROUND_RESULTS -> PODIUM; final standings come from the domain.
+  /// Kept for compatibility (multi-round flows); the single-round
+  /// shell ends at ROUND_RESULTS instead (GDD § 5).
   void toPodium() {
     _apply(() {
       _machine.toPodium();
@@ -65,7 +68,8 @@ class ShellController extends ChangeNotifier {
     });
   }
 
-  /// PODIUM -> LOBBY; clears per-match state for a rematch.
+  /// PODIUM or ROUND_RESULTS (match complete) -> LOBBY; clears
+  /// per-match state for a rematch.
   void toLobby() {
     _apply(() {
       _machine.toLobby();

@@ -81,13 +81,13 @@ final class Profile {
   int get hashCode => Object.hash(nickname, colorIndex);
 }
 
-/// Local match statistics (GDD § 8.1), recorded at podium confirm.
+/// Local match statistics (GDD § 8.1), recorded at the results screen.
 @immutable
 final class Stats {
   /// Creates a stats record; all counters default to zero.
   const Stats({this.matchesPlayed = 0, this.wins = 0, this.firstPlaces = 0});
 
-  /// Matches the player confirmed at the podium.
+  /// Matches the player finished (results screen appearance).
   final int matchesPlayed;
 
   /// Matches finished at final rank 1.

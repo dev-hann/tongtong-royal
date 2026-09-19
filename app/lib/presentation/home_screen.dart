@@ -5,7 +5,8 @@ import 'package:app/design/widgets/ttr_button.dart';
 import 'package:flutter/material.dart';
 
 /// Presentation-level home screen (not a domain round phase): shown
-/// until a match starts and re-entered from the podium's exit.
+/// until a match starts and re-entered from the results screen's
+/// HOME button.
 ///
 /// Pure renderer: buttons only forward taps; no game state here.
 /// Entry points (guide § 6): profile avatar top-left, settings gear

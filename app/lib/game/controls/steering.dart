@@ -87,33 +87,6 @@ final class RaceSteering implements SteeringPolicy {
   }
 }
 
-/// Hammer Dodge auto-steering (GDD § 3): drift back toward the
-/// arena center; idle inside a center band so the player does not
-/// fidget on the pivot.
-final class HammerSteering implements SteeringPolicy {
-  /// Creates the (stateless) survival policy.
-  const HammerSteering();
-
-  /// Dead band around the arena center x=0, meters: inside it the
-  /// player stops steering (~3 player widths — small against the
-  /// 7 m platform, far from the rim where hammer hits launch
-  /// players off). Behavior data, same scale as the survival bot's
-  /// center band.
-  static const double centerBandMeters = 2;
-
-  @override
-  SteeringDecision sample(SteeringObservation obs) {
-    final x = obs.selfX;
-    if (!x.isFinite || x.abs() <= centerBandMeters) {
-      return SteeringDecision(moveDir: Vector2.zero());
-    }
-    return SteeringDecision(
-      moveDir: _sanitized(-x.sign, 0),
-      dashDir: _sanitized(-x.sign, 0),
-    );
-  }
-}
-
 Vector2 _sanitized(double x, double y) {
   if (!x.isFinite || !y.isFinite) {
     return Vector2.zero();

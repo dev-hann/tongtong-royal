@@ -8,40 +8,20 @@ import 'fake_solo_scheduler.dart';
 import 'fake_solo_sim.dart';
 
 /// Fake sim that emits a full ranking script on its first tick so
-/// every round resolves deterministically: the human wins every
-/// archetype.
+/// the round resolves deterministically: the human wins.
 final class _ScriptedSoloSim extends FakeSoloSim {
-  _ScriptedSoloSim({
-    required this.minigameOrder,
-    required super.minigameId,
-    required super.roster,
-  }) : super(completeAfterTicks: 3);
-
-  /// Roster order used by the scripts (best first).
-  final List<PlayerId> minigameOrder;
+  _ScriptedSoloSim({required super.minigameId, required super.roster})
+    : super(completeAfterTicks: 3);
 
   @override
   void tickInputs(Map<PlayerId, PlayerInputState> inputs) {
     if (tickCount == 0) {
-      _emitScript();
+      emit(const PlayerFinished(tick: 1, playerId: 'solo-player'));
+      emit(const PlayerFinished(tick: 2, playerId: 'bot-1'));
+      emit(const PlayerFinished(tick: 3, playerId: 'bot-2'));
+      emit(const PlayerFinished(tick: 4, playerId: 'bot-3'));
     }
     super.tickInputs(inputs);
-  }
-
-  void _emitScript() {
-    switch (minigameId) {
-      case 'trap_race':
-        emit(const PlayerFinished(tick: 1, playerId: 'solo-player'));
-        emit(const PlayerFinished(tick: 2, playerId: 'bot-1'));
-        emit(const PlayerFinished(tick: 3, playerId: 'bot-2'));
-        emit(const PlayerFinished(tick: 4, playerId: 'bot-3'));
-      case 'hammer_dodge':
-        emit(const PlayerEliminated(tick: 1, playerId: 'bot-3'));
-        emit(const PlayerEliminated(tick: 2, playerId: 'bot-2'));
-        emit(const PlayerEliminated(tick: 3, playerId: 'bot-1'));
-      default:
-        fail('script missing for $minigameId');
-    }
   }
 }
 
@@ -60,11 +40,7 @@ void main() {
       config: const SoloMatchConfig(matchSeed: 11),
       scheduler: scheduler.call,
       simulationFactory: (minigameId, mapSeed, roster) {
-        final sim = _ScriptedSoloSim(
-          minigameOrder: roster.toList(),
-          minigameId: minigameId,
-          roster: roster,
-        );
+        final sim = _ScriptedSoloSim(minigameId: minigameId, roster: roster);
         createdSims.add(sim);
         return sim;
       },
@@ -72,7 +48,7 @@ void main() {
     addTearDown(controller.dispose);
   });
 
-  /// Steps one round to completion through the session driver.
+  /// Steps the round to completion through the session driver.
   void playRound() {
     final session = controller.currentRound;
     expect(session, isNotNull, reason: 'round must be built on ROUND_PLAY');
@@ -87,7 +63,12 @@ void main() {
     expect(controller.seats[1].nickname, 'BOT 1');
   });
 
-  test('full match: three rounds then podium with domain standings', () {
+  test('plan is the single MVP minigame', () {
+    expect(controller.rounds, hasLength(1));
+    expect(controller.rounds.single.minigameId, 'trap_race');
+  });
+
+  test('full match: one round then terminal results (no auto-advance)', () {
     final phases = <RoundPhase>[shell.phase];
     shell.addListener(() => phases.add(shell.phase));
 
@@ -100,56 +81,33 @@ void main() {
       }
     });
 
-    for (var round = 0; round < MatchRules.roundCount; round++) {
-      scheduler.elapse(3000); // intro countdown
-      expect(shell.phase, RoundPhase.roundPlay);
-      expect(
-        controller.introName,
-        const MinigameRegistry()
-            .byId(controller.rounds[round].minigameId)
-            .spec
-            .name,
-      );
-      playRound();
-      expect(shell.phase, RoundPhase.roundResults);
-      scheduler.elapse(6000); // results auto-advance
-    }
+    scheduler.elapse(3000); // intro countdown
+    expect(shell.phase, RoundPhase.roundPlay);
+    playRound();
+    expect(shell.phase, RoundPhase.roundResults);
 
-    expect(shell.phase, RoundPhase.podium);
-    expect(results, hasLength(MatchRules.roundCount));
-    for (var round = 0; round < MatchRules.roundCount; round++) {
-      expect(results[round].roundIndex, round);
-      // 4 players ranked: points 4/3/2/1 (GDD § 2), human first in
-      // every script.
-      expect(results[round].placements, hasLength(4));
-      expect(results[round].placements.first.playerId, 'solo-player');
-      expect(results[round].placements.map((p) => p.points).toList(), [
-        4,
-        3,
-        2,
-        1,
-      ]);
-    }
+    // Terminal: no scheduled advance ever fires.
+    scheduler.elapse(600000);
+    expect(shell.phase, RoundPhase.roundResults);
+    expect(shell.roundIndex, 1, reason: 'one round completed');
 
-    final rankings = shell.matchResult!.finalRankings;
-    expect(rankings.first.playerId, 'solo-player');
-    expect(rankings.first.points, 12);
+    expect(results, hasLength(1));
+    expect(results.single.roundIndex, 0);
+    // 4 players ranked: points 4/3/2/1 (GDD § 2), human first.
+    expect(results.single.placements, hasLength(4));
+    expect(results.single.placements.first.playerId, 'solo-player');
+    expect(results.single.placements.map((p) => p.points).toList(), [
+      4,
+      3,
+      2,
+      1,
+    ]);
 
-    // Deduped phase sequence: intro/play/results x3 then podium.
-    final deduped = <RoundPhase>[];
-    for (final phase in phases) {
-      if (deduped.isEmpty || deduped.last != phase) {
-        deduped.add(phase);
-      }
-    }
-    expect(deduped, [
+    expect(deduped(phases), [
       RoundPhase.lobby,
-      for (var i = 0; i < MatchRules.roundCount; i++) ...[
-        RoundPhase.roundIntro,
-        RoundPhase.roundPlay,
-        RoundPhase.roundResults,
-      ],
-      RoundPhase.podium,
+      RoundPhase.roundIntro,
+      RoundPhase.roundPlay,
+      RoundPhase.roundResults,
     ]);
 
     // Every fake simulation was released after its round.
@@ -175,41 +133,47 @@ void main() {
     expect(shell.phase, RoundPhase.roundPlay);
   });
 
-  test('results auto-advance fires after six seconds', () {
+  test('playAgain starts a fresh match with fresh map seed', () {
+    controller.startSolo();
+    scheduler.elapse(3000);
+    playRound();
+    expect(shell.phase, RoundPhase.roundResults);
+    final firstSeed = controller.rounds.single.mapSeed;
+
+    controller.playAgain();
+
+    expect(shell.phase, RoundPhase.roundIntro);
+    expect(shell.roundIndex, 0);
+    expect(controller.rounds.single.mapSeed, isNot(firstSeed));
+
+    // And the fresh match plays another full round.
+    scheduler.elapse(3000);
+    playRound();
+    expect(shell.phase, RoundPhase.roundResults);
+    expect(createdSims, hasLength(2));
+  });
+
+  test('exitToHome returns to the lobby for a fresh match', () {
     controller.startSolo();
     scheduler.elapse(3000);
     playRound();
     expect(shell.phase, RoundPhase.roundResults);
 
-    scheduler.elapse(5999);
-    expect(shell.phase, RoundPhase.roundResults);
-
-    scheduler.elapse(1);
-    expect(shell.phase, RoundPhase.roundIntro);
-    expect(shell.roundIndex, 1);
-  });
-
-  test('rematch replans with fresh seeds and restarts from the lobby', () {
-    controller.startSolo();
-    for (var round = 0; round < MatchRules.roundCount; round++) {
-      scheduler.elapse(3000);
-      playRound();
-      scheduler.elapse(6000);
-    }
-    expect(shell.phase, RoundPhase.podium);
-    final firstSeeds = controller.rounds.map((r) => r.mapSeed).toList();
-
-    controller.rematch();
+    controller.exitToHome();
 
     expect(shell.phase, RoundPhase.lobby);
     expect(shell.roundIndex, 0);
-    final secondSeeds = controller.rounds.map((r) => r.mapSeed).toList();
-    expect(secondSeeds, isNot(equals(firstSeeds)));
-
-    // And the rematch runs another full match.
-    controller.startSolo();
-    scheduler.elapse(3000);
-    playRound();
-    expect(shell.phase, RoundPhase.roundResults);
+    expect(shell.latestRoundResult, isNull);
+    expect(shell.roundResults, isEmpty);
   });
+}
+
+List<RoundPhase> deduped(List<RoundPhase> phases) {
+  final deduped = <RoundPhase>[];
+  for (final phase in phases) {
+    if (deduped.isEmpty || deduped.last != phase) {
+      deduped.add(phase);
+    }
+  }
+  return deduped;
 }

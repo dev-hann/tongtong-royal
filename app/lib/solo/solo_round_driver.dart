@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/bots/bot_brain.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/round_simulation.dart';
@@ -26,9 +25,9 @@ const double groundedSpeedEpsilonMeters = 0.5;
 /// § 2).
 ///
 /// Ticking is split so both hosts work: [buildInputs] runs before a
-/// step, [postTick] after it. The race game view (race rounds, Flame
-/// loop) calls the halves separately; [tick] runs both for headless
-/// arena rounds.
+/// step, [postTick] after it. The race game view (Flame loop)
+/// calls the halves separately; [tick] runs both for headless
+/// rounds.
 final class SoloRoundDriver {
   /// Creates a driver over [simulation]. [map] is the map data the
   /// simulation was built from (bot hazard observations derive from
@@ -130,7 +129,7 @@ final class SoloRoundDriver {
     }
   }
 
-  /// One full headless tick (arena rounds without a Flame loop):
+  /// One full headless tick (rounds without a Flame loop):
   /// inputs, step, bookkeeping.
   void tick() {
     if (_over) {
@@ -207,7 +206,6 @@ final class SoloRoundDriver {
   /// how the builders set the arms in motion.
   Iterable<BotHazard> _hazardStates() sync* {
     final specs = switch (map) {
-      final HammerArenaMap arenaMap => arenaMap.hammers,
       final CourseMap courseMap => courseMap.hammers,
       _ => const <HammerSpec>[],
     };

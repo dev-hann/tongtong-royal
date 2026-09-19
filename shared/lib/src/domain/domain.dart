@@ -1,9 +1,7 @@
-export 'game/hammer_dodge.dart';
 export 'game/registry.dart';
 export 'game/trap_race.dart';
 export 'match_rules.dart';
 export 'minigame.dart';
-export 'minigame_selector.dart';
 export 'models.dart';
 export 'placements.dart';
 export 'points.dart';
