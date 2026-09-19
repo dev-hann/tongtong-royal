@@ -93,7 +93,7 @@ Scope: create room → join 3 fake clients → ready → 1 short round → resul
 
 On every push/PR: `dart analyze` (zero warnings), `dart test` (all green), coverage ≥ floor for `shared/`. CI configuration: `.github/workflows/ci.yml`. Red CI blocks merge — no overrides without the user's explicit instruction.
 
-## 9. On-Device Smoke Test
+## 9. On-Device Smoke Test (Patrol)
 
 Every release candidate APK passes the device smoke before install/deploy (release checklist refs this):
 
@@ -103,7 +103,7 @@ scripts/smoke_device.sh <adb-serial>   # USB or network adb device
 
 Flow asserted: install → launch → (onboarding SKIP if first launch) → home renders → PLAY SOLO → intro countdown → play (JUMP present, tapped ×3) → system back → quit dialog → KEEP RUNNING resumes → back → QUIT → home → process alive → **zero FATAL EXCEPTIONS** in logcat.
 
-- Text anchors come from real widget strings (`PLAY SOLO`, `First to the finish line`, `JUMP`, `Quit the race`, `KEEP RUNNING`, `QUIT`, `SKIP`) — if a label changes, the script and this list change in the same commit.
+- Text anchors come from real widget strings (`PLAY SOLO`, `First to the finish line`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`) — if a label changes, the script and this list change in the same commit.
 - The smoke runs on every connected test device (phone today; the LineageOS Pi rig when enrolled).
 - Failure output includes the last fatal exceptions for triage.
 
@@ -154,22 +154,22 @@ Patrol runs the app on real devices and drives the real Flutter widget tree — 
 
 ### 11.1 Position & rules
 
-- Location: `app/integration_test/*.dart`, naming `smoke_<flow>.dart` / `e2e_<flow>.dart`. One flow per file, ≤ 300 lines.
+- Location: `app/integration_test/*.dart`, naming `smoke_<flow>_test.dart` / `e2e_<flow>_test.dart` — the `_test.dart` suffix is a hard `patrol_cli` requirement (it rejects other targets). One flow per file, ≤ 300 lines.
 - Pyramid top: Patrol suites are regression gates for user-visible flows. They never replace unit/widget/domain tests; asserting game RULES here (points math etc.) is a layer violation — rules are domain-test territory. Patrol asserts **what is on screen**.
 - Selectors: public text anchors (§ 9 list — same list, same commit when labels change) first; `Key` finds for dynamic content. Never index-based (`texts[2]`) or coordinate taps.
-- Waiting: `patrolTester.waitUntilVisible/...` only. `Future.delayed`/sleeps are banned (Law § 10.2.5 applies here too).
+- Waiting: `patrolTester.waitUntilVisible/...` only. `Future.delayed`/sleeps are banned (Law § 10.2.5 applies here too). **`pumpAndSettle` is banned app-wide** — ambient loops (backdrop drift, pulses) schedule frames forever; the app never settles. Time-sensitive taps use `settlePolicy: SettlePolicy.noSettle` + explicit `waitUntilVisible` (intro countdown precedent).
 - Native interactions: `native.pressBack()` for system back; no raw `adb shell input` inside Patrol tests.
 - Determinism: solo flows with bots use a fixed match seed injected via test config; screenshots may be captured but never asserted pixel-by-pixel (token colors vary by theme drift).
 - Every new user-visible flow adds its Patrol case in the same PR (DoD link, `docs/05` § 6).
-- Runs: `patrol test -s <serial>` per enrolled device (Pi rig `192.168.0.5:5555`, phone when enrolled); all enrolled devices pass = release checklist condition. CI emulator hosting is backlog.
+- Runs: `patrol test --device <serial>` per enrolled device (or `scripts/smoke_device.sh <serial>` for suite+crash-scan) (Pi rig `192.168.0.5:5555`, phone when enrolled); all enrolled devices pass = release checklist condition. CI emulator hosting is backlog.
 
 ### 11.2 Required cases (minimum standing suite)
 
-| # | Case (`smoke_*.dart`) | Steps | Hard asserts |
+| # | Case (`smoke_*_test.dart`) | Steps | Hard asserts |
 |---|----------------------|-------|--------------|
 | 1 | `smoke_first_launch` | cold start, first-launch | onboarding shows; SKIP tap lands on Home (`PLAY SOLO` visible) |
 | 2 | `smoke_solo_match` | Home → PLAY SOLO | intro shows rule line; countdown ends in play (`JUMP` visible); 3 jumps complete without exception |
-| 3 | `smoke_quit_dialog` | in play → `native.pressBack()` | dialog `Quit the race` shows; KEEP RUNNING returns to play (`JUMP` visible) |
+| 3 | `smoke_quit_dialog` | in play → `native.pressBack()` | dialog `Quit the race?` shows; KEEP RUNNING returns to play (`JUMP` visible) |
 | 4 | `smoke_quit_to_home` | in play → back → QUIT | Home visible (`PLAY SOLO`); app process alive |
 | 5 | `smoke_race_finish` (seeded fast course) | play to completion | results screen shows placements; PLAY AGAIN restarts intro; HOME returns |
 | 6 | `smoke_profile_flow` | Home → profile avatar | profile screen opens; nickname edit persists; color swatch changes avatar; back returns Home |

@@ -48,4 +48,13 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
+  patrol: "3.20.0"
   very_good_analysis: ^6.0.0
+
+patrol:
+  app_name: TongTong Royal
+  test_directory: integration_test
+  android:
+    package_name: com.tongtongroyal.app
