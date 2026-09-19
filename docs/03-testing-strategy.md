@@ -95,21 +95,24 @@ On every push/PR: `dart analyze` (zero warnings), `dart test` (all green), cover
 
 ## 9. On-Device Smoke Test (Patrol)
 
-Every release candidate APK passes the device smoke before install/deploy (release checklist refs this):
+Every release candidate APK passes the standing Patrol suite (§ 11.2) on every enrolled device before install/deploy (release checklist refs this):
 
 ```bash
-scripts/smoke_device.sh <adb-serial>   # USB or network adb device
+scripts/smoke_device.sh <adb-serial>            # whole suite + logcat crash scan
+scripts/smoke_device.sh <serial> integration_test/smoke_solo_match_test.dart
 ```
 
-Flow asserted: install → launch → (onboarding SKIP if first launch) → home renders → PLAY SOLO → intro countdown → play (JUMP present, tapped ×3) → system back → quit dialog → KEEP RUNNING resumes → back → QUIT → home → process alive → **zero FATAL EXCEPTIONS** in logcat.
-
-- Text anchors come from real widget strings (`PLAY SOLO`, `First to the finish line`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`) — if a label changes, the script and this list change in the same commit.
-- The smoke runs on every connected test device (phone today; the LineageOS Pi rig when enrolled).
+- **Text anchors** ( Patrol selectors AND wrapper assertions — label change ⇒ suite + this list change in the same commit): `PLAY SOLO`, `PLAY FRIENDS`, `Coming soon`, `First to the finish line`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`, `START`, `PLAY AGAIN`, `HOME`, `Sound`, `Fredoka font`, `Nunito font`, `Phosphor Icons (Fill)`, rank ordinals (`1st`, `T-1st`).
+- The suite runs on every enrolled test device (LineageOS Pi rig `192.168.0.5:5555`; phone when enrolled).
 - Failure output includes the last fatal exceptions for triage.
 
-## 10. Strict Test-Writing Law (applies to EVERY test in this repo)
+## 10. Strict Test-Writing Law (unit, widget, domain, integration logic tests)
 
 Hard rules. A test that breaks any of them does not merge — no exceptions, no waivers. Reviewers grade violations as blockers (AGENTS § 10).
+
+**Scope carve-outs (explicit, exhaustive):**
+- **§ 11 Patrol device flows** are exempt from 10.1.1 (composite-flow names are the point — `smoke_race_finish` is one user flow) and 10.1.3 (E2E steps interleave act/assert by nature). All other rules apply unchanged.
+- **Grandfathered debt**: suites predating this law (some `_and_` names, `isNotNull` matchers, widget-test `pumpAndSettle` — see § 11.1 for why widget scope differs) stay as-is until touched; a file picks up full compliance the next time it is edited. New tests and new files: zero tolerance.
 
 ### 10.1 Structure & naming
 
@@ -157,9 +160,9 @@ Patrol runs the app on real devices and drives the real Flutter widget tree — 
 - Location: `app/integration_test/*.dart`, naming `smoke_<flow>_test.dart` / `e2e_<flow>_test.dart` — the `_test.dart` suffix is a hard `patrol_cli` requirement (it rejects other targets). One flow per file, ≤ 300 lines.
 - Pyramid top: Patrol suites are regression gates for user-visible flows. They never replace unit/widget/domain tests; asserting game RULES here (points math etc.) is a layer violation — rules are domain-test territory. Patrol asserts **what is on screen**.
 - Selectors: public text anchors (§ 9 list — same list, same commit when labels change) first; `Key` finds for dynamic content. Never index-based (`texts[2]`) or coordinate taps.
-- Waiting: `patrolTester.waitUntilVisible/...` only. `Future.delayed`/sleeps are banned (Law § 10.2.5 applies here too). **`pumpAndSettle` is banned app-wide** — ambient loops (backdrop drift, pulses) schedule frames forever; the app never settles. Time-sensitive taps use `settlePolicy: SettlePolicy.noSettle` + explicit `waitUntilVisible` (intro countdown precedent).
+- Waiting: `patrolTester.waitUntilVisible/...` only. `Future.delayed`/sleeps are banned (Law § 10.2.5 applies here too). **`pumpAndSettle` is banned in all device/Patrol tests** — ambient loops (backdrop drift, pulses) schedule frames forever on a real device; the app never settles. (Widget tests under fake-async are unaffected — their `pumpAndSettle` terminates.) Time-sensitive taps use `settlePolicy: SettlePolicy.noSettle` + explicit `waitUntilVisible` (intro countdown precedent).
 - Native interactions: `native.pressBack()` for system back; no raw `adb shell input` inside Patrol tests.
-- Determinism: solo flows with bots use a fixed match seed injected via test config; screenshots may be captured but never asserted pixel-by-pixel (token colors vary by theme drift).
+- Determinism: the match seed is wall-clock in the shell (not injectable today — backlog: seeded test config). Race-finish therefore asserts that placements RENDER (incl. `T-1st` shared-rank, GDD § 7.6), never the outcome; screenshots may be captured but never asserted pixel-by-pixel (token colors vary by theme drift).
 - Every new user-visible flow adds its Patrol case in the same PR (DoD link, `docs/05` § 6).
 - Runs: `patrol test --device <serial>` per enrolled device (or `scripts/smoke_device.sh <serial>` for suite+crash-scan) (Pi rig `192.168.0.5:5555`, phone when enrolled); all enrolled devices pass = release checklist condition. CI emulator hosting is backlog.
 
@@ -171,9 +174,9 @@ Patrol runs the app on real devices and drives the real Flutter widget tree — 
 | 2 | `smoke_solo_match` | Home → PLAY SOLO | intro shows rule line; countdown ends in play (`JUMP` visible); 3 jumps complete without exception |
 | 3 | `smoke_quit_dialog` | in play → `native.pressBack()` | dialog `Quit the race?` shows; KEEP RUNNING returns to play (`JUMP` visible) |
 | 4 | `smoke_quit_to_home` | in play → back → QUIT | Home visible (`PLAY SOLO`); app process alive |
-| 5 | `smoke_race_finish` (seeded fast course) | play to completion | results screen shows placements; PLAY AGAIN restarts intro; HOME returns |
-| 6 | `smoke_profile_flow` | Home → profile avatar | profile screen opens; nickname edit persists; color swatch changes avatar; back returns Home |
+| 5 | `smoke_race_finish` | play to completion (round cap 90 s) | results screen shows placements (outcome not asserted — wall-clock seed, see § 11.1); PLAY AGAIN restarts intro |
+| 6 | `smoke_profile_flow` | Home → profile avatar | profile editor opens (field visible); back returns Home. Persistence/swatch behavior is widget-test territory |
 | 7 | `smoke_settings_flow` | Home → gear | settings opens; sound toggle flips; credits lists every ATTRIBUTION row; back returns |
-| 8 | `smoke_orientation_lock` | rotate device (native) | portrait enforced — world renders unchanged |
+| 8 | `smoke_orientation_lock` | portrait steady-state (platform note: patrol 3.20 has no rotate API and the Pi rig has no accelerometer — true rotation coverage lands with a phone-rig case) | UI renders unchanged after settle |
 
 Standing suite must stay green on every enrolled device; a red case blocks release exactly like CI.
