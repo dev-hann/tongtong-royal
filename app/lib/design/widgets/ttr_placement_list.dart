@@ -30,19 +30,27 @@ class TtrPlacementList extends StatelessWidget {
         for (final (index, placement) in placements.indexed)
           TtrStaggeredEntrance(
             index: index,
-            child: ListTile(
+            child: Padding(
               key: ValueKey(placement.playerId),
-              leading: Text(
-                _rankLabel(
-                  placement.rank,
-                  sharedRanks.contains(placement.rank),
-                ),
-                style: TypeScale.title,
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpacingScale.lg,
+                vertical: SpacingScale.sm,
               ),
-              title: Text(placement.playerId, style: TypeScale.body),
-              trailing: Text(
-                '${placement.points} pt',
-                style: TypeScale.label,
+              child: Row(
+                children: [
+                  Text(
+                    _rankLabel(
+                      placement.rank,
+                      sharedRanks.contains(placement.rank),
+                    ),
+                    style: TypeScale.title,
+                  ),
+                  const SizedBox(width: SpacingScale.md),
+                  Expanded(
+                    child: Text(placement.playerId, style: TypeScale.body),
+                  ),
+                  Text('${placement.points} pt', style: TypeScale.label),
+                ],
               ),
             ),
           ),

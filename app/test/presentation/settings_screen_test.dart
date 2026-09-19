@@ -1,3 +1,6 @@
+import 'package:app/design/ttr_icons.dart';
+import 'package:app/design/widgets/ttr_settings_row.dart';
+import 'package:app/design/widgets/ttr_switch.dart';
 import 'package:app/infra/profile_store.dart';
 import 'package:app/presentation/credits_screen.dart';
 import 'package:app/presentation/settings_screen.dart';
@@ -27,7 +30,7 @@ void main() {
   testWidgets('sound toggle starts on, flips off and persists', (tester) async {
     await pumpScreen(tester);
 
-    final toggle = tester.widget<SwitchListTile>(
+    final toggle = tester.widget<TtrSwitch>(
       find.byKey(SettingsScreen.soundToggleKey),
     );
     expect(toggle.value, isTrue);
@@ -37,9 +40,7 @@ void main() {
     await tester.pump();
 
     expect(
-      tester
-          .widget<SwitchListTile>(find.byKey(SettingsScreen.soundToggleKey))
-          .value,
+      tester.widget<TtrSwitch>(find.byKey(SettingsScreen.soundToggleKey)).value,
       isFalse,
     );
 
@@ -65,4 +66,16 @@ void main() {
 
     expect(find.textContaining('0.1.0'), findsOneWidget);
   });
+
+  testWidgets(
+    'rows use the design system with Phosphor icons (guide § 2.1, § 5)',
+    (tester) async {
+      await pumpScreen(tester);
+
+      expect(find.byType(TtrSettingsRow), findsNWidgets(2));
+      expect(find.byIcon(TtrIcons.speakerHigh), findsOneWidget);
+      expect(find.byIcon(TtrIcons.bookOpen), findsOneWidget);
+      expect(find.byIcon(TtrIcons.caretRight), findsOneWidget);
+    },
+  );
 }

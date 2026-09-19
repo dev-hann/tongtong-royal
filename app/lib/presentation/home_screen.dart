@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/ttr_icons.dart';
 import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                       key: settingsButtonKey,
                       onPressed: onOpenSettings,
                       icon: const Icon(
-                        Icons.settings,
+                        TtrIcons.gear,
                         color: ColorPalette.neutral700,
                         size: 28,
                       ),

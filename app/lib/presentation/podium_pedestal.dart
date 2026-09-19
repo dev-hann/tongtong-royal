@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/ttr_icons.dart';
 import 'package:app/design/widgets/ttr_pulse.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
@@ -61,7 +62,7 @@ class _PodiumPedestalState extends State<PodiumPedestal> {
       children: [
         if (widget.trophy)
           const Icon(
-            Icons.emoji_events,
+            TtrIcons.trophy,
             key: trophyIconKey,
             color: ColorPalette.warning,
             size: SpacingScale.xxxl,

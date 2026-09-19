@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/ttr_icons.dart';
 import 'package:app/presentation/podium_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,6 +64,7 @@ void main() {
   testWidgets('trophy icon sits on the first-place pedestal', (tester) async {
     await tester.pumpWidget(wrap(build()));
     expect(find.byKey(PodiumScreen.trophyKey), findsOneWidget);
+    expect(find.byIcon(TtrIcons.trophy), findsOneWidget);
   });
 
   testWidgets('4th place shows as a small chip below the podium', (

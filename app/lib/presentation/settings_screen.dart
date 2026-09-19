@@ -2,15 +2,18 @@ import 'dart:async' show unawaited;
 
 import 'package:app/app_config.dart';
 import 'package:app/design/tokens.dart';
+import 'package:app/design/ttr_icons.dart';
 import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
+import 'package:app/design/widgets/ttr_settings_row.dart';
+import 'package:app/design/widgets/ttr_switch.dart';
 import 'package:app/presentation/credits_screen.dart';
 import 'package:app/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
 
-/// Settings screen (GDD § 8.1, guide § 6): grouped list with the
-/// sound toggle (active = primary), a credits row and the version
-/// footer. All state lives in [controller]; this widget only
-/// renders and forwards taps.
+/// Settings screen (GDD § 8.1, guide § 6): grouped card rows with
+/// the sound toggle (active = primary), a credits row and the version
+/// footer. All state lives in [controller]; this widget only renders
+/// and forwards taps.
 class SettingsScreen extends StatelessWidget {
   /// Creates the settings screen.
   const SettingsScreen({required this.controller, super.key});
@@ -48,24 +51,15 @@ class SettingsScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                     horizontal: SpacingScale.xl,
                   ),
-                  child: Material(
-                    color: ColorPalette.surface,
-                    borderRadius: BorderRadius.circular(RadiusScale.card),
-                    clipBehavior: Clip.antiAlias,
-                    child: SwitchListTile(
+                  child: TtrSettingsRow(
+                    leading: TtrIcons.speakerHigh,
+                    title: 'Sound',
+                    subtitle: 'Sound effects and music',
+                    trailing: TtrSwitch(
                       key: soundToggleKey,
                       value: controller.soundEnabled,
                       onChanged: (value) =>
                           unawaited(controller.setSoundEnabled(value: value)),
-                      title: const Text('Sound', style: TypeScale.bodyEmphasis),
-                      subtitle: Text(
-                        'Sound effects and music',
-                        style: TypeScale.body.copyWith(
-                          color: ColorPalette.neutral500,
-                        ),
-                      ),
-                      activeTrackColor: ColorPalette.primary,
-                      inactiveTrackColor: ColorPalette.neutral200,
                     ),
                   ),
                 ),
@@ -74,32 +68,16 @@ class SettingsScreen extends StatelessWidget {
                     horizontal: SpacingScale.xl,
                     vertical: SpacingScale.md,
                   ),
-                  child: Material(
-                    color: ColorPalette.surface,
-                    borderRadius: BorderRadius.circular(RadiusScale.card),
-                    clipBehavior: Clip.antiAlias,
-                    child: ListTile(
-                      key: creditsRowKey,
-                      leading: const Icon(
-                        Icons.menu_book,
-                        color: ColorPalette.neutral700,
-                      ),
-                      title: const Text(
-                        'Credits',
-                        style: TypeScale.bodyEmphasis,
-                      ),
-                      subtitle: Text(
-                        'Fonts and asset attribution',
-                        style: TypeScale.body.copyWith(
-                          color: ColorPalette.neutral500,
-                        ),
-                      ),
-                      trailing: const Icon(
-                        Icons.chevron_right,
-                        color: ColorPalette.neutral500,
-                      ),
-                      onTap: () => _openCredits(context),
+                  child: TtrSettingsRow(
+                    key: creditsRowKey,
+                    leading: TtrIcons.bookOpen,
+                    title: 'Credits',
+                    subtitle: 'Fonts and asset attribution',
+                    trailing: const Icon(
+                      TtrIcons.caretRight,
+                      color: ColorPalette.neutral500,
                     ),
+                    onTap: () => _openCredits(context),
                   ),
                 ),
                 const Spacer(),

@@ -1,3 +1,4 @@
+import 'package:app/design/ttr_icons.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/presentation/home_screen.dart';
 import 'package:flutter/material.dart';
@@ -87,5 +88,6 @@ void main() {
     await tester.tap(find.byKey(HomeScreen.settingsButtonKey));
     await tester.pump();
     expect(opened, isTrue);
+    expect(find.byIcon(TtrIcons.gear), findsOneWidget);
   });
 }

@@ -30,7 +30,7 @@ Rules:
 
 ## 2.1 Iconography
 
-- **Set**: Phosphor Icons, **Fill** weight (`PhosphorIcons.fill.*`) — rounded, chunky, matches the Fredoka toy-box personality. Stock Material outlined icons are forbidden in UI chrome.
+- **Set**: Phosphor Icons, **Fill** weight — rounded, chunky, matches the Fredoka toy-box personality. Stock Material outlined icons are forbidden in UI chrome. App code accesses glyphs via `TtrIcons.*` (`app/lib/design/ttr_icons.dart`): `phosphor_flutter` 2.1.0 (latest) subclasses `IconData`, which is `final` on the pinned Flutter SDK, so its Dart API cannot compile — `TtrIcons` declares the same Fill codepoints against the package's bundled font.
 - Sizes: 24 (rows), 28 (home entries), 32+ (hero moments). No ad-hoc sizes.
 - Colors: `neutral700` default, `primary` for the single emphasized icon per screen. Never player colors on icons.
 - Icon + label pairs: icon color matches its label style; both come from tokens.
