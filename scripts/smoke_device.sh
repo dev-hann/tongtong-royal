@@ -22,14 +22,20 @@ fi
 adb -s "$SERIAL" wait-for-device
 adb -s "$SERIAL" logcat -c 2>/dev/null || true
 
-ARGS=(test --device "$SERIAL")
+# patrol_cli rejects directory targets — enumerate the standing suite.
 if [ -n "$TARGET" ]; then
-  ARGS+=("--target" "$TARGET")
+  FILES=("$TARGET")
 else
-  ARGS+=("--target" "integration_test/")
+  FILES=(app/integration_test/*_test.dart)
 fi
 
-patrol "${ARGS[@]}"
+FAILURES=0
+for f in "${FILES[@]}"; do
+  echo "== patrol: $f =="
+  if ! patrol test --device "$SERIAL" --target "$f"; then
+    FAILURES=$((FAILURES + 1))
+  fi
+done
 
 echo "== smoke: crash scan =="
 CRASHES=$(adb -s "$SERIAL" logcat -d 2>/dev/null \
