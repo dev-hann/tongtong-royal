@@ -8,6 +8,7 @@ environment:
   sdk: ^3.13.0
 
 flutter:
+  uses-material-design: true
   fonts:
     - family: Fredoka
       fonts:
@@ -21,6 +22,7 @@ dependencies:
   flutter:
     sdk: flutter
   forge2d: ^0.13.0
+  phosphor_flutter: ^2.1.0
   shared_preferences: ^2.3.0
   tongtong_shared:
     path: ../shared

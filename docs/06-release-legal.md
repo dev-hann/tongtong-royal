@@ -32,6 +32,11 @@ Checklist document. Nothing ships until its boxes are ticked. Legal requirements
 
 ## 4. Store Checklists
 
+Pre-build sanity (learned from the 2026-09 icon incident — Material icon font silently missing):
+
+- [ ] `app/pubspec.yaml` contains `flutter: uses-material-design: true`
+- [ ] All bundled assets listed in `ATTRIBUTION.md` (fonts, icons, art, sound)
+
 ### Google Play
 
 - [ ] Developer account ($25 one-time)

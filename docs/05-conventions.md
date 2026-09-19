@@ -60,6 +60,7 @@ GOOD: feat(game): checkpoint respawn on fall (GDD § 4.1)
 - [ ] Layer anti-pattern sections consulted; no violations introduced
 - [ ] Docs updated in-commit if behavior/rules changed
 - [ ] No secrets, no `print`, no empty catch, no magic numbers
+- [ ] **Deployable builds additionally pass the compliance review (AGENTS § 10): zero blockers**
 
 ### M1 — Single-player core
 

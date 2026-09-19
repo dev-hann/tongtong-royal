@@ -106,3 +106,13 @@ Package-specific runs use `dart test` / `dart analyze` inside `app/`, `server/`,
 ## 9. Milestone Context
 
 Current milestone and its Definition of Done live in `docs/05-conventions.md` § Definition of Done. Do not work ahead of the current milestone without the user's instruction.
+
+## 10. Post-Work Compliance Review (mandatory gate)
+
+After every major wave, at milestone completion, and **always before a deployable build** (APK/store), a compliance review runs:
+
+1. **Fresh context**: the review is performed by a subagent (or contributor) that did NOT implement the work — no implementation-context bias.
+2. **Doc-based audit**: the reviewer reads the bible (`AGENTS.md`, `docs/01`–`08`) and checks the changed code against it: prohibitions (§ 6), design guide component map + token/icon rules, layer boundaries, GDD rule conformance, conventions limits (file/function size, logging), release checklist (`docs/06`).
+3. **Findings are graded**: `blocker` (bible violation or spec mismatch — must be fixed before deploy), `warn` (fix or explicitly waived by the user), `note` (style/backlog candidates).
+4. **Feedback loop**: any NEW class of violation found gets added to a checklist in the relevant doc (same commit as the fix) so the gate catches it next time.
+5. Deploy requires: zero blockers, review report recorded in the PR/commit message.

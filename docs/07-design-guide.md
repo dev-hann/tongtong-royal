@@ -28,6 +28,14 @@ Rules:
 - Numbers in HUD/podium always Fredoka SemiBold — Nunito numerals read as "spreadsheet".
 - One font family per visual unit; never mix Fredoka and Nunito inside a single word/row label pair.
 
+## 2.1 Iconography
+
+- **Set**: Phosphor Icons, **Fill** weight (`PhosphorIcons.fill.*`) — rounded, chunky, matches the Fredoka toy-box personality. Stock Material outlined icons are forbidden in UI chrome.
+- Sizes: 24 (rows), 28 (home entries), 32+ (hero moments). No ad-hoc sizes.
+- Colors: `neutral700` default, `primary` for the single emphasized icon per screen. Never player colors on icons.
+- Icon + label pairs: icon color matches its label style; both come from tokens.
+- The Material icons font stays bundled (`uses-material-design: true`) for framework-internal glyphs; app code uses Phosphor.
+
 ## 3. Color Usage
 
 | Token family | Meaning | Never use for |
