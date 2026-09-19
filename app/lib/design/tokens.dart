@@ -16,6 +16,7 @@ import 'dart:ui' show Color;
 import 'package:flutter/painting.dart' show FontWeight, TextStyle;
 
 export 'package:app/design/arena_palette.dart' show ArenaPalette;
+export 'package:app/design/component_sizes.dart' show ComponentSizes;
 
 /// Font families per design guide § 2. Bundled as variable `.ttf`
 /// assets (offline-first); Korean text falls back through

@@ -1,3 +1,6 @@
+import 'package:app/design/widgets/ttr_back_button.dart';
+import 'package:app/design/widgets/ttr_card_group.dart';
+import 'package:app/design/widgets/ttr_page_header.dart';
 import 'package:app/infra/profile_store.dart';
 import 'package:app/presentation/onboarding_screen.dart';
 import 'package:app/profile/profile_controller.dart';
@@ -28,6 +31,9 @@ void main() {
         ),
       ),
     );
+    // Two settle pumps: the card groups' staggered-entrance timers
+    // fire on the first, the slide/fade needs a second frame.
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
   }
 
@@ -45,6 +51,19 @@ void main() {
     expect(find.byKey(const ValueKey('onboarding_swatch_3')), findsOneWidget);
   });
 
+  testWidgets('form law: backless header carries SKIP, two card sections', (
+    tester,
+  ) async {
+    await pumpScreen(tester, () {});
+
+    expect(find.byType(TtrPageHeader), findsOneWidget);
+    expect(find.byKey(TtrBackButton.buttonKey), findsNothing);
+    expect(find.byKey(OnboardingScreen.skipButtonKey), findsOneWidget);
+    expect(find.byType(TtrCardGroup), findsNWidgets(2));
+    expect(find.text('IDENTITY'), findsOneWidget);
+    expect(find.text('COLOR'), findsOneWidget);
+  });
+
   testWidgets('START saves nickname + color and flips the onboarding flag', (
     tester,
   ) async {
@@ -55,6 +74,9 @@ void main() {
       find.byKey(OnboardingScreen.nicknameFieldKey),
       'HANN',
     );
+    // Let the field's counter decoration relayout before tapping.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.tap(find.byKey(const ValueKey('onboarding_swatch_2')));
     await tester.pump();
     await tester.tap(find.byKey(OnboardingScreen.startButtonKey));

@@ -1,5 +1,7 @@
 import 'package:app/design/ttr_icons.dart';
 import 'package:app/design/widgets/ttr_back_button.dart';
+import 'package:app/design/widgets/ttr_card_group.dart';
+import 'package:app/design/widgets/ttr_page_header.dart';
 import 'package:app/design/widgets/ttr_settings_row.dart';
 import 'package:app/design/widgets/ttr_switch.dart';
 import 'package:app/infra/profile_store.dart';
@@ -95,6 +97,17 @@ void main() {
     await pumpScreen(tester);
 
     expect(find.textContaining('0.1.0'), findsOneWidget);
+  });
+
+  testWidgets('form law: fixed header over two card sections', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    expect(find.byType(TtrPageHeader), findsOneWidget);
+    expect(find.byType(TtrCardGroup), findsNWidgets(2));
+    expect(find.text('GENERAL'), findsOneWidget);
+    expect(find.text('ABOUT'), findsOneWidget);
   });
 
   testWidgets(

@@ -123,6 +123,12 @@ void main() {
     });
   });
 
+  group('component sizes', () {
+    test('avatar circle diameter is 96 (guide § 6 tokenized avatar)', () {
+      expect(ComponentSizes.avatar, 96);
+    });
+  });
+
   group('motion scales', () {
     test('press/pop/pulse peaks match guide § 4', () {
       expect(MotionScales.press, 0.96);

@@ -34,8 +34,14 @@ for f in "${FILES[@]}"; do
   echo "== patrol: $f =="
   if ! patrol test --device "$SERIAL" --target "$f"; then
     FAILURES=$((FAILURES + 1))
+    echo "SMOKE FAIL: patrol case failed: $f" >&2
   fi
 done
+
+if [ "$FAILURES" -ne 0 ]; then
+  echo "SMOKE FAIL: $FAILURES case(s) failed on $SERIAL" >&2
+  exit 1
+fi
 
 echo "== smoke: crash scan =="
 CRASHES=$(adb -s "$SERIAL" logcat -d 2>/dev/null \

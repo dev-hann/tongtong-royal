@@ -1,4 +1,6 @@
 import 'package:app/design/widgets/ttr_back_button.dart';
+import 'package:app/design/widgets/ttr_card_group.dart';
+import 'package:app/design/widgets/ttr_page_header.dart';
 import 'package:app/presentation/credits_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(home: Scaffold(body: CreditsScreen())),
     );
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Fredoka font'), findsOneWidget);
     expect(find.text('Nunito font'), findsOneWidget);
@@ -18,6 +21,27 @@ void main() {
     expect(
       find.byKey(const Key('credits_row_Phosphor Icons (Fill)')),
       findsOneWidget,
+    );
+  });
+
+  testWidgets('form law: fixed header over one assets card group', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: CreditsScreen())),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(TtrPageHeader), findsOneWidget);
+    expect(find.byType(TtrCardGroup), findsOneWidget);
+    expect(find.text('ASSETS'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(TtrCardGroup),
+        matching: find.text('Fredoka font'),
+      ),
+      findsOneWidget,
+      reason: 'attribution rows live inside the card group',
     );
   });
 

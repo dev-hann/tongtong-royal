@@ -1,14 +1,17 @@
 import 'package:app/design/tokens.dart';
-import 'package:app/design/widgets/ttr_back_button.dart';
 import 'package:app/design/widgets/ttr_button.dart';
+import 'package:app/design/widgets/ttr_card_group.dart';
 import 'package:app/design/widgets/ttr_color_swatch.dart';
+import 'package:app/design/widgets/ttr_page_header.dart';
 import 'package:app/design/widgets/ttr_page_shell.dart';
 import 'package:app/presentation/profile_stats.dart';
 import 'package:app/profile/profile_controller.dart';
 import 'package:flutter/material.dart';
 
-/// Profile screen (GDD § 8.1, guide § 6): avatar block, nickname
-/// editor, palette grid and the stats cards row.
+/// Profile screen (GDD § 8.1, guide § 6 FORM): fixed `TtrPageHeader`
+/// over one scroll of `TtrCardGroup` sections — IDENTITY (avatar +
+/// nickname field + full-width SAVE), COLOR (palette grid), RECORD
+/// (stats cards) — staggered as groups 0/1/2.
 ///
 /// Save policy (documented decision): the nickname persists on field
 /// submit — IME "done" or the SAVE button; palette swatches persist
@@ -68,56 +71,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
         listenable: widget.controller,
         builder: (context, _) {
           final profile = widget.controller.profile;
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(SpacingScale.xl),
-            child: Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(SpacingScale.lg),
-                  child: Stack(
-                    alignment: Alignment.center,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const TtrPageHeader(title: 'PROFILE'),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(SpacingScale.xl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TtrBackButton(),
+                      TtrCardGroup(
+                        label: 'IDENTITY',
+                        staggerIndex: 0,
+                        children: [
+                          _AvatarBlock(
+                            colorIndex: profile.colorIndex,
+                            nickname: profile.nickname,
+                            avatarKey: ProfileScreen.avatarKey,
+                          ),
+                          _NicknameField(
+                            key: ProfileScreen.nicknameFieldKey,
+                            controller: _nickname,
+                            invalid: _invalid,
+                            onSubmitted: (_) => _saveNickname(),
+                          ),
+                          TtrButton(
+                            key: ProfileScreen.saveNicknameButtonKey,
+                            label: 'SAVE',
+                            onPressed: _saveNickname,
+                          ),
+                        ],
                       ),
-                      Text(
-                        'PROFILE',
-                        style: TypeScale.title,
-                        textAlign: TextAlign.center,
+                      const SizedBox(height: SpacingScale.xl),
+                      TtrCardGroup(
+                        label: 'COLOR',
+                        staggerIndex: 1,
+                        children: [
+                          _PaletteGrid(
+                            swatchKeyPrefix: ProfileScreen.swatchKeyPrefix,
+                            selectedIndex: profile.colorIndex,
+                            onSelect: widget.controller.selectColor,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: SpacingScale.xl),
+                      TtrCardGroup(
+                        label: 'RECORD',
+                        staggerIndex: 2,
+                        children: [
+                          ProfileStatsRow(stats: widget.controller.stats),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: SpacingScale.lg),
-                _AvatarBlock(
-                  colorIndex: profile.colorIndex,
-                  nickname: profile.nickname,
-                  avatarKey: ProfileScreen.avatarKey,
-                ),
-                const SizedBox(height: SpacingScale.xl),
-                _NicknameField(
-                  key: ProfileScreen.nicknameFieldKey,
-                  controller: _nickname,
-                  invalid: _invalid,
-                  onSubmitted: (_) => _saveNickname(),
-                ),
-                const SizedBox(height: SpacingScale.md),
-                TtrButton(
-                  key: ProfileScreen.saveNicknameButtonKey,
-                  label: 'SAVE',
-                  onPressed: _saveNickname,
-                ),
-                const SizedBox(height: SpacingScale.xl),
-                _PaletteGrid(
-                  swatchKeyPrefix: ProfileScreen.swatchKeyPrefix,
-                  selectedIndex: profile.colorIndex,
-                  onSelect: widget.controller.selectColor,
-                ),
-                const SizedBox(height: SpacingScale.xl),
-                ProfileStatsRow(stats: widget.controller.stats),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
@@ -142,8 +152,8 @@ class _AvatarBlock extends StatelessWidget {
       children: [
         Container(
           key: avatarKey,
-          width: 96,
-          height: 96,
+          width: ComponentSizes.avatar,
+          height: ComponentSizes.avatar,
           decoration: BoxDecoration(
             color: PlayerPalette.forIndex(colorIndex),
             shape: BoxShape.circle,
@@ -193,11 +203,17 @@ class _NicknameField extends StatelessWidget {
         errorText: invalid ? '1-12 characters after trimming' : null,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(RadiusScale.button),
-          borderSide: const BorderSide(color: ColorPalette.neutral200),
+          borderSide: const BorderSide(
+            color: ColorPalette.neutral200,
+            width: SpacingScale.xs,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(RadiusScale.button),
-          borderSide: const BorderSide(color: ColorPalette.primary),
+          borderSide: const BorderSide(
+            color: ColorPalette.primary,
+            width: SpacingScale.xs,
+          ),
         ),
       ),
     );

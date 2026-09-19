@@ -1,5 +1,7 @@
 import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_back_button.dart';
+import 'package:app/design/widgets/ttr_card_group.dart';
+import 'package:app/design/widgets/ttr_page_header.dart';
 import 'package:app/infra/profile_store.dart';
 import 'package:app/presentation/profile_screen.dart';
 import 'package:app/profile/profile_controller.dart';
@@ -20,6 +22,9 @@ void main() {
         home: Scaffold(body: ProfileScreen(controller: controller)),
       ),
     );
+    // Two settle pumps: the card groups' staggered-entrance timers
+    // fire on the first, the slide/fade needs a second frame.
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
   }
 
@@ -71,6 +76,9 @@ void main() {
       find.byKey(ProfileScreen.nicknameFieldKey),
       ' HANN ',
     );
+    // Let the field's counter decoration relayout before tapping.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.tap(find.byKey(ProfileScreen.saveNicknameButtonKey));
     await tester.pump();
     await tester.pump();
@@ -102,6 +110,43 @@ void main() {
     expect(reloaded.profile.colorIndex, 2);
   });
 
+  testWidgets('form law: fixed header over three card sections', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    expect(find.byType(TtrPageHeader), findsOneWidget);
+    expect(find.byType(TtrCardGroup), findsNWidgets(3));
+    expect(find.text('IDENTITY'), findsOneWidget);
+    expect(find.text('COLOR'), findsOneWidget);
+    expect(find.text('RECORD'), findsOneWidget);
+  });
+
+  testWidgets('form law: SAVE stretches the identity card width', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    final save = tester.getSize(
+      find.byKey(ProfileScreen.saveNicknameButtonKey),
+    );
+    final body = tester.getSize(find.byType(SingleChildScrollView));
+    expect(
+      save.width,
+      body.width - 2 * (SpacingScale.xl + SpacingScale.md + SpacingScale.xs),
+      reason: 'body padding + card padding + card border on each side',
+    );
+  });
+
+  testWidgets('form law: avatar renders at the tokenized component size', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    final avatar = tester.getSize(find.byKey(ProfileScreen.avatarKey));
+    expect(avatar, const Size(ComponentSizes.avatar, ComponentSizes.avatar));
+  });
+
   testWidgets('too-long nickname shows an error and saves nothing', (
     tester,
   ) async {
@@ -111,6 +156,9 @@ void main() {
       find.byKey(ProfileScreen.nicknameFieldKey),
       'A' * 13,
     );
+    // Let the field's counter decoration relayout before tapping.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.tap(find.byKey(ProfileScreen.saveNicknameButtonKey));
     await tester.pump();
 
