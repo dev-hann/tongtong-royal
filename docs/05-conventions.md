@@ -16,7 +16,7 @@
 | Function length | ≤ 40 lines |
 | Constructor parameters | Prefer named; > 6 params → introduce a params object |
 
-Naming: Dart style (`lowerCamelCase`, `UpperCamelCase`, `snake_case.dart`). Domain types use game vocabulary from the GDD (`RoundResult`, `Placement`) — one concept, one name, everywhere.
+Naming: Dart style (`lowerCamelCase`, `UpperCamelCase`, `snake_case.dart`). Domain types use game vocabulary from the GDD (`QualificationResult`, `ShowSchedule`) — one concept, one name, everywhere.
 
 **Design tokens (mandatory)**: all colors, text styles, spacing, radii, and motion durations come from `app/lib/design/tokens.dart`. Inline `Color(0x...)`, raw `TextStyle(...)` in screens, and ad-hoc paddings outside the token scale are review-blockers. Shared UI building blocks live in `app/lib/design/widgets/`; the in-game HUD (incl. the one-button action control) lives in `app/lib/design/game_hud/`.
 
@@ -70,7 +70,7 @@ GOOD: feat(game): checkpoint respawn on fall (GDD § 4.1)
 - [ ] Tuning constants all in `shared/physics`
 - [ ] GDD § 4.1 behaviors tested (finish detection, timeout ranking by distance)
 
-### M2 — Shell UI
+### M2 — Shell UI *(v1 flow rows below are historical; v2 = home → show → podium per GDD v2)*
 
 - [ ] Full state machine: home → intro → play → results (terminal) → home
 - [ ] Widget tests per screen; state transitions unit-tested in domain

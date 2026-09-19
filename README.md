@@ -1,6 +1,6 @@
 # TongTong Royal (통통로얄)
 
-A one-button physics race for mobile: auto-run, time your jumps, beat the bots. (Multiplayer rooms and extra minigames are built and preserved in the codebase for a later release — see docs/08-roadmap.md.)
+A Fall Guys-style show for mobile: qualification rounds 4→3→2→1, one button, one crown — you vs 3 bots. (Online-show infrastructure is built and preserved — see docs/08-roadmap.md.)
 
 ## Stack
 
@@ -78,7 +78,7 @@ adb install -r app/build/app/outputs/flutter-apk/app-release.apk
 | M1 | Single-player core: physics character (move/jump/dash), one race course | 2-3 wk |
 | M2 | Shell UI: lobby → intro → play → results → podium state machine | 1-2 wk |
 | M3 | Server + netcode: rooms/invite codes, 20Hz snapshots, interpolation | 3-4 wk |
-| M4 | ~~Minigames 2 & 3~~ *(superseded by the 2026-09-19 scope reset — single-game single-round; expansion is trigger-gated in the roadmap)* | — |
+| M4 | ~~Minigames 2 & 3~~ *(superseded twice: 2026-09-19 scope reset, then GDD v2 show era — current DoD in `docs/05` § M4)* | — |
 | M5 | Polish: disconnect handling, sound, ads, store release | 2-3 wk |
 
 Milestone acceptance criteria: `docs/05-conventions.md` § Definition of Done.

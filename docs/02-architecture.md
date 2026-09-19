@@ -56,18 +56,18 @@ abstract class MiniGame {
 }
 
 /// Per-round verdict: qualifiers (+ shared-qualification groups per
-/// GDD 7.1), eliminated, and champion when this round is the FINAL.
+/// GDD 7.1), eliminated, and champions when this round is the FINAL.
 final class QualificationResult {
   final List<PlayerId> qualified;   // order matters within (finish order)
   final List<PlayerId> eliminated;  // elimination order
-  final bool isFinal;               // FINAL rounds crown a champion
-  final PlayerId? champion;         // null unless isFinal; shared-crown
-                                    // (GDD 7.2) yields BOTH in qualified
-                                    // with champion recorded per rules
+  final bool isFinal;               // FINAL rounds crown champions
+  final List<PlayerId> champions;   // empty unless isFinal; exactly 1,
+                                    // or 2 for a shared crown (GDD 7.2 —
+                                    // both get crownsWon)
 }
 ```
 
-The quota is a property of the SHOW SCHEDULE (GDD § 4), not the game: resolvers receive the quota via the event/input channel and apply it. The show state machine chains rounds `4 → 3 → 2 → crown` (domain-owned; `QUALIFY_FLASH` replaces the v1 `ROUND_RESULTS` phase; `toPodium` is the reachable ending).
+The quota is a property of the SHOW SCHEDULE (GDD § 4), not the game: resolvers receive the quota via the event/input channel and apply it. The show state machine chains rounds `4 → 3 → 2 (or 3 via shared qualification) → crown` (domain-owned; `QUALIFY_FLASH` replaces the v1 `ROUND_RESULTS` phase; `toPodium` is the reachable ending).
 
 **Event channels (concrete):** `RoundEvents` carries ordered discrete events (`PlayerFinished`, `PlayerFell`, `PlayerEliminated`, ... — sealed set) + quota + roster. Continuous data (e.g. race progress samples) travels via an optional per-minigame input parameter (e.g. `TrapRaceInput { roster, progressSamples }`). Last progress sample per player wins.
 

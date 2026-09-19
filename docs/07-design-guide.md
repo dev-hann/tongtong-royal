@@ -60,7 +60,7 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 | **Pulse on emphasis** | Winner pedestal, "1st" chip, active round badge: repeating 1.0→1.04 scale at `pulse` period. One pulsing element per screen — more is noise. |
 | **Screen transitions** | Fade + slide-up 240ms (TtrPhaseTransition). Direction always "upward energy". |
 | **Ambient backdrop** | Slow drifting soft shapes (`ambient` loop) behind every shell screen — the "alive" floor. |
-| **Score delta fly-in** | Round points appear as chips flying in staggered (entrance rule) next to standings. |
+| **Verdict reveal** | QUALIFY_FLASH: each player chip drops in staggered (entrance rule), verdict-colored (qualified=success, eliminated=danger); champion reveal = crown pop (§ 4 pop + one pulse). |
 
 **Do not**: animate layout positions of interactive controls mid-tap (mis-taps), pulse more than one element per screen, or exceed 300ms for anything the user is waiting on.
 
@@ -77,14 +77,14 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 | Transient message | `TtrToast` | `SnackBar` |
 | Destructive confirm (quit race) | `TtrQuitDialog` (tokened AlertDialog + `TtrButton` actions; **safe action carries primary, destructive stays secondary — anti-misclick convention**; **actions fill the row as equal stretched buttons — never right-clustered**) | raw `AlertDialog` with default styling; danger-colored destructive buttons; right-clumped actions |
 | Route back affordance | `TtrBackButton` (left caret, top-left header) | text-only "< Back" or bare edge swipe |
-| Podium finish | Pedestal row (2-1-3 heights, trophy pulse) | flat ranked list |
+| Podium finish (crown ceremony) | Crown podium: champion center-tall with crown + pulse (one pulse rule), co-champions side-by-side (GDD § 7.2), eliminated chips small below | flat ranked list; points/standings lists |
 
 **BAD**: `Text('2nd', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))` — no font token, no tracking, no entrance, spreadsheet numeral.
 **GOOD**: `Text('2nd', style: TypeScale.display)` inside a staggered pedestal with `PlayerPalette` color block.
 
 ## 6. Screen Layout Patterns
 
-**The Non-Game Form Law (absolute — violations are review blockers, AGENTS § 10).** Every screen outside the game world (HUD/play rendering) follows EXACTLY ONE of two archetypes. No third layouts, no per-screen improvisation. **One exemption: Results is a terminal list screen** (staggered placement list + terminal actions) — its body is exempt from the FORM skeleton by design.
+**The Non-Game Form Law (absolute — violations are review blockers, AGENTS § 10).** Every screen outside the game world (HUD/play rendering) follows EXACTLY ONE of two archetypes. No third layouts, no per-screen improvisation. **One exemption: the elimination SUMMARY screen** (GDD § 7.3 — simulated outcome list + terminal actions) — body exempt from the FORM skeleton by design.
 
 - **A. FOCUSED** (single-purpose, no chrome): centered vertical column, no header, no scroll. Applies to: **Home, Round Intro, Results header zone**.
 - **B. FORM** (meta pages with content): `TtrPageHeader` (fixed, back + centered title, `SpacingScale.lg` padding — never inside the scroll area) + ONE scrollable body (`horizontal: SpacingScale.xl`) whose content appears ONLY inside `TtrCardGroup` sections (section label + card rows), actions full-width (`CrossAxisAlignment.stretch`), optional bottom-pinned footer. Applies to: **Profile, Settings, Credits, Onboarding** — and every future meta page.
@@ -95,10 +95,11 @@ Screens:
 
 - **Home** (FOCUSED): centered column — logo (two-tone display), tagline, stacked actions (PLAY SOLO primary large, FRIENDS secondary disabled + chip). Ambient backdrop. **Entry points: profile avatar top-left, settings gear top-right** (SafeArea-protected corners).
 - **Lobby**: reserved for the multiplayer rebuild (MVP Home replaces it) — seat card grid 2×2 centered, actions bottom.
-- **Intro** (FOCUSED): vertical rhythm — banner, giant countdown. Nothing else (single round: no round pill). Backdrop tinted to the race arena family.
+- **Show/Round Intro** (FOCUSED): vertical rhythm — ROUND n / 3 pill, game banner (name + rule line + verb), giant countdown. Backdrop tinted to the game's arena family.
 - **Play**: full-bleed world; HUD strip top (standings), timer badge bottom under the world, single action button bottom-center (bottom viewPadding-aware). (Game world — the Form Law does not apply here.)
-- **Results**: terminal screen — header pill, placement list (staggered), standings with delta chips, PLAY AGAIN primary + HOME secondary. No auto-advance.
-- **Podium**: removed from the MVP shell (multi-round flow deleted 2026-09-19); pattern returns with the multiplayer rebuild.
+- **QUALIFY_FLASH** (FOCUSED, 4 s auto-advance): verdict reveal — per-player chips staggered, `QUALIFIED` (success) / `ELIMINATED` (danger) verdict text, quota counter (e.g. `2 / 3 QUALIFIED`). The FINAL's flash is the **crown moment**: champion reveal with crown pop; shared crown shows both champions.
+- **Elimination summary** (exempt archetype): the human is out — own verdict, simulated show outcome (which bot wins the crown, one line), stat deltas, PLAY AGAIN primary + HOME secondary.
+- **Podium — crown ceremony** (FOCUSED): champion center-tall, crown + single pulse, co-champion pair when shared; `PLAY AGAIN` primary + `HOME` secondary.
 - **Profile** (FORM): `[IDENTITY]` avatar + nickname field + SAVE / `[COLOR]` palette grid / `[RECORD]` stats cards.
 - **Settings** (FORM): `[GENERAL]` sound toggle / `[ABOUT]` credits row; version footer bottom-pinned.
 - **Credits** (FORM): attribution rows in cards, body type.
@@ -139,4 +140,5 @@ Fredoka and Nunito are SIL OFL, bundled as `.ttf` assets in `app/assets/fonts/` 
 ### 9.4 Audio
 
 - Cue table per game doc (`docs/games/*.md` § Art & Audio); shared ids: `ui_tap`, `jump`, `finish`, `fanfare`, `fail` (+ per-game loops).
+- Loop cues: `hazard_whoosh` (hammer pass), `rim_shrink` (platform shrink rumble), `victory_loop` (crown ceremony bed).
 - Current SFX are ffmpeg-synthesized placeholders (release checklist row: swap for CC0 before store); every audio file carries an ATTRIBUTION row — synthesized or sourced, no exceptions.

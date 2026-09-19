@@ -12,8 +12,7 @@ Usability criteria for every user-facing change. Joins the compliance review gat
   |---------|----------------------------|
   | Home | default app exit |
   | Pushed route (Profile/Settings/Credits) | pop the route |
-  | ROUND_INTRO | abandon to Home (no dialog — nothing at stake in a 3 s countdown) |
-  | SHOW_INTRO / ROUND_PLAY (any round) | quit-confirm dialog (`TtrQuitDialog`) — abandoning the show records nothing |
+  | SHOW_INTRO / ROUND_PLAY (any round of the show) | quit-confirm dialog (`TtrQuitDialog`) — abandoning the show records nothing (GDD § 7.4) |
   | QUALIFY_FLASH (human qualified) | auto-advance to next round intro |
   | QUALIFY_FLASH (human eliminated) | show summary with simulated outcome + PLAY AGAIN / HOME |
   | PODIUM | PLAY AGAIN / HOME |

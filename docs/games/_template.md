@@ -39,8 +39,8 @@ Copy this file per game (`docs/games/<game-id>.md`). Every section is mandatory;
 
 ## Art & Audio
 
-- **Visual spec**: jelly-casual vector treatment (shapes, faces, animation states) mapped to `ArenaPalette` tokens (design guide § 7)
-- **Audio cues**: moment → sound id (from `docs/games/sfx-cues` common table)
+- **Visual spec**: jelly-casual vector treatment (shapes, faces, animation states) mapped to `ArenaPalette` tokens (design guide § 9.2)
+- **Audio cues**: moment → sound id (shared ids + loop ids per design guide § 9.4)
 
 ## Edge cases (game-level)
 

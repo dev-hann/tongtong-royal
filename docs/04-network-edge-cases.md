@@ -73,7 +73,7 @@ Sequencing: **inputs and snapshots carry independent `seq`/`tick` counters.** On
 | Snapshot starvation (client) | No snapshot for 2 s → show "unstable connection" banner, freeze interpolation (hold last state). Recovery: resume from next snapshot, snap to it |
 | Latency > 300 ms | Client shows ping warning only. **No kick, no throttling** (friends game principle) |
 | Duplicate join (same playerId, second socket) | First socket wins; second receives `AlreadyConnected` and is closed |
-| Message during state transition (race) | Every message is processed **only if valid for the current room state** (state machine owns filtering); otherwise dropped + logged. Examples: `StartMatch` from non-host → drop; input during `ROUND_RESULTS` → drop |
+| Message during state transition (race) | Every message is processed **only if valid for the current room state** (state machine owns filtering); otherwise dropped + logged. Examples: `StartMatch` from non-host → drop; input during `QUALIFY_FLASH` → drop |
 
 ## 7. Message Size Budget
 

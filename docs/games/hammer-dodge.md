@@ -14,7 +14,7 @@ The show's survival archetype: ROUND 2 (3 players, quota: last 2 alive). Fall Gu
 ## Qualification
 
 - **Quota (3 players → 2)**: the round ends the instant only 2 players remain alive; survivors qualify, everyone eliminated before that instant is out.
-- **Boundary rule**: if one event eliminates multiple players crossing the quota (3 alive → 1 in one tick), the victims of that event ALSO qualify (GDD § 7.1 shared qualification) — the show continues with 3 into the FINAL is impossible (FINAL is 2-player); in that case the **most recently eliminated before that event** returns... no — clean rule: GDD § 7.1 applies literally, and the FINAL variant supports 3 starters (narrow course handles 2–3 runners; quota still 1). FINAL player count = qualifier count, not fixed 2.
+- **Boundary rule**: GDD § 7.1 applies literally — if one event eliminates multiple players crossing the quota (3 alive → 1 in one tick), the victims of that event ALSO qualify (shared qualification). The FINAL then starts with 3 runners (see `trap-race.md` § FINAL: supports 2–3 starters; quota always 1).
 - **Timeout (60 s)**: all remaining survivors qualify (shared) — survival IS the qualification.
 - Elimination: hammer contact or falling off the platform. No respawn, no second chances.
 
@@ -46,7 +46,7 @@ Center-drift with wander (avoid stacking), jump when an arm's predicted tip cros
 ## Edge cases (game-level)
 
 - Same-tick multi-elimination crossing quota → shared qualification (§ above / GDD § 7.1).
-- All alive players eliminated on one tick → all share qualification (timeout rule degenerate case: quota = survivors = victims).
+- All alive players eliminated on one tick → all share qualification (GDD § 7.1 degenerate case: the eliminating event's victims qualify alongside survivors).
 - Hammer-arm overlap double-hit on one player → single elimination event (idempotent by playerId).
 - Shrink phase never eliminates by itself — only hammer contact or falling off the (shrinking) rim does.
 

@@ -30,7 +30,7 @@ Required in every rule-level test suite:
 
 - **Boundary values**: 0 players, 1 player, 4 players, exactly-at-timeout.
 - **Failure paths**: empty events, missing player, malformed round data.
-- **The spec's edge cases**: every item in `docs/01-game-design.md` § 7 has at least one named test (`gdd_7_4_race_timeout_ranks_by_distance`, etc.). An untested GDD edge case is an open defect.
+- **The spec's edge cases**: every item in `docs/01-game-design.md` § 7 has at least one named test (`gdd_<section>_*` per the CURRENT GDD numbering — v2 examples: `gdd_7_1_shared_qualification`, race-timeout under `docs/games/trap-race.md`). An untested GDD edge case is an open defect.
 
 ## 4. Physics Testing Pattern (headless)
 
@@ -102,7 +102,7 @@ scripts/smoke_device.sh <adb-serial>            # whole suite + logcat crash sca
 scripts/smoke_device.sh <serial> integration_test/smoke_solo_match_test.dart
 ```
 
-- **Text anchors** ( Patrol selectors AND wrapper assertions — label change ⇒ suite + this list change in the same commit): `PLAY SOLO`, `PLAY FRIENDS`, `Coming soon`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`, `START`, `PLAY AGAIN`, `HOME`, `Sound`, `TIME`, `NEW BEST`, `BEST TIME`, `Fredoka font`, `Nunito font`, `Phosphor Icons (Fill)`, rank ordinals (`1st`, `T-1st`). **GDD v2 show-era anchors (landing with the v2 implementation, same-commit when the screens land)**: `QUALIFIED`, `ELIMINATED`, `CROWN`, per-game intro rule lines (`First to the finish line`, `Last two standing qualify`).
+- **Text anchors** ( Patrol selectors AND wrapper assertions — label change ⇒ suite + this list change in the same commit): `PLAY SOLO`, `PLAY FRIENDS`, `Coming soon`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`, `START`, `PLAY AGAIN`, `HOME`, `Sound`, `TIME`, `NEW BEST`, `BEST TIME`, `Fredoka font`, `Nunito font`, `Phosphor Icons (Fill)`, rank ordinals (`1st`, `T-1st`) *(v1-era anchors — retained while the v1 suite runs; dropped with the v2 results screens)*. **GDD v2 show-era anchors (landing with the v2 implementation, same-commit when the screens land)**: `QUALIFIED`, `ELIMINATED`, `CROWN`, per-game intro rule lines (`First to the finish line`, `Last two standing qualify`).
 - The suite runs on the Pi rig only (`192.168.0.5:5555`) — absolute (user directive 2026-09-19).
 - Failure output includes the last fatal exceptions for triage.
 
@@ -175,7 +175,7 @@ Patrol runs the app on real devices and drives the real Flutter widget tree — 
 | 2 | `smoke_solo_match` | Home → PLAY SOLO | intro shows rule line; countdown ends in play (`JUMP` visible); 3 jumps complete without exception |
 | 3 | `smoke_quit_dialog` | in play → `native.pressBack()` | dialog `Quit the race?` shows; KEEP RUNNING returns to play (`JUMP` visible) |
 | 4 | `smoke_quit_to_home` | in play → back → QUIT | Home visible (`PLAY SOLO`); app process alive |
-| 5 | `smoke_race_finish` | play to completion (round cap 90 s) | results screen shows placements (outcome not asserted — wall-clock seed, see § 11.1); PLAY AGAIN restarts intro |
+| 5 | `smoke_race_finish` | play to completion (v1 round cap 90 s) | *(v1 suite as built — v2 rows: qualify-flash verdicts, crown podium; land with the v2 implementation per § 9 note)* |
 | 6 | `smoke_profile_flow` | Home → profile avatar | profile editor opens (field visible); back returns Home. Persistence/swatch behavior is widget-test territory |
 | 7 | `smoke_settings_flow` | Home → gear | settings opens; sound toggle flips; credits lists every ATTRIBUTION row; back returns |
 | 8 | `smoke_orientation_lock` | portrait steady-state (platform note: patrol 3.20 has no rotate API and the Pi rig has no accelerometer — true rotation coverage is backlog) | UI renders unchanged after settle |
