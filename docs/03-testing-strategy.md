@@ -103,7 +103,7 @@ scripts/smoke_device.sh <serial> integration_test/smoke_solo_match_test.dart
 ```
 
 - **Text anchors** ( Patrol selectors AND wrapper assertions — label change ⇒ suite + this list change in the same commit): `PLAY SOLO`, `PLAY FRIENDS`, `Coming soon`, `First to the finish line`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`, `START`, `PLAY AGAIN`, `HOME`, `Sound`, `Fredoka font`, `Nunito font`, `Phosphor Icons (Fill)`, rank ordinals (`1st`, `T-1st`).
-- The suite runs on every enrolled test device (LineageOS Pi rig `192.168.0.5:5555`; phone when enrolled).
+- The suite runs on the Pi rig only (`192.168.0.5:5555`) — absolute (user directive 2026-09-19).
 - Failure output includes the last fatal exceptions for triage.
 
 ## 10. Strict Test-Writing Law (unit, widget, domain, integration logic tests)
@@ -164,7 +164,7 @@ Patrol runs the app on real devices and drives the real Flutter widget tree — 
 - Native interactions: `native.pressBack()` for system back; no raw `adb shell input` inside Patrol tests.
 - Determinism: the match seed is wall-clock in the shell (not injectable today — backlog: seeded test config). Race-finish therefore asserts that placements RENDER (incl. `T-1st` shared-rank, GDD § 7.6), never the outcome; screenshots may be captured but never asserted pixel-by-pixel (token colors vary by theme drift).
 - Every new user-visible flow adds its Patrol case in the same PR (DoD link, `docs/05` § 6).
-- Runs: `patrol test --device <serial>` per enrolled device (or `scripts/smoke_device.sh <serial>` for suite+crash-scan) (Pi rig `192.168.0.5:5555`, phone when enrolled); all enrolled devices pass = release checklist condition. CI emulator hosting is backlog.
+- Runs: `patrol test --device 192.168.0.5:5555` (or `scripts/smoke_device.sh` which enforces the rig) — **Pi rig ONLY, absolute (user directive 2026-09-19; phone = manual-install target, never a test device)**. Pi pass = release checklist condition. CI emulator hosting is backlog.
 
 ### 11.2 Required cases (minimum standing suite)
 
@@ -177,6 +177,6 @@ Patrol runs the app on real devices and drives the real Flutter widget tree — 
 | 5 | `smoke_race_finish` | play to completion (round cap 90 s) | results screen shows placements (outcome not asserted — wall-clock seed, see § 11.1); PLAY AGAIN restarts intro |
 | 6 | `smoke_profile_flow` | Home → profile avatar | profile editor opens (field visible); back returns Home. Persistence/swatch behavior is widget-test territory |
 | 7 | `smoke_settings_flow` | Home → gear | settings opens; sound toggle flips; credits lists every ATTRIBUTION row; back returns |
-| 8 | `smoke_orientation_lock` | portrait steady-state (platform note: patrol 3.20 has no rotate API and the Pi rig has no accelerometer — true rotation coverage lands with a phone-rig case) | UI renders unchanged after settle |
+| 8 | `smoke_orientation_lock` | portrait steady-state (platform note: patrol 3.20 has no rotate API and the Pi rig has no accelerometer — true rotation coverage is backlog) | UI renders unchanged after settle |
 
 Standing suite must stay green on every enrolled device; a red case blocks release exactly like CI.

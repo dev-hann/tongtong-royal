@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 # Device smoke for TongTong Royal — thin Patrol launcher (docs/03 § 9/§ 11).
 #
-# Usage: scripts/smoke_device.sh <adb-serial> [patrol-target]
+# Usage: scripts/smoke_device.sh [patrol-target]
 #
-# Runs the Patrol standing suite (or one target file) on the device,
+# ABSOLUTE RULE (user directive 2026-09-19): device testing runs on
+# the Pi rig ONLY. Any other serial is refused. The phone is a
+# manual-install target, never a test device (its wireless serial
+# rotates between transports).
+#
+# Runs the Patrol standing suite (or one target file) on the rig,
 # then scans logcat for fatal exceptions. Patrol owns all UI
 # interaction; this wrapper only orchestrates + triages.
 
 set -euo pipefail
 
-SERIAL="${1:?usage: smoke_device.sh <adb-serial> [patrol-target]}"
-TARGET="${2:-}"
+SERIAL="192.168.0.5:5555"
+TARGET="${1:-}"
 PKG="com.tongtongroyal.app"
 export PATH="$PATH:$HOME/.pub-cache/bin"
 
@@ -31,10 +36,13 @@ fi
 
 FAILURES=0
 for f in "${FILES[@]}"; do
-  echo "== patrol: $f =="
-  if ! patrol test --device "$SERIAL" --target "$f"; then
+  # Patrol must run from app/ (AGENTS § 3): repo-root runs misplace
+  # the generated bundle and fail the APK-config step.
+  rel="${f#app/}"
+  echo "== patrol: $rel =="
+  if ! (cd app && patrol test --device "$SERIAL" --target "$rel"); then
     FAILURES=$((FAILURES + 1))
-    echo "SMOKE FAIL: patrol case failed: $f" >&2
+    echo "SMOKE FAIL: patrol case failed: $rel" >&2
   fi
 done
 
