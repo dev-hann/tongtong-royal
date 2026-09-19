@@ -102,7 +102,7 @@ scripts/smoke_device.sh <adb-serial>            # whole suite + logcat crash sca
 scripts/smoke_device.sh <serial> integration_test/smoke_solo_match_test.dart
 ```
 
-- **Text anchors** ( Patrol selectors AND wrapper assertions — label change ⇒ suite + this list change in the same commit): `PLAY SOLO`, `PLAY FRIENDS`, `Coming soon`, `First to the finish line`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`, `START`, `PLAY AGAIN`, `HOME`, `Sound`, `Fredoka font`, `Nunito font`, `Phosphor Icons (Fill)`, rank ordinals (`1st`, `T-1st`).
+- **Text anchors** ( Patrol selectors AND wrapper assertions — label change ⇒ suite + this list change in the same commit): `PLAY SOLO`, `PLAY FRIENDS`, `Coming soon`, `First to the finish line`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`, `START`, `PLAY AGAIN`, `HOME`, `Sound`, `TIME`, `NEW BEST`, `BEST TIME`, `Fredoka font`, `Nunito font`, `Phosphor Icons (Fill)`, rank ordinals (`1st`, `T-1st`).
 - The suite runs on the Pi rig only (`192.168.0.5:5555`) — absolute (user directive 2026-09-19).
 - Failure output includes the last fatal exceptions for triage.
 

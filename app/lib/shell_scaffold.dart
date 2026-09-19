@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_phase_transition.dart';
 import 'package:app/infra/profile_store.dart';
+import 'package:app/infra/sound_service.dart';
 import 'package:app/presentation/game_screen.dart';
 import 'package:app/presentation/home_screen.dart';
 import 'package:app/presentation/lobby_screen.dart' show LobbyPlayer;
@@ -14,6 +15,7 @@ import 'package:app/presentation/solo_standings.dart';
 import 'package:app/profile/profile_controller.dart';
 import 'package:app/profile/stats_recorder.dart';
 import 'package:app/shell_controller.dart';
+import 'package:app/shell_results_flow.dart';
 import 'package:app/solo/solo_match_config.dart';
 import 'package:app/solo/solo_match_controller.dart';
 import 'package:app/solo/solo_play_view.dart';
@@ -43,12 +45,13 @@ class _ShellScaffoldState extends State<ShellScaffold>
   final int _matchSeed = DateTime.now().millisecondsSinceEpoch % 1000000;
 
   ProfileController? _profile;
-  StatsRecorder? _recorder;
+  ShellResultsFlow? _resultsFlow;
   SoloMatchController? _solo;
+  AudioplayersSfxPlayer? _sfxBackend;
+  SoundService? _sound;
   String _lastNickname = '';
   int _lastColorIndex = -1;
   bool _atHome = true;
-  bool _resultsRecorded = false;
 
   @override
   void initState() {
@@ -69,6 +72,8 @@ class _ShellScaffoldState extends State<ShellScaffold>
     _controller.removeListener(_onPhaseChanged);
     _solo?.dispose();
     _profile?.dispose();
+    _sound?.dispose();
+    _sfxBackend?.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -94,9 +99,16 @@ class _ShellScaffoldState extends State<ShellScaffold>
       return;
     }
     profile.addListener(_onProfileChanged);
+    final sfxBackend = AudioplayersSfxPlayer();
+    final sound = SoundService(player: sfxBackend, profile: profile);
     setState(() {
       _profile = profile;
-      _recorder = StatsRecorder(store: store);
+      _resultsFlow = ShellResultsFlow(
+        recorder: StatsRecorder(store: store),
+        sound: sound,
+      );
+      _sfxBackend = sfxBackend;
+      _sound = sound;
       _lastNickname = profile.profile.nickname;
       _lastColorIndex = profile.profile.colorIndex;
       _solo = _createSolo(profile.profile);
@@ -132,41 +144,23 @@ class _ShellScaffoldState extends State<ShellScaffold>
     });
   }
 
-  /// Stats recording (GDD § 8.1): the single-round match's final
-  /// rank fires once when the results screen appears — the results
-  /// screen is the match's terminal state.
+  /// Results side effects (GDD § 8.1): stats, best record and
+  /// sound cues fire once when the terminal results screen appears.
   void _onPhaseChanged() {
-    if (_controller.phase != RoundPhase.roundResults) {
-      return;
-    }
-    final solo = _solo;
-    final recorder = _recorder;
-    if (_resultsRecorded || solo == null || recorder == null) {
-      return;
-    }
-    final human = Rankings.finalRanking(
-      _controller.roundResults,
-      const {},
-    ).finalRankings.where((p) => p.playerId == solo.humanId).toList();
-    if (human.isEmpty) {
-      return;
-    }
-    _resultsRecorded = true;
-    // Stats are best-effort local persistence; a failed write must
-    // not block the results screen.
-    unawaited(recorder.recordMatch(finalRank: human.first.rank));
+    _resultsFlow?.handle(shell: _controller, solo: _solo);
   }
 
   void _startSoloFromHome() {
+    _sound?.play(Sfx.uiTap);
     setState(() {
       _atHome = false;
-      _resultsRecorded = false;
+      _resultsFlow?.reset();
     });
     _solo?.startSolo();
   }
 
   void _playAgain() {
-    setState(() => _resultsRecorded = false);
+    setState(() => _resultsFlow?.reset());
     _solo?.playAgain();
   }
 
@@ -204,7 +198,7 @@ class _ShellScaffoldState extends State<ShellScaffold>
     }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SettingsScreen(controller: profile),
+        builder: (_) => SettingsScreen(controller: profile, sound: _sound),
       ),
     );
   }
@@ -228,8 +222,14 @@ class _ShellScaffoldState extends State<ShellScaffold>
               key: const ValueKey('onboarding'),
               child: OnboardingScreen(
                 controller: profile,
-                onStart: () => setState(() {}),
-                onSkip: () => setState(() {}),
+                onStart: () {
+                  _sound?.play(Sfx.uiTap);
+                  setState(() {});
+                },
+                onSkip: () {
+                  _sound?.play(Sfx.uiTap);
+                  setState(() {});
+                },
               ),
             );
           } else if (_atHome && _controller.phase == RoundPhase.lobby) {
@@ -260,6 +260,7 @@ class _ShellScaffoldState extends State<ShellScaffold>
                         child: SoloPlayView(
                           session: session,
                           humanColorIndex: solo.config.humanColorIndex,
+                          sound: _sound,
                           onQuit: _abandonSolo,
                         ),
                       ),
@@ -287,6 +288,8 @@ class _ShellScaffoldState extends State<ShellScaffold>
                 countdownValue: solo.countdownValue,
                 resultsMinigameName: solo.resultsMinigameName,
                 resultsStandings: solo.standingsAfterLatestRound,
+                resultsHumanTimeMs: solo.humanFinishMs,
+                resultsIsNewBest: _resultsFlow?.isNewBest ?? false,
                 onPlayAgain: _playAgain,
                 onExitHome: _exitToHome,
               ),

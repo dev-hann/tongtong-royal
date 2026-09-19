@@ -85,7 +85,12 @@ final class Profile {
 @immutable
 final class Stats {
   /// Creates a stats record; all counters default to zero.
-  const Stats({this.matchesPlayed = 0, this.wins = 0, this.firstPlaces = 0});
+  const Stats({
+    this.matchesPlayed = 0,
+    this.wins = 0,
+    this.firstPlaces = 0,
+    this.bestRaceMs,
+  });
 
   /// Matches the player finished (results screen appearance).
   final int matchesPlayed;
@@ -97,15 +102,21 @@ final class Stats {
   /// counter per GDD § 8.1 wording.
   final int firstPlaces;
 
+  /// Fastest completed-race finish time in milliseconds (GDD § 8.1:
+  /// finishers only; timeout-ranked rounds never set records);
+  /// null before the first completed race.
+  final int? bestRaceMs;
+
   @override
   bool operator ==(Object other) =>
       other is Stats &&
       other.matchesPlayed == matchesPlayed &&
       other.wins == wins &&
-      other.firstPlaces == firstPlaces;
+      other.firstPlaces == firstPlaces &&
+      other.bestRaceMs == bestRaceMs;
 
   @override
-  int get hashCode => Object.hash(matchesPlayed, wins, firstPlaces);
+  int get hashCode => Object.hash(matchesPlayed, wins, firstPlaces, bestRaceMs);
 }
 
 /// Local app settings (GDD § 8.1).
@@ -114,7 +125,7 @@ final class Settings {
   /// Creates settings with defaults.
   const Settings({this.soundEnabled = true});
 
-  /// Master sound flag (audio engine lands with M5; persisted now).
+  /// Master sound flag (gates the SFX engine instantly).
   final bool soundEnabled;
 
   @override
@@ -152,6 +163,7 @@ final class ProfileStore {
   static const String _matchesPlayedKey = 'ttr.stats.matchesPlayed';
   static const String _winsKey = 'ttr.stats.wins';
   static const String _firstPlacesKey = 'ttr.stats.firstPlaces';
+  static const String _bestRaceMsKey = 'ttr.stats.bestRaceMs';
   static const String _soundEnabledKey = 'ttr.settings.soundEnabled';
 
   Profile _profile = const Profile();
@@ -171,6 +183,7 @@ final class ProfileStore {
       matchesPlayed: await storage.getInt(_matchesPlayedKey) ?? 0,
       wins: await storage.getInt(_winsKey) ?? 0,
       firstPlaces: await storage.getInt(_firstPlacesKey) ?? 0,
+      bestRaceMs: await storage.getInt(_bestRaceMsKey),
     );
     _settings = Settings(
       soundEnabled: await storage.getBool(_soundEnabledKey) ?? true,
@@ -209,6 +222,10 @@ final class ProfileStore {
     await storage.setInt(_matchesPlayedKey, value.matchesPlayed);
     await storage.setInt(_winsKey, value.wins);
     await storage.setInt(_firstPlacesKey, value.firstPlaces);
+    final best = value.bestRaceMs;
+    if (best != null) {
+      await storage.setInt(_bestRaceMsKey, best);
+    }
   }
 
   /// Persists the sound flag and refreshes the cache.

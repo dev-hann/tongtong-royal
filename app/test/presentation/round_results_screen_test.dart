@@ -20,6 +20,8 @@ void main() {
   RoundResultsScreen build({
     VoidCallback? onPlayAgain,
     VoidCallback? onExitHome,
+    int? humanTimeMs,
+    bool isNewBest = false,
   }) => RoundResultsScreen(
     result: result,
     roundNumber: 1,
@@ -30,6 +32,8 @@ void main() {
       StandingEntry(playerId: 'p2', totalPoints: 3, roundDelta: 3),
       StandingEntry(playerId: 'p3', totalPoints: 2, roundDelta: 2),
     ],
+    humanTimeMs: humanTimeMs,
+    isNewBest: isNewBest,
     onPlayAgain: onPlayAgain,
     onExitHome: onExitHome,
   );
@@ -109,6 +113,32 @@ void main() {
       wrap(const RoundResultsScreen(roundNumber: 1, totalRounds: 1)),
     );
     expect(find.text('Waiting for results...'), findsOneWidget);
+  });
+
+  testWidgets('shows the human finish time in seconds', (tester) async {
+    await tester.pumpWidget(wrap(build(humanTimeMs: 12340)));
+
+    expect(find.text('TIME 12.34s'), findsOneWidget);
+  });
+
+  testWidgets('shows no finish time when the human did not finish', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap(build()));
+
+    expect(find.textContaining('TIME'), findsNothing);
+  });
+
+  testWidgets('shows a NEW BEST chip only for a new record', (tester) async {
+    await tester.pumpWidget(wrap(build(humanTimeMs: 12340, isNewBest: true)));
+
+    expect(find.text('NEW BEST'), findsOneWidget);
+  });
+
+  testWidgets('hides the NEW BEST chip without a new record', (tester) async {
+    await tester.pumpWidget(wrap(build(humanTimeMs: 12340)));
+
+    expect(find.text('NEW BEST'), findsNothing);
   });
 
   testWidgets('system back on results goes HOME, not app exit', (tester) async {

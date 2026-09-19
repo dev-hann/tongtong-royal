@@ -207,6 +207,26 @@ void main() {
 
     expect(completions, 1);
   });
+
+  test('finishTickOf_returns_the_finisher_event_tick', () {
+    final sim = FakeSoloSim(minigameId: 'trap_race', roster: roster);
+    final driver = buildDriver(sim);
+    sim.emit(const PlayerFinished(tick: 7, playerId: humanId));
+
+    driver.tick();
+
+    expect(driver.finishTickOf(humanId), 7);
+  });
+
+  test('finishTickOf_returns_null_for_a_non_finisher', () {
+    final sim = FakeSoloSim(minigameId: 'trap_race', roster: roster);
+    final driver = buildDriver(sim);
+    sim.emit(const PlayerFinished(tick: 7, playerId: 'bot-1'));
+
+    driver.tick();
+
+    expect(driver.finishTickOf(humanId), isNull);
+  });
 }
 
 /// Marker map type the driver treats as hazard-free.

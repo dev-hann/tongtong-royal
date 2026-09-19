@@ -121,7 +121,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'RECORD',
                         staggerIndex: 2,
                         children: [
-                          ProfileStatsRow(stats: widget.controller.stats),
+                          ProfileStatsRow(
+                            stats: widget.controller.stats,
+                            bestTimeMs: widget.controller.stats.bestRaceMs,
+                          ),
                         ],
                       ),
                     ],

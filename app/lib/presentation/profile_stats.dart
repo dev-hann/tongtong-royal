@@ -3,23 +3,32 @@ import 'package:app/design/widgets/ttr_staggered_entrance.dart';
 import 'package:app/infra/profile_store.dart';
 import 'package:flutter/material.dart';
 
-/// Stats cards row (matches / wins / 1st places) for the profile
-/// screen: Fredoka numerals, staggered entrance (guide § 4, § 6).
+/// Stats cards row (matches / wins / 1st places / best time) for
+/// the profile screen's RECORD group: Fredoka numerals, staggered
+/// entrance (guide § 4, § 6). The best-time card shows an em dash
+/// before the first completed race (GDD § 8.1).
 class ProfileStatsRow extends StatelessWidget {
   /// Creates the row over [stats].
-  const ProfileStatsRow({required this.stats, super.key});
+  const ProfileStatsRow({required this.stats, this.bestTimeMs, super.key});
 
   /// Local match statistics (GDD § 8.1).
   final Stats stats;
 
+  /// Persisted best race time in ms; null when no record exists.
+  final int? bestTimeMs;
+
   @override
   Widget build(BuildContext context) {
+    final bestTime = bestTimeMs == null
+        ? '—'
+        : '${(bestTimeMs! / 1000).toStringAsFixed(2)}s';
     return Row(
       children: [
-        for (final (index, card) in <(String, int)>[
-          ('MATCHES', stats.matchesPlayed),
-          ('WINS', stats.wins),
-          ('1ST PLACES', stats.firstPlaces),
+        for (final (index, card) in <(String, String)>[
+          ('MATCHES', '${stats.matchesPlayed}'),
+          ('WINS', '${stats.wins}'),
+          ('1ST PLACES', '${stats.firstPlaces}'),
+          ('BEST TIME', bestTime),
         ].indexed)
           Expanded(
             child: TtrStaggeredEntrance(
@@ -36,7 +45,7 @@ class _StatCard extends StatelessWidget {
   const _StatCard({required this.label, required this.value});
 
   final String label;
-  final int value;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
@@ -50,10 +59,13 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.all(SpacingScale.md),
         child: Column(
           children: [
-            Text(
-              '$value',
-              style: TypeScale.displayNumeral.copyWith(
-                fontSize: TypeScale.headlineSize,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TypeScale.displayNumeral.copyWith(
+                  fontSize: TypeScale.headlineSize,
+                ),
               ),
             ),
             const SizedBox(height: SpacingScale.xs),

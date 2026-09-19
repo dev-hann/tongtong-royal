@@ -34,6 +34,8 @@ class PhaseRouter extends StatelessWidget {
     this.timeRemaining = '',
     this.resultsMinigameName,
     this.resultsStandings = const [],
+    this.resultsHumanTimeMs,
+    this.resultsIsNewBest = false,
     this.onPlayAgain,
     this.onExitHome,
     super.key,
@@ -84,6 +86,13 @@ class PhaseRouter extends StatelessWidget {
   /// Standings (controller-computed) for the results screen.
   final List<StandingEntry> resultsStandings;
 
+  /// The human's finish time in ms for the results screen; null
+  /// when they did not finish (timeout-ranked).
+  final int? resultsHumanTimeMs;
+
+  /// Whether the human's finish beat the persisted best record.
+  final bool resultsIsNewBest;
+
   /// Invoked when the player chooses PLAY AGAIN on the results
   /// screen (fresh match, GDD § 5).
   final VoidCallback? onPlayAgain;
@@ -123,6 +132,8 @@ class PhaseRouter extends StatelessWidget {
             totalRounds: controller.totalRounds,
             minigameName: resultsMinigameName,
             standings: resultsStandings,
+            humanTimeMs: resultsHumanTimeMs,
+            isNewBest: resultsIsNewBest,
             onPlayAgain: onPlayAgain,
             onExitHome: onExitHome,
           ),

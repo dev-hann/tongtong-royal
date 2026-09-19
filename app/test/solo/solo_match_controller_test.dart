@@ -193,6 +193,54 @@ void main() {
     controller.abandonMatch();
     expect(shell.phase, RoundPhase.lobby);
   });
+
+  test('humanFinishMs_exposes_the_human_finish_tick_in_ms', () {
+    controller.startSolo();
+    scheduler.elapse(3000);
+    playRound();
+    expect(shell.phase, RoundPhase.roundResults);
+
+    // Human finished at tick 1 (scripted): 1 / 60 Hz -> ~17 ms.
+    expect(controller.humanFinishMs, 17);
+  });
+
+  test('humanFinishMs_is_null_when_the_human_never_finished', () {
+    // No PlayerFinished events: everyone is ranked by progress only.
+    final timeoutShell = ShellController();
+    final timeoutScheduler = FakeSoloScheduler();
+    final timeoutController = SoloMatchController(
+      shell: timeoutShell,
+      config: const SoloMatchConfig(matchSeed: 3),
+      scheduler: timeoutScheduler.call,
+      simulationFactory: (minigameId, mapSeed, roster) =>
+          FakeSoloSim(minigameId: minigameId, roster: roster),
+    );
+    addTearDown(timeoutController.dispose);
+
+    timeoutController.startSolo();
+    timeoutScheduler.elapse(3000);
+    final session = timeoutController.currentRound;
+    expect(session, isNotNull, reason: 'round must be built on ROUND_PLAY');
+    while (!session!.driver.isRoundOver) {
+      session.driver.tick();
+    }
+    expect(timeoutShell.phase, RoundPhase.roundResults);
+
+    expect(timeoutController.humanFinishMs, isNull);
+  });
+
+  test('humanFinishMs_resets_between_matches', () {
+    controller.startSolo();
+    scheduler.elapse(3000);
+    playRound();
+    expect(controller.humanFinishMs, 17);
+
+    controller.playAgain();
+    scheduler.elapse(3000);
+
+    // Fresh match, fresh round: no finish recorded yet.
+    expect(controller.humanFinishMs, isNull);
+  });
 }
 
 List<RoundPhase> deduped(List<RoundPhase> phases) {

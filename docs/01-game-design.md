@@ -122,8 +122,9 @@ Each play generates a fresh `mapSeed` (host/solo side); identical seed = identic
 - **Multiplayer infra preserved but not user-facing yet**: rooms/invite codes/netcode remain in the repo (server, protocol, host/remote client code) for the planned rebuild — do not delete, do not wire into the shell.
 - **Bot fill** (§ 9).
 - **Local profile** (no accounts, no server sync): nickname (first-launch onboarding, default `PLAYER`, editable), player color (persisted; drives seat color + in-game local rendering), stats (races played, wins, first-place finishes — recorded at the results screen, stored locally only).
-- **Settings**: sound toggle (audio engine lands with M5; the flag persists now), credits (asset attribution view — legal § 3 duty), app version.
-- Sound effects, best-score persistence (local), simple character customization (color).
+- **Best record**: the fastest finish time (ms) among COMPLETED races. Finishers only — timeout-ranked rounds (§ 7.4) never set records; an equal time does not beat the record.
+- **Settings**: sound toggle (mutes the SFX engine instantly; persisted), credits (asset attribution view — legal § 3 duty), app version.
+- **Sound effects**: five one-shot cues — UI tap, jump, finish, fanfare (rank 1), fail (quiet, timed-out human) — gated by the sound flag. Best-score persistence (the best record above) and simple character customization (color) complete the loop.
 
 ### 8.2 Backlog (explicitly out — do not build)
 

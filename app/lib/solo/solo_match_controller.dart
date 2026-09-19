@@ -69,6 +69,7 @@ final class SoloMatchController extends ChangeNotifier {
   SoloRoundSession? _session;
   int _countdown = 0;
   int _generation = 0;
+  int? _humanFinishMs;
 
   /// All seats: the human first, then the bot fill (GDD § 9.1).
   List<({PlayerId id, String nickname})> get seats => List.unmodifiable(_seats);
@@ -118,6 +119,12 @@ final class SoloMatchController extends ChangeNotifier {
     final id = shell.latestRoundResult?.minigameId;
     return id == null ? null : registry.byId(id).spec.name;
   }
+
+  /// The human's finish time in ms for the latest round (finish
+  /// tick × fixed dt), captured before the round session is
+  /// released on ROUND_RESULTS; null when they did not finish
+  /// (timeout-ranked) or no round ran.
+  int? get humanFinishMs => _humanFinishMs;
 
   /// LOBBY -> ROUND_INTRO: starts the solo match.
   void startSolo() {
@@ -188,6 +195,7 @@ final class SoloMatchController extends ChangeNotifier {
         _startRound();
       case RoundPhase.roundResults:
       case RoundPhase.podium:
+        _captureHumanFinish();
         _releaseRound();
       case RoundPhase.lobby:
         break;
@@ -216,6 +224,7 @@ final class SoloMatchController extends ChangeNotifier {
   }
 
   void _startRound() {
+    _humanFinishMs = null;
     final roundIndex = shell.roundIndex;
     final plan = _rounds[roundIndex];
     final game = registry.byId(plan.minigameId);
@@ -246,6 +255,15 @@ final class SoloMatchController extends ChangeNotifier {
       humanId: config.humanId,
       rosterIds: rosterIds,
     );
+  }
+
+  /// Reads the human's finish tick off the still-alive session and
+  /// converts it to ms at the fixed rate (GDD § 8.1 best record).
+  void _captureHumanFinish() {
+    final tick = _session?.driver.finishTickOf(config.humanId);
+    _humanFinishMs = tick == null
+        ? null
+        : (tick * PhysicsConsts.fixedDt * 1000).round();
   }
 
   void _releaseRound() {

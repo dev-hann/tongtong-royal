@@ -2,6 +2,7 @@ import 'package:app/design/tokens.dart';
 import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/design/widgets/ttr_placement_list.dart';
+import 'package:app/design/widgets/ttr_pop_on_change.dart';
 import 'package:app/design/widgets/ttr_pulse.dart';
 import 'package:app/design/widgets/ttr_standings_list.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,8 @@ class RoundResultsScreen extends StatelessWidget {
     this.totalRounds,
     this.minigameName,
     this.standings = const [],
+    this.humanTimeMs,
+    this.isNewBest = false,
     this.onPlayAgain,
     this.onExitHome,
     super.key,
@@ -52,6 +55,13 @@ class RoundResultsScreen extends StatelessWidget {
 
   /// Standings (controller-computed), best first.
   final List<StandingEntry> standings;
+
+  /// The human's finish time in ms; null when they did not finish
+  /// (timeout-ranked — GDD § 8.1 records need a finisher).
+  final int? humanTimeMs;
+
+  /// Whether [humanTimeMs] beat the persisted best record.
+  final bool isNewBest;
 
   /// Starts a fresh match (new map seed).
   final VoidCallback? onPlayAgain;
@@ -98,6 +108,10 @@ class RoundResultsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: SpacingScale.lg),
+                  if (humanTimeMs case final timeMs?) ...[
+                    _FinishTimeBanner(timeMs: timeMs, isNewBest: isNewBest),
+                    const SizedBox(height: SpacingScale.lg),
+                  ],
                   TtrPlacementList(placements: result.placements),
                   if (standings.isNotEmpty) ...[
                     const SizedBox(height: SpacingScale.xl),
@@ -152,6 +166,51 @@ class _HeaderPill extends StatelessWidget {
         border: Border.all(color: ColorPalette.neutral200),
       ),
       child: Text(text, style: TypeScale.label),
+    );
+  }
+}
+
+/// The human's race clock: 'TIME 12.34s' with a popping NEW BEST
+/// chip when the run beat the persisted record (GDD § 8.1).
+class _FinishTimeBanner extends StatelessWidget {
+  const _FinishTimeBanner({required this.timeMs, required this.isNewBest});
+
+  final int timeMs;
+  final bool isNewBest;
+
+  @override
+  Widget build(BuildContext context) {
+    final seconds = (timeMs / 1000).toStringAsFixed(2);
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('TIME ${seconds}s', style: TypeScale.title),
+          if (isNewBest) ...[
+            const SizedBox(width: SpacingScale.sm),
+            TtrPopOnChange(
+              tag: seconds,
+              initialPop: true,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingScale.sm,
+                  vertical: SpacingScale.xs / 2,
+                ),
+                decoration: BoxDecoration(
+                  color: ColorPalette.warning,
+                  borderRadius: BorderRadius.circular(RadiusScale.chip),
+                ),
+                child: Text(
+                  'NEW BEST',
+                  style: TypeScale.bodyLabel.copyWith(
+                    color: ColorPalette.neutral900,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

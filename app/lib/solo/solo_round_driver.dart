@@ -95,6 +95,17 @@ final class SoloRoundDriver {
   @visibleForTesting
   List<RoundEvent> get collectedEvents => List.unmodifiable(_roundEvents);
 
+  /// Finish tick of [playerId]'s [PlayerFinished] event, or null
+  /// when they never finished (timeout-ranked, GDD § 7.4).
+  int? finishTickOf(PlayerId playerId) {
+    for (final event in _roundEvents) {
+      if (event is PlayerFinished && event.playerId == playerId) {
+        return event.tick;
+      }
+    }
+    return null;
+  }
+
   /// Builds the full per-tick input map: the human's sample plus one
   /// decision per live bot from a [BotObservation] of the current
   /// simulation state. Eliminated bots (no body) get no entry and

@@ -59,6 +59,18 @@ void main() {
       expect(second.stats.firstPlaces, 1);
     });
 
+    test('saved best race time survives reload through the storage', () async {
+      final storage = FakeKeyValueStorage();
+      final first = ProfileStore(storage: storage);
+      await first.load();
+      await first.saveStats(const Stats(matchesPlayed: 2, bestRaceMs: 37120));
+
+      final second = ProfileStore(storage: storage);
+      await second.load();
+
+      expect(second.stats.bestRaceMs, 37120);
+    });
+
     test('saved settings survive reload through the storage', () async {
       final storage = FakeKeyValueStorage();
       final first = ProfileStore(storage: storage);
@@ -103,6 +115,16 @@ void main() {
       expect(storage.values.containsKey('ttr.stats.matchesPlayed'), isTrue);
       expect(storage.values.containsKey('ttr.stats.wins'), isTrue);
       expect(storage.values.containsKey('ttr.stats.firstPlaces'), isTrue);
+    });
+
+    test('best race time persists under its own stats key', () async {
+      final storage = FakeKeyValueStorage();
+      final store = ProfileStore(storage: storage);
+      await store.load();
+      await store.saveStats(const Stats(matchesPlayed: 1, bestRaceMs: 52340));
+
+      expect(storage.values.containsKey('ttr.stats.bestRaceMs'), isTrue);
+      expect(storage.values['ttr.stats.bestRaceMs'], 52340);
     });
   });
 
