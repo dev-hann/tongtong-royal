@@ -281,6 +281,7 @@ class _ShellScaffoldState extends State<ShellScaffold>
                 ],
                 lobbyLocalColorIndex: solo.config.humanColorIndex,
                 onSolo: solo.startSolo,
+                onAbandonIntro: _abandonSolo,
                 minigameName: solo.introName,
                 minigameRule: solo.introRule,
                 countdownValue: solo.countdownValue,

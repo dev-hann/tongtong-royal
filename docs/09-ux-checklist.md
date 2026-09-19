@@ -12,6 +12,7 @@ Usability criteria for every user-facing change. Joins the compliance review gat
   |---------|----------------------------|
   | Home | default app exit |
   | Pushed route (Profile/Settings/Credits) | pop the route |
+  | ROUND_INTRO | abandon to Home (no dialog — nothing at stake in a 3 s countdown) |
   | ROUND_PLAY | quit-confirm dialog (never silent app exit) |
   | ROUND_RESULTS | go HOME |
   | Onboarding (first launch) | default app exit (no route stack yet) |

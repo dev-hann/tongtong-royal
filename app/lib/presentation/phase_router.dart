@@ -29,6 +29,7 @@ class PhaseRouter extends StatelessWidget {
     this.minigameName = '',
     this.minigameRule = '',
     this.countdownValue = 0,
+    this.onAbandonIntro,
     this.scoreboard = const [],
     this.timeRemaining = '',
     this.resultsMinigameName,
@@ -67,6 +68,10 @@ class PhaseRouter extends StatelessWidget {
   /// Countdown value for the intro screen (injected ticker).
   final int countdownValue;
 
+  /// Abandons the match when system back fires during ROUND_INTRO
+  /// (ux-checklist back matrix).
+  final VoidCallback? onAbandonIntro;
+
   /// Score strip entries for the game HUD.
   final List<ScoreEntry> scoreboard;
 
@@ -104,6 +109,7 @@ class PhaseRouter extends StatelessWidget {
             minigameName: minigameName,
             ruleLine: minigameRule,
             countdownValue: countdownValue,
+            onAbandon: onAbandonIntro,
           ),
           RoundPhase.roundPlay => GameScreen(
             scoreboard: scoreboard,

@@ -118,6 +118,15 @@ void main() {
     expect(sm.canTransition(RoundPhase.roundIntro), isTrue);
   });
 
+  test('gdd_7_11_abandon_during_round_intro_returns_to_lobby', () {
+    final sm = RoundStateMachine()
+      ..beginRound()
+      ..abandon();
+
+    expect(sm.phase, RoundPhase.lobby);
+    expect(sm.roundsCompleted, 0);
+  });
+
   test('abandon_rejected_outside_round_play', () {
     final sm = RoundStateMachine();
 
@@ -167,7 +176,8 @@ void main() {
 
     final intro = RoundStateMachine()..beginRound();
     expect(intro.canTransition(RoundPhase.roundResults), isFalse);
-    expect(intro.canTransition(RoundPhase.lobby), isFalse);
+    // Intro -> lobby is legal (abandon during countdown, GDD 7.11).
+    expect(intro.canTransition(RoundPhase.lobby), isTrue);
 
     final play = RoundStateMachine()
       ..beginRound()

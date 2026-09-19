@@ -16,6 +16,7 @@ class RoundIntroScreen extends StatelessWidget {
     required this.minigameName,
     required this.ruleLine,
     required this.countdownValue,
+    this.onAbandon,
     super.key,
   });
 
@@ -31,34 +32,47 @@ class RoundIntroScreen extends StatelessWidget {
   /// Current countdown value (seconds remaining), injected.
   final int countdownValue;
 
+  /// Invoked when system back fires during the countdown: abandon to
+  /// Home without a dialog (nothing at stake — ux-checklist back
+  /// matrix). When null, default back behavior applies.
+  final VoidCallback? onAbandon;
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const TtrAmbientBackdrop(),
-        DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [ColorPalette.primarySoft, ColorPalette.background],
+    return PopScope(
+      canPop: onAbandon == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          onAbandon?.call();
+        }
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const TtrAmbientBackdrop(),
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [ColorPalette.primarySoft, ColorPalette.background],
+              ),
             ),
-          ),
-          child: SafeArea(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TtrRoundBanner(title: minigameName, ruleLine: ruleLine),
-                  const SizedBox(height: SpacingScale.xl),
-                  TtrCountdown(key: countdownKey, value: countdownValue),
-                ],
+            child: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TtrRoundBanner(title: minigameName, ruleLine: ruleLine),
+                    const SizedBox(height: SpacingScale.xl),
+                    TtrCountdown(key: countdownKey, value: countdownValue),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

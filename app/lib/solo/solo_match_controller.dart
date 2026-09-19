@@ -158,7 +158,10 @@ final class SoloMatchController extends ChangeNotifier {
   /// the shell to the lobby for its home screen. Abandoned races
   /// never reach ROUND_RESULTS, so no stats are recorded.
   void abandonMatch() {
-    if (shell.phase != RoundPhase.roundPlay) {
+    // Abandoning works from the countdown and from play — anywhere a
+    // round is in flight (ux-checklist back matrix).
+    if (shell.phase != RoundPhase.roundPlay &&
+        shell.phase != RoundPhase.roundIntro) {
       return;
     }
     _generation++;

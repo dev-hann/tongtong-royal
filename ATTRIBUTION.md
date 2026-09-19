@@ -4,8 +4,14 @@ Every asset (sprite, sound, font, map art) shipped in the app gets a row here **
 
 | Asset | Path | Source URL | License | Proof (date/notes) | Restrictions |
 |-------|------|-----------|---------|--------------------|--------------|
-| Fredoka font | app/assets/fonts/Fredoka.ttf | github.com/google/fonts (ofl/fredoka) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Fredoka.txt | Reserved Font Name per OFL |
-| Nunito font | app/assets/fonts/Nunito.ttf | github.com/google/fonts (ofl/nunito) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Nunito.txt | Reserved Font Name per OFL |
+| Fredoka 400 | app/assets/fonts/Fredoka-400.ttf | github.com/google/fonts (ofl/fredoka) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Fredoka.txt | Reserved Font Name per OFL |
+| Fredoka 500 | app/assets/fonts/Fredoka-500.ttf | github.com/google/fonts (ofl/fredoka) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Fredoka.txt | Reserved Font Name per OFL |
+| Fredoka 600 | app/assets/fonts/Fredoka-600.ttf | github.com/google/fonts (ofl/fredoka) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Fredoka.txt | Reserved Font Name per OFL |
+| Fredoka 700 | app/assets/fonts/Fredoka-700.ttf | github.com/google/fonts (ofl/fredoka) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Fredoka.txt | Reserved Font Name per OFL |
+| Nunito 400 | app/assets/fonts/Nunito-400.ttf | github.com/google/fonts (ofl/nunito) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Nunito.txt | Reserved Font Name per OFL |
+| Nunito 600 | app/assets/fonts/Nunito-600.ttf | github.com/google/fonts (ofl/nunito) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Nunito.txt | Reserved Font Name per OFL |
+| Nunito 700 | app/assets/fonts/Nunito-700.ttf | github.com/google/fonts (ofl/nunito) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Nunito.txt | Reserved Font Name per OFL |
+| Nunito 800 | app/assets/fonts/Nunito-800.ttf | github.com/google/fonts (ofl/nunito) | SIL OFL 1.1 | 2026-09-19; OFL copy at assets/fonts/OFL-Nunito.txt | Reserved Font Name per OFL |
 | Phosphor Icons | pub: phosphor_flutter | phosphoricons.com / github.com/phosphor-icons/web | MIT | 2026-09-19; Fill weight used | notice file per MIT |
 
 Rules:
