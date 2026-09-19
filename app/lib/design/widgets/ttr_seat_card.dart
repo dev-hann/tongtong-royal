@@ -91,11 +91,7 @@ class _TtrSeatCardState extends State<TtrSeatCard> {
             const SizedBox(height: SpacingScale.sm),
             Text(
               widget.nickname,
-              style: const TextStyle(
-                fontSize: TypeScale.bodySize,
-                fontWeight: FontWeight.w700,
-                color: ColorPalette.onSurface,
-              ),
+              style: TypeScale.bodyEmphasis,
             ),
             const SizedBox(height: SpacingScale.xs),
             Wrap(
@@ -134,9 +130,7 @@ class _SeatBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: TypeScale.labelSize,
-          fontWeight: FontWeight.w600,
+        style: TypeScale.bodyLabel.copyWith(
           color: ColorPalette.neutral700,
         ),
       ),

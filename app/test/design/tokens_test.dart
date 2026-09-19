@@ -95,6 +95,72 @@ void main() {
       expect(MotionDurations.pulse, const Duration(milliseconds: 900));
       expect(MotionDurations.ambient, const Duration(seconds: 12));
     });
+
+    test('staggered-entrance durations match guide § 4', () {
+      expect(MotionDurations.staggerItem, const Duration(milliseconds: 240));
+      expect(MotionDurations.staggerDelay, const Duration(milliseconds: 40));
+      expect(MotionDurations.staggerStart, const Duration(milliseconds: 80));
+    });
+  });
+
+  group('motion scales', () {
+    test('press/pop/pulse peaks match guide § 4', () {
+      expect(MotionScales.press, 0.96);
+      expect(MotionScales.pop, 1.15);
+      expect(MotionScales.pulse, 1.04);
+    });
+  });
+
+  group('typography', () {
+    test('FontTokens assign the two bundled families per guide § 2', () {
+      expect(FontTokens.display, 'Fredoka');
+      expect(FontTokens.body, 'Nunito');
+    });
+
+    test('Hangul fallback chain is declared once', () {
+      expect(FontTokens.hangulFallback, ['Noto Sans KR', 'sans-serif']);
+    });
+
+    test('label tracking is a positive wide-ish value', () {
+      expect(TypeScale.labelTracking, greaterThan(0));
+    });
+
+    test('display roles use the display family with tracking-free text', () {
+      expect(TypeScale.display.fontFamily, FontTokens.display);
+      expect(TypeScale.displayNumeral.fontFamily, FontTokens.display);
+      expect(TypeScale.displayNumeral.fontWeight!.value, 600);
+      expect(TypeScale.display.letterSpacing, isNull);
+    });
+
+    test('label roles use the display family plus label tracking', () {
+      expect(TypeScale.label.fontFamily, FontTokens.display);
+      expect(TypeScale.label.fontWeight!.value, 600);
+      expect(TypeScale.label.letterSpacing, TypeScale.labelTracking);
+      expect(TypeScale.labelLarge.letterSpacing, TypeScale.labelTracking);
+    });
+
+    test('body roles use the body family', () {
+      expect(TypeScale.body.fontFamily, FontTokens.body);
+      expect(TypeScale.bodyEmphasis.fontFamily, FontTokens.body);
+      expect(TypeScale.bodyLabel.fontFamily, FontTokens.body);
+      expect(TypeScale.bodyLabel.letterSpacing, TypeScale.labelTracking);
+    });
+
+    test('every role carries the Hangul fallback chain', () {
+      const roles = [
+        TypeScale.display,
+        TypeScale.displayNumeral,
+        TypeScale.title,
+        TypeScale.label,
+        TypeScale.labelLarge,
+        TypeScale.body,
+        TypeScale.bodyEmphasis,
+        TypeScale.bodyLabel,
+      ];
+      for (final role in roles) {
+        expect(role.fontFamilyFallback, FontTokens.hangulFallback);
+      }
+    });
   });
 
   group('backdrop tints', () {

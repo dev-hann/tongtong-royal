@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_staggered_entrance.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
@@ -6,7 +7,9 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 /// labeled `T-<ordinal>` (e.g. `T-1st`).
 ///
 /// Pure renderer: rows are displayed exactly as delivered by the
-/// domain, in the given order — no sorting, no re-scoring.
+/// domain, in the given order — no sorting, no re-scoring. Rows
+/// enter staggered (guide § 4); rank labels and points render in
+/// the Fredoka SemiBold display role (guide § 2).
 class TtrPlacementList extends StatelessWidget {
   /// Creates the placement list.
   const TtrPlacementList({required this.placements, super.key});
@@ -24,31 +27,22 @@ class TtrPlacementList extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final placement in placements)
-          ListTile(
-            key: ValueKey(placement.playerId),
-            leading: Text(
-              _rankLabel(placement.rank, sharedRanks.contains(placement.rank)),
-              style: const TextStyle(
-                fontSize: TypeScale.titleSize,
-                fontWeight: FontWeight.w700,
-                color: ColorPalette.onSurface,
+        for (final (index, placement) in placements.indexed)
+          TtrStaggeredEntrance(
+            index: index,
+            child: ListTile(
+              key: ValueKey(placement.playerId),
+              leading: Text(
+                _rankLabel(
+                  placement.rank,
+                  sharedRanks.contains(placement.rank),
+                ),
+                style: TypeScale.title,
               ),
-            ),
-            title: Text(
-              placement.playerId,
-              style: const TextStyle(
-                fontSize: TypeScale.bodySize,
-                fontWeight: FontWeight.w400,
-                color: ColorPalette.onSurface,
-              ),
-            ),
-            trailing: Text(
-              '${placement.points} pt',
-              style: const TextStyle(
-                fontSize: TypeScale.labelSize,
-                fontWeight: FontWeight.w600,
-                color: ColorPalette.onSurface,
+              title: Text(placement.playerId, style: TypeScale.body),
+              trailing: Text(
+                '${placement.points} pt',
+                style: TypeScale.label,
               ),
             ),
           ),

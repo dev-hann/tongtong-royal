@@ -1,9 +1,31 @@
+import 'package:app/design/widgets/ttr_staggered_entrance.dart';
 import 'package:app/design/widgets/ttr_standings_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+  testWidgets('rows and delta chips enter staggered (guide § 4)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        const TtrStandingsList(
+          entries: [
+            StandingEntry(playerId: 'p1', totalPoints: 7, roundDelta: 4),
+            StandingEntry(playerId: 'p2', totalPoints: 3, roundDelta: 3),
+          ],
+        ),
+      ),
+    );
+
+    final staggers = tester.widgetList<TtrStaggeredEntrance>(
+      find.byType(TtrStaggeredEntrance),
+    );
+    expect(staggers, hasLength(2));
+    expect(staggers.map((s) => s.index), [0, 1]);
+  });
 
   testWidgets('renders cumulative points with per-round delta chips', (
     tester,

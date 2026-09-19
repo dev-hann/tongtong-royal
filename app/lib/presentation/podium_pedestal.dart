@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_pulse.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
@@ -51,27 +52,7 @@ class PodiumPedestal extends StatefulWidget {
   State<PodiumPedestal> createState() => _PodiumPedestalState();
 }
 
-class _PodiumPedestalState extends State<PodiumPedestal>
-    with SingleTickerProviderStateMixin {
-  AnimationController? _pulse;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.pulse) {
-      _pulse = AnimationController(
-        vsync: this,
-        duration: MotionDurations.pulse,
-      )..repeat(reverse: true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulse?.dispose();
-    super.dispose();
-  }
-
+class _PodiumPedestalState extends State<PodiumPedestal> {
   @override
   Widget build(BuildContext context) {
     final shared = widget.placements.length > 1;
@@ -122,16 +103,10 @@ class _PodiumPedestalState extends State<PodiumPedestal>
         ),
       ],
     );
-    final pulse = _pulse;
-    if (pulse == null) {
+    if (!widget.pulse) {
       return column;
     }
-    return ScaleTransition(
-      scale: Tween<double>(begin: 1, end: 1.04).animate(
-        CurvedAnimation(parent: pulse, curve: Curves.easeInOut),
-      ),
-      child: column,
-    );
+    return TtrPulse(child: column);
   }
 }
 
@@ -164,25 +139,14 @@ class _PlayerFigure extends StatelessWidget {
         const SizedBox(height: SpacingScale.xs),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: TypeScale.labelSize,
-            fontWeight: FontWeight.w600,
+          style: TypeScale.label.copyWith(
             color: ColorPalette.neutral500,
           ),
         ),
-        Text(
-          name,
-          style: const TextStyle(
-            fontSize: TypeScale.bodySize,
-            fontWeight: FontWeight.w700,
-            color: ColorPalette.onSurface,
-          ),
-        ),
+        Text(name, style: TypeScale.bodyEmphasis),
         Text(
           '${placement.points} pt',
-          style: const TextStyle(
-            fontSize: TypeScale.labelSize,
-            fontWeight: FontWeight.w600,
+          style: TypeScale.label.copyWith(
             color: ColorPalette.neutral700,
           ),
         ),

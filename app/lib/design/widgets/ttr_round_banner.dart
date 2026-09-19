@@ -28,23 +28,9 @@ class TtrRoundBanner extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: TypeScale.titleSize,
-              fontWeight: FontWeight.w700,
-              color: ColorPalette.onSurface,
-            ),
-          ),
+          Text(title, style: TypeScale.title),
           const SizedBox(height: SpacingScale.xs),
-          Text(
-            ruleLine,
-            style: const TextStyle(
-              fontSize: TypeScale.bodySize,
-              fontWeight: FontWeight.w400,
-              color: ColorPalette.onSurface,
-            ),
-          ),
+          Text(ruleLine, style: TypeScale.body),
         ],
       ),
     );

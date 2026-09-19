@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_press_scale.dart';
 import 'package:flutter/material.dart';
 
 /// The one-button in-game action control (JUMP / DASH).
@@ -7,9 +8,11 @@ import 'package:flutter/material.dart';
 /// finger contact and jump/dash input; material tap-up semantics
 /// are deliberately bypassed.
 ///
+/// Juice (guide § 4): squashes to [MotionScales.press] while the
+/// pointer is down and springs back over [MotionDurations.tap].
 /// Placement guidance: mount at the bottom-center of the game HUD,
 /// above the safe-area inset, sized for a thumb.
-class TtrActionButton extends StatelessWidget {
+class TtrActionButton extends StatefulWidget {
   /// Creates the action button.
   const TtrActionButton({
     required this.label,
@@ -19,7 +22,7 @@ class TtrActionButton extends StatelessWidget {
     super.key,
   });
 
-  /// Action caption, e.g. `'JUMP'` / `'DASH'`.
+  /// Action caption (UPPERCASE verb), e.g. `'JUMP'` / `'DASH'`.
   final String label;
 
   /// Fired on tap-down (immediate input, game-feel over the
@@ -36,33 +39,57 @@ class TtrActionButton extends StatelessWidget {
   static const double _diameter = 96;
 
   @override
+  State<TtrActionButton> createState() => _TtrActionButtonState();
+}
+
+class _TtrActionButtonState extends State<TtrActionButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final enabled = widget.enabled;
     return IgnorePointer(
       ignoring: !enabled,
       child: Listener(
-        onPointerDown: enabled ? (_) => onPressed() : null,
-        onPointerUp: enabled ? (_) => onReleased?.call() : null,
-        onPointerCancel: enabled ? (_) => onReleased?.call() : null,
-        child: Container(
-          width: _diameter,
-          height: _diameter,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: enabled ? ColorPalette.primary : ColorPalette.neutral200,
-            border: Border.all(
-              color: ColorPalette.neutral900,
-              width: SpacingScale.xs,
+        onPointerDown: enabled
+            ? (_) {
+                widget.onPressed();
+                setState(() => _pressed = true);
+              }
+            : null,
+        onPointerUp: enabled
+            ? (_) {
+                widget.onReleased?.call();
+                setState(() => _pressed = false);
+              }
+            : null,
+        onPointerCancel: enabled
+            ? (_) {
+                widget.onReleased?.call();
+                setState(() => _pressed = false);
+              }
+            : null,
+        child: TtrPressScale(
+          pressed: _pressed,
+          child: Container(
+            width: TtrActionButton._diameter,
+            height: TtrActionButton._diameter,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: enabled ? ColorPalette.primary : ColorPalette.neutral200,
+              border: Border.all(
+                color: ColorPalette.neutral900,
+                width: SpacingScale.xs,
+              ),
             ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: TypeScale.labelSize,
-                fontWeight: FontWeight.w800,
-                color: enabled
-                    ? ColorPalette.onPrimary
-                    : ColorPalette.neutral500,
+            child: Center(
+              child: Text(
+                widget.label,
+                style: TypeScale.label.copyWith(
+                  color: enabled
+                      ? ColorPalette.onPrimary
+                      : ColorPalette.neutral500,
+                ),
               ),
             ),
           ),

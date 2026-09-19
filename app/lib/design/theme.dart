@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 /// Builds the TongTong Royal Material 3 theme.
 ///
 /// Derived ONLY from `design/tokens.dart` (conventions doc § 2):
-/// no hand-rolled colors, sizes or durations appear here.
+/// no hand-rolled colors, sizes or durations appear here. Every text
+/// slot maps to a guide § 2 family — display-side slots (screens,
+/// headlines, titles, buttons) Fredoka, body-side slots Nunito — and
+/// carries the Hangul fallback chain via the token styles.
 ThemeData buildTtrTheme() {
   const scheme = ColorScheme.light(
     primary: ColorPalette.primary,
@@ -15,31 +18,37 @@ ThemeData buildTtrTheme() {
     onSurface: ColorPalette.onSurface,
   );
 
-  const textTheme = TextTheme(
-    displayLarge: TextStyle(
-      fontSize: TypeScale.displaySize,
-      fontWeight: FontWeight.w800,
-      color: ColorPalette.onSurface,
+  final textTheme = TextTheme(
+    displayLarge: TypeScale.display,
+    displayMedium: TypeScale.display.copyWith(
+      fontSize: TypeScale.displayMediumSize,
     ),
-    headlineMedium: TextStyle(
-      fontSize: TypeScale.titleSize,
-      fontWeight: FontWeight.w700,
-      color: ColorPalette.onSurface,
+    displaySmall: TypeScale.display.copyWith(
+      fontSize: TypeScale.displaySmallSize,
     ),
-    titleMedium: TextStyle(
-      fontSize: TypeScale.titleSize,
-      fontWeight: FontWeight.w700,
-      color: ColorPalette.onSurface,
+    headlineLarge: TypeScale.title.copyWith(
+      fontSize: TypeScale.headlineSize,
     ),
-    bodyMedium: TextStyle(
-      fontSize: TypeScale.bodySize,
-      fontWeight: FontWeight.w400,
-      color: ColorPalette.onSurface,
+    headlineMedium: TypeScale.title,
+    headlineSmall: TypeScale.title.copyWith(
+      fontSize: TypeScale.headlineSize,
     ),
-    labelLarge: TextStyle(
+    titleLarge: TypeScale.title,
+    titleMedium: TypeScale.title.copyWith(
+      fontSize: TypeScale.bodyLargeSize,
+    ),
+    titleSmall: TypeScale.label,
+    bodyLarge: TypeScale.body.copyWith(
+      fontSize: TypeScale.bodyLargeSize,
+    ),
+    bodyMedium: TypeScale.body,
+    bodySmall: TypeScale.body.copyWith(
       fontSize: TypeScale.labelSize,
-      fontWeight: FontWeight.w600,
-      color: ColorPalette.onSurface,
+    ),
+    labelLarge: TypeScale.label,
+    labelMedium: TypeScale.bodyLabel,
+    labelSmall: TypeScale.bodyLabel.copyWith(
+      fontSize: TypeScale.labelSmallSize,
     ),
   );
 
@@ -47,5 +56,6 @@ ThemeData buildTtrTheme() {
     colorScheme: scheme,
     scaffoldBackgroundColor: ColorPalette.background,
     textTheme: textTheme,
+    fontFamilyFallback: FontTokens.hangulFallback,
   );
 }

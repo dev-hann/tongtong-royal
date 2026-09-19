@@ -31,4 +31,41 @@ void main() {
     expect(find.text('first'), findsNothing);
     expect(find.text('second'), findsOneWidget);
   });
+
+  testWidgets('entering screen slides UP from below (guide § 4)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(host(const KeyedSubtree(
+      key: ValueKey('a'),
+      child: Text('first'),
+    )));
+    await tester.pumpWidget(host(const KeyedSubtree(
+      key: ValueKey('b'),
+      child: Text('second'),
+    )));
+
+    // Mid-transition the incoming child's slide offset starts below
+    // its resting slot (positive dy) and travels toward zero.
+    await tester.pump(const Duration(milliseconds: 40));
+    final incoming = tester
+        .widgetList<SlideTransition>(
+          find.ancestor(
+            of: find.text('second'),
+            matching: find.byType(SlideTransition),
+          ),
+        )
+        .first;
+    expect(incoming.position.value.dy, greaterThan(0));
+
+    await tester.pumpAndSettle();
+    final settled = tester
+        .widgetList<SlideTransition>(
+          find.ancestor(
+            of: find.text('second'),
+            matching: find.byType(SlideTransition),
+          ),
+        )
+        .first;
+    expect(settled.position.value, Offset.zero);
+  });
 }

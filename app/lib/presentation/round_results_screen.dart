@@ -1,5 +1,7 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
 import 'package:app/design/widgets/ttr_placement_list.dart';
+import 'package:app/design/widgets/ttr_pulse.dart';
 import 'package:app/design/widgets/ttr_standings_list.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
@@ -56,41 +58,51 @@ class RoundResultsScreen extends StatelessWidget {
     if (result == null) {
       return const Center(child: Text('Waiting for results...'));
     }
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [ColorPalette.secondarySoft, ColorPalette.background],
-        ),
-      ),
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(SpacingScale.lg),
-          children: [
-            Center(child: _HeaderPill(text: _headerLabel(result))),
-            const SizedBox(height: SpacingScale.lg),
-            TtrPlacementList(placements: result.placements),
-            if (standings.isNotEmpty) ...[
-              const SizedBox(height: SpacingScale.xl),
-              const Text(
-                'Standings',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: TypeScale.labelSize,
-                  fontWeight: FontWeight.w600,
-                  color: ColorPalette.neutral500,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const TtrAmbientBackdrop(),
+        DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [ColorPalette.secondarySoft, ColorPalette.background],
+            ),
+          ),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(SpacingScale.lg),
+              children: [
+                Center(
+                  // The header pill is the screen's one pulsing
+                  // element (guide § 4): the "active round" badge.
+                  child: TtrPulse(
+                    child: _HeaderPill(text: _headerLabel(result)),
+                  ),
                 ),
-              ),
-              TtrStandingsList(entries: standings),
-            ],
-            if (autoAdvanceSeconds case final seconds?) ...[
-              const SizedBox(height: SpacingScale.lg),
-              _AutoAdvanceBar(seconds: seconds),
-            ],
-          ],
+                const SizedBox(height: SpacingScale.lg),
+                TtrPlacementList(placements: result.placements),
+                if (standings.isNotEmpty) ...[
+                  const SizedBox(height: SpacingScale.xl),
+                  Text(
+                    'Standings',
+                    textAlign: TextAlign.center,
+                    style: TypeScale.bodyLabel.copyWith(
+                      color: ColorPalette.neutral500,
+                    ),
+                  ),
+                  TtrStandingsList(entries: standings),
+                ],
+                if (autoAdvanceSeconds case final seconds?) ...[
+                  const SizedBox(height: SpacingScale.lg),
+                  _AutoAdvanceBar(seconds: seconds),
+                ],
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -121,14 +133,7 @@ class _HeaderPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(RadiusScale.pill),
         border: Border.all(color: ColorPalette.neutral200),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: TypeScale.labelSize,
-          fontWeight: FontWeight.w600,
-          color: ColorPalette.onSurface,
-        ),
-      ),
+      child: Text(text, style: TypeScale.label),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:app/design/game_hud/ttr_action_button.dart';
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_press_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,7 +26,8 @@ void main() {
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(TtrActionButton)),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
     expect(fired, 1);
 
     await gesture.up();
@@ -86,5 +88,43 @@ void main() {
         .widgetList<Container>(find.byType(Container))
         .map((c) => (c.decoration as BoxDecoration?)?.color);
     expect(fills, contains(ColorPalette.primary));
+  });
+
+  testWidgets('label uses the display face with label tracking', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(TtrActionButton(label: 'JUMP', onPressed: () {})),
+    );
+
+    final style = tester.widget<Text>(find.text('JUMP')).style!;
+    expect(style.fontFamily, FontTokens.display);
+    expect(style.letterSpacing, TypeScale.labelTracking);
+  });
+
+  testWidgets('squashes to the press token on press-down', (tester) async {
+    await tester.pumpWidget(
+      wrap(TtrActionButton(label: 'JUMP', onPressed: () {})),
+    );
+
+    Finder scaleOf() => find.descendant(
+      of: find.byType(TtrPressScale),
+      matching: find.byType(ScaleTransition),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(TtrActionButton)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      tester.widget<ScaleTransition>(scaleOf()).scale.value,
+      MotionScales.press,
+    );
+
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(MotionDurations.tap);
+    expect(tester.widget<ScaleTransition>(scaleOf()).scale.value, 1);
   });
 }

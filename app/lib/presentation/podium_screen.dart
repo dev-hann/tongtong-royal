@@ -1,5 +1,7 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
 import 'package:app/design/widgets/ttr_button.dart';
+import 'package:app/design/widgets/ttr_staggered_entrance.dart';
 import 'package:app/presentation/podium_pedestal.dart';
 import 'package:flutter/material.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
@@ -80,53 +82,68 @@ class PodiumScreen extends StatelessWidget {
         .where((placement) => placement.rank > 3)
         .toList(growable: false);
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [ColorPalette.warningSoft, ColorPalette.background],
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    PodiumPedestal(
-                      blockKey: secondPedestalKey,
-                      placements: byRank[2] ?? const [],
-                      height: secondHeight,
-                      nicknames: nicknames,
-                      playerColors: playerColors,
-                    ),
-                    const SizedBox(width: SpacingScale.md),
-                    PodiumPedestal(
-                      blockKey: firstPedestalKey,
-                      placements: byRank[1] ?? const [],
-                      height: firstHeight,
-                      trophy: true,
-                      pulse: true,
-                      nicknames: nicknames,
-                      playerColors: playerColors,
-                    ),
-                    const SizedBox(width: SpacingScale.md),
-                    PodiumPedestal(
-                      blockKey: thirdPedestalKey,
-                      placements: byRank[3] ?? const [],
-                      height: thirdHeight,
-                      nicknames: nicknames,
-                      playerColors: playerColors,
-                    ),
-                  ],
-                ),
-              ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const TtrAmbientBackdrop(),
+        DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [ColorPalette.warningSoft, ColorPalette.background],
             ),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Pedestals enter staggered left → right
+                        // (guide § 4), ending on the pulsing winner.
+                        TtrStaggeredEntrance(
+                          index: 0,
+                          child: PodiumPedestal(
+                            blockKey: secondPedestalKey,
+                            placements: byRank[2] ?? const [],
+                            height: secondHeight,
+                            nicknames: nicknames,
+                            playerColors: playerColors,
+                          ),
+                        ),
+                        const SizedBox(width: SpacingScale.md),
+                        TtrStaggeredEntrance(
+                          index: 1,
+                          child: PodiumPedestal(
+                            blockKey: firstPedestalKey,
+                            placements: byRank[1] ?? const [],
+                            height: firstHeight,
+                            trophy: true,
+                            pulse: true,
+                            nicknames: nicknames,
+                            playerColors: playerColors,
+                          ),
+                        ),
+                        const SizedBox(width: SpacingScale.md),
+                        TtrStaggeredEntrance(
+                          index: 2,
+                          child: PodiumPedestal(
+                            blockKey: thirdPedestalKey,
+                            placements: byRank[3] ?? const [],
+                            height: thirdHeight,
+                            nicknames: nicknames,
+                            playerColors: playerColors,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             if (rest.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: SpacingScale.md),
@@ -145,23 +162,25 @@ class PodiumScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            TtrButton(
-              key: rematchButtonKey,
-              label: 'Rematch',
-              size: TtrButtonSize.large,
-              onPressed: onRematch,
+                TtrButton(
+                  key: rematchButtonKey,
+                  label: 'REMATCH',
+                  size: TtrButtonSize.large,
+                  onPressed: onRematch,
+                ),
+                const SizedBox(height: SpacingScale.sm),
+                TtrButton(
+                  key: exitButtonKey,
+                  label: 'EXIT',
+                  variant: TtrButtonVariant.secondary,
+                  onPressed: onExit,
+                ),
+                const SizedBox(height: SpacingScale.lg),
+              ],
             ),
-            const SizedBox(height: SpacingScale.sm),
-            TtrButton(
-              key: exitButtonKey,
-              label: 'Exit',
-              variant: TtrButtonVariant.secondary,
-              onPressed: onExit,
-            ),
-            const SizedBox(height: SpacingScale.lg),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -187,9 +206,7 @@ class _FourthChip extends StatelessWidget {
       ),
       child: Text(
         '${ordinalOf(placement.rank)} · $nickname',
-        style: const TextStyle(
-          fontSize: TypeScale.labelSize,
-          fontWeight: FontWeight.w600,
+        style: TypeScale.label.copyWith(
           color: ColorPalette.neutral700,
         ),
       ),

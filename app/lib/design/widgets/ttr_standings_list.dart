@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_staggered_entrance.dart';
 import 'package:flutter/material.dart';
 
 /// View model for one cumulative-standings row (dumb data): total
@@ -27,6 +28,8 @@ class StandingEntry {
 ///
 /// Pure renderer: entries arrive sorted (domain-computed by the
 /// controller); rows are displayed verbatim, in the given order.
+/// Rows (delta chips included) enter staggered (guide § 4); totals
+/// render in the Fredoka SemiBold display role (guide § 2).
 class TtrStandingsList extends StatelessWidget {
   /// Creates the standings list.
   const TtrStandingsList({required this.entries, super.key});
@@ -39,38 +42,33 @@ class TtrStandingsList extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final entry in entries)
-          Padding(
-            key: ValueKey(entry.playerId),
-            padding: const EdgeInsets.symmetric(vertical: SpacingScale.xs),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    entry.playerId,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: TypeScale.bodySize,
-                      fontWeight: FontWeight.w400,
-                      color: ColorPalette.onSurface,
+        for (final (index, entry) in entries.indexed)
+          TtrStaggeredEntrance(
+            index: index,
+            child: Padding(
+              key: ValueKey(entry.playerId),
+              padding: const EdgeInsets.symmetric(vertical: SpacingScale.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      entry.playerId,
+                      overflow: TextOverflow.ellipsis,
+                      style: TypeScale.body,
                     ),
                   ),
-                ),
-                SizedBox(
-                  width: SpacingScale.xxxl,
-                  child: Text(
-                    '${entry.totalPoints}',
-                    textAlign: TextAlign.end,
-                    style: const TextStyle(
-                      fontSize: TypeScale.labelSize,
-                      fontWeight: FontWeight.w700,
-                      color: ColorPalette.onSurface,
+                  SizedBox(
+                    width: SpacingScale.xxxl,
+                    child: Text(
+                      '${entry.totalPoints}',
+                      textAlign: TextAlign.end,
+                      style: TypeScale.label,
                     ),
                   ),
-                ),
-                const SizedBox(width: SpacingScale.sm),
-                _DeltaChip(delta: entry.roundDelta),
-              ],
+                  const SizedBox(width: SpacingScale.sm),
+                  _DeltaChip(delta: entry.roundDelta),
+                ],
+              ),
             ),
           ),
       ],
@@ -97,9 +95,7 @@ class _DeltaChip extends StatelessWidget {
       ),
       child: Text(
         gained ? '+$delta' : '±0',
-        style: TextStyle(
-          fontSize: TypeScale.labelSize,
-          fontWeight: FontWeight.w600,
+        style: TypeScale.label.copyWith(
           color: gained ? ColorPalette.onSurface : ColorPalette.neutral700,
         ),
       ),

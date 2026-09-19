@@ -1,10 +1,14 @@
 import 'package:app/design/game_hud/score_entry.dart';
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_pop_on_change.dart';
 import 'package:flutter/material.dart';
 
 /// HUD score strip: current round plus cumulative points per
 /// player. All values are injected (host-owned, architecture
 /// doc § 4).
+///
+/// Numerals render in the Fredoka SemiBold display role (guide § 2)
+/// and pop on change (guide § 4).
 class TtrScoreStrip extends StatelessWidget {
   /// Creates the score strip.
   const TtrScoreStrip({
@@ -45,9 +49,7 @@ class TtrScoreStrip extends StatelessWidget {
               ),
               child: Text(
                 roundLabel,
-                style: const TextStyle(
-                  fontSize: TypeScale.labelSize,
-                  fontWeight: FontWeight.w600,
+                style: TypeScale.label.copyWith(
                   color: ColorPalette.onSecondary,
                 ),
               ),
@@ -56,12 +58,11 @@ class TtrScoreStrip extends StatelessWidget {
         for (final entry in entries)
           Padding(
             padding: const EdgeInsets.only(right: SpacingScale.sm),
-            child: Text(
-              '${entry.playerId}: ${entry.points}',
-              style: const TextStyle(
-                fontSize: TypeScale.labelSize,
-                fontWeight: FontWeight.w600,
-                color: ColorPalette.onSurface,
+            child: TtrPopOnChange(
+              tag: entry.points,
+              child: Text(
+                '${entry.playerId}: ${entry.points}',
+                style: TypeScale.label,
               ),
             ),
           ),

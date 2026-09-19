@@ -4,13 +4,35 @@
 /// motion (conventions doc § 2). No inline `Color(0x...)`, no
 /// hand-rolled text styles outside `design/`.
 ///
-/// Purity: this library imports only `dart:ui` colors, so painters
-/// (`game/view`) consume it without any Flutter widget dependency.
-/// Everything that needs a `BuildContext` or Flutter widgets lives
-/// in `design/theme.dart` / `design/widgets/` / `design/game_hud/`.
+/// Purity: this library imports only `dart:ui` colors plus the
+/// Flutter `TextStyle` value type, so painters (`game/view`) consume
+/// it without any Flutter widget dependency. Everything that needs a
+/// `BuildContext` or Flutter widgets lives in `design/theme.dart` /
+/// `design/widgets/` / `design/game_hud/`.
 library;
 
 import 'dart:ui' show Color;
+
+import 'package:flutter/painting.dart' show FontWeight, TextStyle;
+
+export 'package:app/design/arena_palette.dart' show ArenaPalette;
+
+/// Font families per design guide § 2. Bundled as variable `.ttf`
+/// assets (offline-first); Korean text falls back through
+/// [hangulFallback].
+abstract final class FontTokens {
+  /// Display face — logo, countdown numerals, podium ranks, score
+  /// numbers, button labels, badges.
+  static const String display = 'Fredoka';
+
+  /// Body face — rule one-liners, player names, lists, standings,
+  /// toasts, helper text.
+  static const String body = 'Nunito';
+
+  /// Hangul fallback chain: neither bundled face covers Korean, so
+  /// every role style and theme slot carries this chain.
+  static const List<String> hangulFallback = ['Noto Sans KR', 'sans-serif'];
+}
 
 /// Core UI palette: warm orange primary, teal secondary, light
 /// background, semantic colors for success/danger/warning.
@@ -99,83 +121,103 @@ abstract final class PlayerPalette {
   static Color forIndex(int index) => all[index % all.length];
 }
 
-/// Arena render colors. Instantiable so painters/tests can override
-/// individual colors; every default is a token value, never inline
-/// at the call site.
-///
-/// Player contrast: all [PlayerPalette.all] colors differ from
-/// [platform] and [background] by a relative-luminance gap large
-/// enough for gameplay legibility (guarded by `design` tests).
-class ArenaPalette {
-  /// Creates an arena palette; every field defaults to the token.
-  const ArenaPalette({
-    this.background = const Color(0xFF101820),
-    this.platform = const Color(0xFF3E5C76),
-    this.platformEdge = const Color(0xFF2C3E50),
-    this.hazard = const Color(0xFFE63946),
-    this.killZoneHint = const Color(0xFF7A1F2B),
-    this.checkpoint = const Color(0xFF7FC8A9),
-    this.finishLine = ColorPalette.warning,
-    this.playerLocal = PlayerPalette.one,
-    this.playerRemote = PlayerPalette.two,
-  });
-
-  /// Arena backdrop (behind all geometry).
-  final Color background;
-
-  /// Standable platforms/floors.
-  final Color platform;
-
-  /// Walls and ramps (darker than [platform]).
-  final Color platformEdge;
-
-  /// Hazards (hammer arms and other danger geometry).
-  final Color hazard;
-
-  /// Kill zone hint (fall line, kill ring).
-  final Color killZoneHint;
-
-  /// Checkpoint markers.
-  final Color checkpoint;
-
-  /// Finish line sensor.
-  final Color finishLine;
-
-  /// Local player body.
-  final Color playerLocal;
-
-  /// Remote player bodies.
-  final Color playerRemote;
-}
-
-/// Type scale: sizes (logical px) and weights only — Flutter-side
-/// code turns these into `TextStyle`s (see `design/theme.dart`).
+/// Type scale (guide § 2): per-role [TextStyle]s carrying the role's
+/// font family, weight and tracking. Callers own the content side
+/// (labels arrive UPPERCASE) and may `copyWith` a color; every other
+/// property is a token.
 abstract final class TypeScale {
-  /// Display (countdown numbers, podium ranks): big and loud.
+  /// Display size (countdown numbers, logo).
   static const double displaySize = 64;
-
-  /// Display weight.
-  static const int displayWeight = 800;
-
+  /// Medium display size.
+  static const double displayMediumSize = 48;
+  /// Small display size.
+  static const double displaySmallSize = 40;
   /// Screen/card titles (minigame names).
   static const double titleSize = 28;
-
-  /// Title weight.
-  static const int titleWeight = 700;
-
+  /// Headline size (section headers, HUD numerals).
+  static const double headlineSize = 24;
+  /// Large body size.
+  static const double bodyLargeSize = 18;
   /// Body copy (rules, messages).
   static const double bodySize = 16;
-
-  /// Body weight.
-  static const int bodyWeight = 400;
-
   /// Labels, buttons, badges.
   static const double labelSize = 14;
-
+  /// Small labels (compact chips).
+  static const double labelSmallSize = 12;
+  /// Large button label size.
+  static const double buttonLargeSize = 20;
+  /// Display weight (logo, big headings).
+  static const int displayWeight = 700;
+  /// Numeral weight — Fredoka SemiBold (guide § 2: HUD/podium
+  /// numbers are always display-face SemiBold, never body-face).
+  static const int numeralWeight = 600;
   /// Label weight.
   static const int labelWeight = 600;
+  /// Letter spacing for uppercase labels: ~0.057em at 14px — wide
+  /// enough to read as deliberate tracking on the rounded display
+  /// face without scattering two-letter button verbs.
+  static const double labelTracking = 0.8;
+  /// Logo / hero display: Fredoka Bold.
+  static const TextStyle display = TextStyle(
+    fontFamily: FontTokens.display,
+    fontSize: displaySize,
+    fontWeight: FontWeight.w700,
+    fontFamilyFallback: FontTokens.hangulFallback,
+  );
+  /// Countdown / big numerals: Fredoka SemiBold (guide § 2).
+  static const TextStyle displayNumeral = TextStyle(
+    fontFamily: FontTokens.display,
+    fontSize: displaySize,
+    fontWeight: FontWeight.w600,
+    fontFamilyFallback: FontTokens.hangulFallback,
+  );
+  /// Screen/card titles and rank labels: Fredoka SemiBold.
+  static const TextStyle title = TextStyle(
+    fontFamily: FontTokens.display,
+    fontSize: titleSize,
+    fontWeight: FontWeight.w600,
+    fontFamilyFallback: FontTokens.hangulFallback,
+  );
+  /// Button/badge labels: Fredoka SemiBold, tracked. Content-side
+  /// rule: the caller passes the text already UPPERCASE.
+  static const TextStyle label = TextStyle(
+    fontFamily: FontTokens.display,
+    fontSize: labelSize,
+    fontWeight: FontWeight.w600,
+    letterSpacing: labelTracking,
+    fontFamilyFallback: FontTokens.hangulFallback,
+  );
+  /// Large button labels (lobby primary actions).
+  static const TextStyle labelLarge = TextStyle(
+    fontFamily: FontTokens.display,
+    fontSize: buttonLargeSize,
+    fontWeight: FontWeight.w600,
+    letterSpacing: labelTracking,
+    fontFamilyFallback: FontTokens.hangulFallback,
+  );
+  /// Body copy: Nunito Regular.
+  static const TextStyle body = TextStyle(
+    fontFamily: FontTokens.body,
+    fontSize: bodySize,
+    fontFamilyFallback: FontTokens.hangulFallback,
+  );
+  /// Emphasized body (player names on cards): Nunito Bold.
+  static const TextStyle bodyEmphasis = TextStyle(
+    fontFamily: FontTokens.body,
+    fontSize: bodySize,
+    fontWeight: FontWeight.w700,
+    fontFamilyFallback: FontTokens.hangulFallback,
+  );
+  /// Status/helper labels in the body face: Nunito SemiBold,
+  /// tracked ("Ready", "Not ready", helper chips).
+  static const TextStyle bodyLabel = TextStyle(
+    fontFamily: FontTokens.body,
+    fontSize: labelSize,
+    fontWeight: FontWeight.w600,
+    letterSpacing: labelTracking,
+    fontFamilyFallback: FontTokens.hangulFallback,
+  );
 }
-
 /// 4-based spacing scale (logical px).
 abstract final class SpacingScale {
   /// 4 — hairline gaps, chip innards.
@@ -215,7 +257,7 @@ abstract final class RadiusScale {
   static const double pill = 999;
 }
 
-/// Motion durations (milliseconds).
+/// Motion durations (milliseconds, guide § 4).
 abstract final class MotionDurations {
   /// Button press feedback.
   static const Duration tap = Duration(milliseconds: 80);
@@ -231,4 +273,25 @@ abstract final class MotionDurations {
 
   /// One slow drift cycle of ambient backdrop shapes.
   static const Duration ambient = Duration(seconds: 12);
+
+  /// Staggered entrance: per-item slide+fade run.
+  static const Duration staggerItem = Duration(milliseconds: 240);
+
+  /// Staggered entrance: gap between consecutive items.
+  static const Duration staggerDelay = Duration(milliseconds: 40);
+
+  /// Staggered entrance: wait after build before the first item.
+  static const Duration staggerStart = Duration(milliseconds: 80);
+}
+
+/// Motion scale peaks (guide § 4).
+abstract final class MotionScales {
+  /// Button press-down squash factor.
+  static const double press = 0.96;
+
+  /// Pop-on-change peak (scores, timers, countdowns).
+  static const double pop = 1.15;
+
+  /// Emphasis pulse peak (one element per screen).
+  static const double pulse = 1.04;
 }

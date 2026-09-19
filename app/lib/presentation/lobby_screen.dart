@@ -1,6 +1,8 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
 import 'package:app/design/widgets/ttr_button.dart';
 import 'package:app/design/widgets/ttr_seat_card.dart';
+import 'package:app/design/widgets/ttr_staggered_entrance.dart';
 import 'package:flutter/material.dart';
 
 /// View model for one lobby seat (dumb data; rules live in the domain).
@@ -67,49 +69,59 @@ class LobbyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              padding: const EdgeInsets.all(SpacingScale.lg),
-              mainAxisSpacing: SpacingScale.md,
-              crossAxisSpacing: SpacingScale.md,
-              childAspectRatio: 1.15,
-              children: [
-                for (final (index, player) in players.indexed)
-                  Center(
-                    child: TtrSeatCard(
-                      nickname: player.displayName,
-                      playerColor: PlayerPalette.forIndex(index),
-                      isReady: player.isReady && !player.isDisconnected,
-                      isBot: player.isBot,
-                      isLocal: player.isLocal,
-                    ),
-                  ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const TtrAmbientBackdrop(),
+        SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.all(SpacingScale.lg),
+                  mainAxisSpacing: SpacingScale.md,
+                  crossAxisSpacing: SpacingScale.md,
+                  childAspectRatio: 1.15,
+                  children: [
+                    for (final (index, player) in players.indexed)
+                      Center(
+                        child: TtrStaggeredEntrance(
+                          index: index,
+                          child: TtrSeatCard(
+                            nickname: player.displayName,
+                            playerColor: PlayerPalette.forIndex(index),
+                            isReady:
+                                player.isReady && !player.isDisconnected,
+                            isBot: player.isBot,
+                            isLocal: player.isLocal,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (onSolo != null) ...[
+                TtrButton(
+                  key: soloButtonKey,
+                  label: 'PLAY SOLO',
+                  size: TtrButtonSize.large,
+                  onPressed: onSolo,
+                ),
+                const SizedBox(height: SpacingScale.sm),
               ],
-            ),
+              TtrButton(
+                key: startButtonKey,
+                label: 'START',
+                variant: TtrButtonVariant.secondary,
+                onPressed: canStart ? onStart : null,
+              ),
+              const SizedBox(height: SpacingScale.lg),
+            ],
           ),
-          if (onSolo != null) ...[
-            TtrButton(
-              key: soloButtonKey,
-              label: 'PLAY SOLO',
-              size: TtrButtonSize.large,
-              onPressed: onSolo,
-            ),
-            const SizedBox(height: SpacingScale.sm),
-          ],
-          TtrButton(
-            key: startButtonKey,
-            label: 'Start',
-            variant: TtrButtonVariant.secondary,
-            onPressed: canStart ? onStart : null,
-          ),
-          const SizedBox(height: SpacingScale.lg),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

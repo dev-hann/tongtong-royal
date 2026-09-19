@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app/design/tokens.dart';
 import 'package:app/game/controls/action_input_controller.dart';
 import 'package:app/game/controls/auto_input_source.dart';
 import 'package:app/game/course/course_map.dart';
@@ -141,16 +142,15 @@ final class _ActionIconButton extends StatelessWidget {
       child: Container(
         width: diameterPx,
         height: diameterPx,
-        decoration: const BoxDecoration(
-          color: Color(0x663E5C76),
+        decoration: BoxDecoration(
+          color: const ArenaPalette().platform.withValues(alpha: 0.4),
           shape: BoxShape.circle,
         ),
         alignment: Alignment.center,
         child: Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFFFFFFFF),
-            fontWeight: FontWeight.bold,
+          style: TypeScale.label.copyWith(
+            color: ColorPalette.onPrimary,
           ),
         ),
       ),

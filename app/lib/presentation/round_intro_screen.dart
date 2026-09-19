@@ -1,5 +1,7 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_ambient_backdrop.dart';
 import 'package:app/design/widgets/ttr_countdown.dart';
+import 'package:app/design/widgets/ttr_pulse.dart';
 import 'package:app/design/widgets/ttr_round_banner.dart';
 import 'package:flutter/material.dart';
 
@@ -7,7 +9,8 @@ import 'package:flutter/material.dart';
 /// phase-tinted backdrop.
 ///
 /// Pure renderer: the countdown comes from an injected ticker value
-/// (host-owned), never from a local timer.
+/// (host-owned), never from a local timer. The round badge is the
+/// screen's single pulsing element (guide § 4).
 class RoundIntroScreen extends StatelessWidget {
   /// Creates the intro screen.
   const RoundIntroScreen({
@@ -43,29 +46,39 @@ class RoundIntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final round = roundNumber;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [ColorPalette.primarySoft, ColorPalette.background],
-        ),
-      ),
-      child: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (round != null)
-                _RoundBadge(label: 'ROUND $round / ${totalRounds ?? round}'),
-              const SizedBox(height: SpacingScale.lg),
-              TtrRoundBanner(title: minigameName, ruleLine: ruleLine),
-              const SizedBox(height: SpacingScale.xl),
-              TtrCountdown(key: countdownKey, value: countdownValue),
-            ],
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const TtrAmbientBackdrop(),
+        DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [ColorPalette.primarySoft, ColorPalette.background],
+            ),
+          ),
+          child: SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (round != null)
+                    TtrPulse(
+                      child: _RoundBadge(
+                        label: 'ROUND $round / ${totalRounds ?? round}',
+                      ),
+                    ),
+                  const SizedBox(height: SpacingScale.lg),
+                  TtrRoundBanner(title: minigameName, ruleLine: ruleLine),
+                  const SizedBox(height: SpacingScale.xl),
+                  TtrCountdown(key: countdownKey, value: countdownValue),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -89,9 +102,7 @@ class _RoundBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: TypeScale.labelSize,
-          fontWeight: FontWeight.w600,
+        style: TypeScale.label.copyWith(
           color: ColorPalette.onSecondary,
         ),
       ),

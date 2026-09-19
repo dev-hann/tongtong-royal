@@ -59,14 +59,7 @@ class TtrPlayerChip extends StatelessWidget {
             ),
           ),
           const SizedBox(width: SpacingScale.sm),
-          Text(
-            nickname,
-            style: const TextStyle(
-              fontSize: TypeScale.bodySize,
-              fontWeight: FontWeight.w400,
-              color: ColorPalette.onSurface,
-            ),
-          ),
+          Text(nickname, style: TypeScale.body),
           if (isBot) ...[
             const SizedBox(width: SpacingScale.xs),
             Container(
@@ -78,11 +71,9 @@ class TtrPlayerChip extends StatelessWidget {
                 color: ColorPalette.neutral200,
                 borderRadius: BorderRadius.circular(RadiusScale.chip),
               ),
-              child: const Text(
+              child: Text(
                 'BOT',
-                style: TextStyle(
-                  fontSize: TypeScale.labelSize,
-                  fontWeight: FontWeight.w600,
+                style: TypeScale.bodyLabel.copyWith(
                   color: ColorPalette.neutral900,
                 ),
               ),
@@ -91,9 +82,7 @@ class TtrPlayerChip extends StatelessWidget {
           const SizedBox(width: SpacingScale.sm),
           Text(
             status,
-            style: TextStyle(
-              fontSize: TypeScale.labelSize,
-              fontWeight: FontWeight.w600,
+            style: TypeScale.bodyLabel.copyWith(
               color: isDisconnected
                   ? ColorPalette.danger
                   : ColorPalette.neutral500,

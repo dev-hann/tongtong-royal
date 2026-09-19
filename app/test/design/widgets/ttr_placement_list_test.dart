@@ -1,10 +1,30 @@
 import 'package:app/design/widgets/ttr_placement_list.dart';
+import 'package:app/design/widgets/ttr_staggered_entrance.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
 void main() {
   Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+  testWidgets('rows enter staggered (guide § 4)', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        const TtrPlacementList(
+          placements: [
+            Placement(playerId: 'p1', rank: 1, points: 4),
+            Placement(playerId: 'p2', rank: 2, points: 3),
+          ],
+        ),
+      ),
+    );
+
+    final staggers = tester.widgetList<TtrStaggeredEntrance>(
+      find.byType(TtrStaggeredEntrance),
+    );
+    expect(staggers, hasLength(2));
+    expect(staggers.map((s) => s.index), [0, 1]);
+  });
 
   testWidgets('renders rank, player and points per row', (tester) async {
     await tester.pumpWidget(

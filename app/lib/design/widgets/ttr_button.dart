@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_press_scale.dart';
 import 'package:flutter/material.dart';
 
 /// Variants of [TtrButton].
@@ -20,7 +21,12 @@ enum TtrButtonSize {
 }
 
 /// Shared filled button styled from design tokens.
-class TtrButton extends StatelessWidget {
+///
+/// Juice (guide § 4): squashes to [MotionScales.press] on press-down
+/// and springs back over [MotionDurations.tap]. Labels render in the
+/// display face with [TypeScale.labelTracking]; the caller passes
+/// the caption already UPPERCASE.
+class TtrButton extends StatefulWidget {
   /// Creates a token-styled button.
   const TtrButton({
     required this.label,
@@ -30,7 +36,7 @@ class TtrButton extends StatelessWidget {
     super.key,
   });
 
-  /// Button caption.
+  /// Button caption (UPPERCASE, content-side rule).
   final String label;
 
   /// Fired on tap; `null` disables the button.
@@ -43,21 +49,42 @@ class TtrButton extends StatelessWidget {
   final TtrButtonSize size;
 
   @override
+  State<TtrButton> createState() => _TtrButtonState();
+}
+
+class _TtrButtonState extends State<TtrButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed != value) {
+      setState(() => _pressed = value);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    return FilledButton(
-      onPressed: onPressed,
-      style: _style(enabled),
-      child: Text(label),
+    final enabled = widget.onPressed != null;
+    return Listener(
+      onPointerDown: enabled ? (_) => _setPressed(true) : null,
+      onPointerUp: (_) => _setPressed(false),
+      onPointerCancel: (_) => _setPressed(false),
+      child: TtrPressScale(
+        pressed: _pressed,
+        child: FilledButton(
+          onPressed: widget.onPressed,
+          style: _style(enabled),
+          child: Text(widget.label),
+        ),
+      ),
     );
   }
 
   ButtonStyle _style(bool enabled) {
-    final fill = switch (variant) {
+    final fill = switch (widget.variant) {
       TtrButtonVariant.primary => ColorPalette.primary,
       TtrButtonVariant.secondary => ColorPalette.secondary,
     };
-    final large = size == TtrButtonSize.large;
+    final large = widget.size == TtrButtonSize.large;
     return ButtonStyle(
       backgroundColor: WidgetStatePropertyAll(
         enabled ? fill : ColorPalette.neutral200,
@@ -71,10 +98,7 @@ class TtrButton extends StatelessWidget {
       ),
       minimumSize: const WidgetStatePropertyAll(Size(192, 40)),
       textStyle: WidgetStatePropertyAll(
-        TextStyle(
-          fontSize: large ? 20 : TypeScale.labelSize,
-          fontWeight: FontWeight.w600,
-        ),
+        large ? TypeScale.labelLarge : TypeScale.label,
       ),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(

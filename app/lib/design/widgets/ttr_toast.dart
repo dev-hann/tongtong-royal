@@ -25,14 +25,7 @@ class TtrToast extends StatelessWidget {
           ),
         ],
       ),
-      child: Text(
-        message,
-        style: const TextStyle(
-          fontSize: TypeScale.bodySize,
-          fontWeight: FontWeight.w400,
-          color: ColorPalette.onSurface,
-        ),
-      ),
+      child: Text(message, style: TypeScale.body),
     );
   }
 }

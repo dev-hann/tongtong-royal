@@ -30,28 +30,22 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'TONGTONG',
-                style: TextStyle(
-                  fontSize: TypeScale.displaySize,
-                  fontWeight: FontWeight.w800,
+                style: TypeScale.display.copyWith(
                   color: ColorPalette.primary,
                 ),
               ),
-              const Text(
+              Text(
                 'ROYAL',
-                style: TextStyle(
-                  fontSize: TypeScale.displaySize,
-                  fontWeight: FontWeight.w800,
+                style: TypeScale.display.copyWith(
                   color: ColorPalette.secondary,
                 ),
               ),
               const SizedBox(height: SpacingScale.sm),
-              const Text(
+              Text(
                 'One button. Total chaos.',
-                style: TextStyle(
-                  fontSize: TypeScale.bodySize,
-                  fontWeight: FontWeight.w400,
+                style: TypeScale.body.copyWith(
                   color: ColorPalette.neutral500,
                 ),
               ),
@@ -97,11 +91,9 @@ class _ComingSoonChip extends StatelessWidget {
         color: ColorPalette.neutral200,
         borderRadius: BorderRadius.circular(RadiusScale.chip),
       ),
-      child: const Text(
+      child: Text(
         'Coming soon',
-        style: TextStyle(
-          fontSize: TypeScale.labelSize,
-          fontWeight: FontWeight.w600,
+        style: TypeScale.bodyLabel.copyWith(
           color: ColorPalette.neutral700,
         ),
       ),
