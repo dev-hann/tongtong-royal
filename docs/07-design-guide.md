@@ -74,10 +74,13 @@ Durations (tokens): `tap` 80ms · `countdownPop` 150ms · `transition` 240ms · 
 
 ## 6. Screen Layout Patterns
 
-- **Home**: centered column — logo (two-tone display), tagline, stacked actions (PLAY SOLO primary large, FRIENDS secondary disabled + chip). Ambient backdrop.
+- **Home**: centered column — logo (two-tone display), tagline, stacked actions (PLAY SOLO primary large, FRIENDS secondary disabled + chip). Ambient backdrop. **Entry points: profile avatar top-left, settings gear top-right** (SafeArea-protected corners).
+- **Profile**: avatar block (player color + nickname), nickname edit field, color palette grid (PlayerPalette swatches; selection ring = primary), stats cards row (matches / wins / 1st places — Fredoka numerals, staggered entrance). Local-only, no sync UI.
+- **Settings**: grouped list — sound toggle, credits row, version footer. Primary-colored active toggle.
+- **Credits**: scrollable attribution rows (asset name, source, license) — mirrors `ATTRIBUTION.md`, body type.
 - **Lobby**: seat card grid 2×2 centered, match meta pill above (rounds, bot fill), actions bottom.
 - **Intro**: vertical rhythm — round pill, banner, giant countdown. Nothing else. Backdrop tinted to the upcoming minigame's arena family.
-- **Play**: full-bleed world; HUD strip top (standings + timer + round), single action button bottom-center.
+- **Play**: full-bleed world; HUD strip top (standings + timer + round), single action button bottom-center (bottom viewPadding-aware).
 - **Results**: header pill, placement list (staggered), standings with delta chips, auto-advance progress bar at bottom.
 - **Podium**: pedestals bottom-heavy, winner center-tall pulsing; Rematch primary + Exit secondary below.
 

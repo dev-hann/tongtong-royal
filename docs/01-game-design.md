@@ -137,11 +137,14 @@ State machine is owned by `shared/domain` (see architecture doc). Server relays 
 
 - 2-4 players, invite-code rooms, 3-round matches, 2 minigames (a 3rd is planned post-MVP), podium, rematch.
 - **Bot fill** (§ 9): host-side bot players fill empty seats.
+- **Local profile** (no accounts, no server sync): nickname (first-launch onboarding, default `PLAYER`, editable), player color (persisted; drives seat color + in-game local rendering), stats (matches played, wins, first-place finishes — recorded at podium confirm, stored locally only).
+- **Settings**: sound toggle (audio engine lands with M5; the flag persists now), credits (asset attribution view — legal § 3 duty), app version.
 - Sound effects, best-score persistence (local), simple character customization (color).
 
 ### 8.2 Backlog (explicitly out — do not build)
 
 - Random matchmaking, AFK handling, spectator mode, cosmetics beyond color, chat, seasons, ranked, bot difficulty tiers.
+- Achievements/quests, progression/rewards, levels, replay history.
 - **King of the Hill** — removed from MVP for pacing ("too boring" verdict); revisit as a redesigned occupancy archetype after launch polish.
 
 ## 9. Bot Players
