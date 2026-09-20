@@ -18,9 +18,10 @@ void main() {
 
       expect(store.profile.nickname, 'PLAYER');
       expect(store.profile.colorIndex, 0);
-      expect(store.stats.matchesPlayed, 0);
-      expect(store.stats.wins, 0);
-      expect(store.stats.firstPlaces, 0);
+      expect(store.stats.showsPlayed, 0);
+      expect(store.stats.finalsReached, 0);
+      expect(store.stats.crownsWon, 0);
+      expect(store.stats.bestRaceMs, isNull);
       expect(store.settings.soundEnabled, isTrue);
       expect(store.onboarded, isFalse);
     });
@@ -43,27 +44,27 @@ void main() {
       expect(second.onboarded, isTrue);
     });
 
-    test('saved stats survive reload through the storage', () async {
+    test('saved crown stats survive reload through the storage', () async {
       final storage = FakeKeyValueStorage();
       final first = ProfileStore(storage: storage);
       await first.load();
       await first.saveStats(
-        const Stats(matchesPlayed: 3, wins: 1, firstPlaces: 1),
+        const Stats(showsPlayed: 3, finalsReached: 1, crownsWon: 1),
       );
 
       final second = ProfileStore(storage: storage);
       await second.load();
 
-      expect(second.stats.matchesPlayed, 3);
-      expect(second.stats.wins, 1);
-      expect(second.stats.firstPlaces, 1);
+      expect(second.stats.showsPlayed, 3);
+      expect(second.stats.finalsReached, 1);
+      expect(second.stats.crownsWon, 1);
     });
 
     test('saved best race time survives reload through the storage', () async {
       final storage = FakeKeyValueStorage();
       final first = ProfileStore(storage: storage);
       await first.load();
-      await first.saveStats(const Stats(matchesPlayed: 2, bestRaceMs: 37120));
+      await first.saveStats(const Stats(showsPlayed: 2, bestRaceMs: 37120));
 
       final second = ProfileStore(storage: storage);
       await second.load();
@@ -82,15 +83,47 @@ void main() {
 
       expect(second.settings.soundEnabled, isFalse);
     });
+  });
 
-    test('mutations are cached synchronously after save', () async {
-      final store = ProfileStore(storage: FakeKeyValueStorage());
+  group('v1 → v2 stats migration (GDD v2 § 2)', () {
+    test('v1 counter keys are ignored — counts restart fresh', () async {
+      final storage = FakeKeyValueStorage();
+      storage.values['ttr.stats.matchesPlayed'] = 7;
+      storage.values['ttr.stats.wins'] = 5;
+      storage.values['ttr.stats.firstPlaces'] = 5;
+
+      final store = ProfileStore(storage: storage);
       await store.load();
-      await store.saveNickname('ACE');
-      await store.saveColorIndex(3);
 
-      expect(store.profile.nickname, 'ACE');
-      expect(store.profile.colorIndex, 3);
+      expect(store.stats.showsPlayed, 0);
+      expect(store.stats.finalsReached, 0);
+      expect(store.stats.crownsWon, 0);
+    });
+
+    test('v1 best race time carries over (kept side record)', () async {
+      final storage = FakeKeyValueStorage();
+      storage.values['ttr.stats.bestRaceMs'] = 42310;
+
+      final store = ProfileStore(storage: storage);
+      await store.load();
+
+      expect(store.stats.bestRaceMs, 42310);
+    });
+
+    test('v1 counter keys are never rewritten by v2 saves', () async {
+      final storage = FakeKeyValueStorage();
+      storage.values['ttr.stats.matchesPlayed'] = 7;
+      final store = ProfileStore(storage: storage);
+      await store.load();
+
+      await store.saveStats(
+        const Stats(showsPlayed: 1, finalsReached: 1, crownsWon: 1),
+      );
+
+      expect(storage.values['ttr.stats.matchesPlayed'], 7);
+      expect(storage.values['ttr.stats.showsPlayed'], 1);
+      expect(storage.values['ttr.stats.finalsReached'], 1);
+      expect(storage.values['ttr.stats.crownsWon'], 1);
     });
   });
 
@@ -104,7 +137,7 @@ void main() {
       await store.markOnboarded();
       await store.saveSoundEnabled(value: false);
       await store.saveStats(
-        const Stats(matchesPlayed: 1, wins: 1, firstPlaces: 1),
+        const Stats(showsPlayed: 1, finalsReached: 1, crownsWon: 1),
       );
 
       expect(storage.values.keys, everyElement(contains('ttr.')));
@@ -112,19 +145,9 @@ void main() {
       expect(storage.values.containsKey('ttr.profile.colorIndex'), isTrue);
       expect(storage.values.containsKey('ttr.profile.onboarded'), isTrue);
       expect(storage.values.containsKey('ttr.settings.soundEnabled'), isTrue);
-      expect(storage.values.containsKey('ttr.stats.matchesPlayed'), isTrue);
-      expect(storage.values.containsKey('ttr.stats.wins'), isTrue);
-      expect(storage.values.containsKey('ttr.stats.firstPlaces'), isTrue);
-    });
-
-    test('best race time persists under its own stats key', () async {
-      final storage = FakeKeyValueStorage();
-      final store = ProfileStore(storage: storage);
-      await store.load();
-      await store.saveStats(const Stats(matchesPlayed: 1, bestRaceMs: 52340));
-
-      expect(storage.values.containsKey('ttr.stats.bestRaceMs'), isTrue);
-      expect(storage.values['ttr.stats.bestRaceMs'], 52340);
+      expect(storage.values.containsKey('ttr.stats.showsPlayed'), isTrue);
+      expect(storage.values.containsKey('ttr.stats.finalsReached'), isTrue);
+      expect(storage.values.containsKey('ttr.stats.crownsWon'), isTrue);
     });
   });
 
@@ -132,7 +155,7 @@ void main() {
     test('Profile/Stats/Settings compare by field values', () {
       expect(const Profile(), const Profile());
       expect(const Profile(nickname: 'ACE'), const Profile(nickname: 'ACE'));
-      expect(const Stats(matchesPlayed: 2), const Stats(matchesPlayed: 2));
+      expect(const Stats(showsPlayed: 2), const Stats(showsPlayed: 2));
       expect(
         const Settings(soundEnabled: false),
         const Settings(soundEnabled: false),

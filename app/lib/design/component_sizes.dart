@@ -16,4 +16,12 @@ abstract final class ComponentSizes {
   /// Icon glyph inside home corner entries (24 = rows per § 2.1,
   /// 28 = home entries per § 2.1 — kept as tokens, not literals).
   static const double homeEntryIcon = 28;
+
+  /// Row-level icon glyph (§ 2.1 size 24 role: verdict rows, list
+  /// rows).
+  static const double rowIcon = 24;
+
+  /// Hero-moment icon glyph (§ 2.1 size 32+ role: crown reveals,
+  /// podium ceremony).
+  static const double heroIcon = 40;
 }

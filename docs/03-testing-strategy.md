@@ -102,7 +102,7 @@ scripts/smoke_device.sh <adb-serial>            # whole suite + logcat crash sca
 scripts/smoke_device.sh <serial> integration_test/smoke_solo_match_test.dart
 ```
 
-- **Text anchors** ( Patrol selectors AND wrapper assertions — label change ⇒ suite + this list change in the same commit): `PLAY SOLO`, `PLAY FRIENDS`, `Coming soon`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`, `START`, `PLAY AGAIN`, `HOME`, `Sound`, `TIME`, `NEW BEST`, `BEST TIME`, `Fredoka font`, `Nunito font`, `Phosphor Icons (Fill)`, rank ordinals (`1st`, `T-1st`) *(v1-era anchors — retained while the v1 suite runs; dropped with the v2 results screens)*. **GDD v2 show-era anchors (landing with the v2 implementation, same-commit when the screens land)**: `QUALIFIED`, `ELIMINATED`, `CROWN`, per-game intro rule lines (`First to the finish line`, `Last two standing qualify`).
+- **Text anchors** ( Patrol selectors AND wrapper assertions — label change ⇒ suite + this list change in the same commit): `PLAY SOLO`, `PLAY FRIENDS`, `Coming soon`, `JUMP`, `Quit the race?`, `KEEP RUNNING`, `QUIT`, `SKIP`, `PLAY AGAIN`, `HOME`, `Sound`, `BEST TIME`, `Fredoka font`, `Nunito font`, `Phosphor Icons (Fill)`. **GDD v2 show-era anchors (live since the v2 shell)**: `QUALIFIED`, `ELIMINATED`, `CROWN`, `VICTORY`, round pills (`ROUND 1 / 3` … `ROUND 3 / 3`), intro rule lines (`First to the finish line`, `Last two standing qualify`, `First finisher takes the crown`), summary champion line (`takes the crown`). *(v1-era anchors `START`, `TIME`, `NEW BEST`, rank ordinals `1st`/`T-1st` retired with the v1 results screens.)*
 - The suite runs on the Pi rig only (`192.168.0.5:5555`) — absolute (user directive 2026-09-19).
 - Failure output includes the last fatal exceptions for triage.
 
@@ -163,7 +163,7 @@ Patrol runs the app on real devices and drives the real Flutter widget tree — 
 - Selectors: public text anchors (§ 9 list — same list, same commit when labels change) first; `Key` finds for dynamic content. Never index-based (`texts[2]`) or coordinate taps.
 - Waiting: `patrolTester.waitUntilVisible/...` only. `Future.delayed`/sleeps are banned (Law § 10.2.5 applies here too). **`pumpAndSettle` is banned in all device/Patrol tests** — ambient loops (backdrop drift, pulses) schedule frames forever on a real device; the app never settles. (Widget tests under fake-async are unaffected — their `pumpAndSettle` terminates.) Time-sensitive taps use `settlePolicy: SettlePolicy.noSettle` + explicit `waitUntilVisible` (intro countdown precedent).
 - Native interactions: `native.pressBack()` for system back; no raw `adb shell input` inside Patrol tests.
-- Determinism: the match seed is wall-clock in the shell (not injectable today — backlog: seeded test config). Race-finish therefore asserts that placements RENDER (incl. `T-1st` shared-rank, GDD § 7.6), never the outcome; screenshots may be captured but never asserted pixel-by-pixel (token colors vary by theme drift).
+- Determinism: the show seed is wall-clock in the shell (not injectable today — backlog: seeded test config). Show-flow cases therefore assert that the flow SHAPE renders (flash verdict chips, crown podium, summary line — GDD v2 § 7.3/§ 7.2), never the human's own outcome; screenshots may be captured but never asserted pixel-by-pixel (token colors vary by theme drift).
 - Every new user-visible flow adds its Patrol case in the same PR (DoD link, `docs/05` § 6).
 - Runs: `patrol test --device 192.168.0.5:5555` (or `scripts/smoke_device.sh` which enforces the rig) — **Pi rig ONLY, absolute (user directive 2026-09-19; phone = manual-install target, never a test device)**. Pi pass = release checklist condition. CI emulator hosting is backlog.
 
@@ -172,10 +172,10 @@ Patrol runs the app on real devices and drives the real Flutter widget tree — 
 | # | Case (`smoke_*_test.dart`) | Steps | Hard asserts |
 |---|----------------------|-------|--------------|
 | 1 | `smoke_first_launch` | cold start, first-launch | onboarding shows; SKIP tap lands on Home (`PLAY SOLO` visible) |
-| 2 | `smoke_solo_match` | Home → PLAY SOLO | intro shows rule line; countdown ends in play (`JUMP` visible); 3 jumps complete without exception |
-| 3 | `smoke_quit_dialog` | in play → `native.pressBack()` | dialog `Quit the race?` shows; KEEP RUNNING returns to play (`JUMP` visible) |
-| 4 | `smoke_quit_to_home` | in play → back → QUIT | Home visible (`PLAY SOLO`); app process alive |
-| 5 | `smoke_race_finish` | play to completion (v1 round cap 90 s) | *(v1 suite as built — v2 rows: qualify-flash verdicts, crown podium; land with the v2 implementation per § 9 note)* |
+| 2 | `smoke_solo_match` | Home → PLAY SOLO | show intro shows `ROUND 1 / 3` pill + rule line; countdown ends in play (`JUMP` visible); 3 jumps complete without exception |
+| 3 | `smoke_quit_dialog` | in ROUND 1 play → `native.pressBack()` | dialog `Quit the race?` shows; KEEP RUNNING returns to play (`JUMP` visible) |
+| 4 | `smoke_show_quit` | in ROUND 1 play → back → QUIT | Home visible (`PLAY SOLO`); app process alive; no stats recorded (GDD v2 § 7.4) |
+| 5 | `smoke_show_happy_path` | play the whole show (tap JUMP through the rounds) | `ROUND n / 3` pills per round; each round ends in a flash verdict (`QUALIFIED`/`ELIMINATED`); qualified runs chain into the FINAL (`CROWN` reveal + podium `CROWN`/`VICTORY` + `PLAY AGAIN`); eliminated runs land on the summary (`takes the crown` + `PLAY AGAIN`); PLAY AGAIN restarts at `ROUND 1 / 3`. Human verdict itself is never asserted (wall-clock seed, § 11.1) |
 | 6 | `smoke_profile_flow` | Home → profile avatar | profile editor opens (field visible); back returns Home. Persistence/swatch behavior is widget-test territory |
 | 7 | `smoke_settings_flow` | Home → gear | settings opens; sound toggle flips; credits lists every ATTRIBUTION row; back returns |
 | 8 | `smoke_orientation_lock` | portrait steady-state (platform note: patrol 3.20 has no rotate API and the Pi rig has no accelerometer — true rotation coverage is backlog) | UI renders unchanged after settle |

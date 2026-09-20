@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show Canvas, Color, Offset, Paint, Rect, Size;
 
+import 'package:app/design/game_art/jelly_primitives.dart';
 import 'package:app/design/tokens.dart' show ArenaPalette;
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
@@ -18,6 +19,20 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 /// slow frame cannot snowball into an ever-growing backlog. Engine
 /// constant, not gameplay tuning.
 const int maxStepsPerFrame = 5;
+
+/// Render approximation: a body whose vertical speed stays below
+/// this (m/s) reads as supported/grounded — jelly pose selection and
+/// bot observations share the threshold (views have no ground
+/// contacts).
+const double groundedSpeedEpsilonMeters = 0.5;
+
+/// Render cadence: jelly blink period — eyes shut for
+/// [blinkDurationTicks] every [blinkPeriodTicks] (art constant,
+/// guide § 9.1).
+const int blinkPeriodTicks = 3 * PhysicsConsts.tickRate;
+
+/// Blink shut duration in ticks (~0.2 s).
+const int blinkDurationTicks = 12;
 
 /// Engine constant: render scale, logical pixels per world meter.
 /// Pure display constant (M1 has no sprites; bodies draw as colored
@@ -140,6 +155,7 @@ final class RaceGameView extends Game {
     this.simulation,
     InputSource? inputSource,
     this.playerIds = const [],
+    this.playerColors = const {},
     RenderFeed? renderFeed,
     this.tickInputsProvider,
     this.tickEnabled,
@@ -180,6 +196,11 @@ final class RaceGameView extends Game {
   /// Rendered players; empty renders only [localPlayerId].
   final List<PlayerId> playerIds;
 
+  /// Seat colors per player (a `PlayerPalette` value each); players
+  /// without an entry fall back to the palette's local/remote body
+  /// colors.
+  final Map<PlayerId, Color> playerColors;
+
   /// Full per-tick input map for multi-seat hosts (human + bots):
   /// when provided, the loop feeds `tickInputs(provider())` instead
   /// of sampling [inputSource] for the local player only. Null keeps
@@ -209,8 +230,6 @@ final class RaceGameView extends Game {
   late final Paint _checkpointPaint = Paint()..color = palette.checkpoint;
   late final Paint _finishPaint = Paint()..color = palette.finishLine;
   late final Paint _hammerPaint = Paint()..color = palette.hazard;
-  late final Paint _remotePlayerPaint = Paint()..color = palette.playerRemote;
-  late final Paint _localPlayerPaint = Paint()..color = palette.playerLocal;
 
   /// Camera clamp rectangle for [map].
   @visibleForTesting
@@ -353,7 +372,9 @@ final class RaceGameView extends Game {
     for (final hammer in map.hammers) {
       _drawHammer(canvas, hammer, state.worldTick);
     }
-    state.players.forEach((id, pose) => _drawPlayer(canvas, id, pose));
+    state.players.forEach(
+      (id, pose) => _drawPlayer(canvas, id, pose, state.worldTick),
+    );
 
     canvas.restore();
   }
@@ -396,17 +417,32 @@ final class RaceGameView extends Game {
       );
   }
 
-  void _drawPlayer(Canvas canvas, PlayerId playerId, PlayerRenderPose pose) {
-    final paint = playerId == localPlayerId
-        ? _localPlayerPaint
-        : _remotePlayerPaint;
-    canvas.drawRect(
+  /// Jelly player at its snapshot pose (guide § 9.1): airborne
+  /// bodies stretch (jump squash), grounded ones breathe by the
+  /// world tick; the local player keeps the white ring.
+  void _drawPlayer(
+    Canvas canvas,
+    PlayerId playerId,
+    PlayerRenderPose pose,
+    int worldTick,
+  ) {
+    final airborne = pose.vy.abs() > groundedSpeedEpsilonMeters;
+    drawJelly(
+      canvas,
       Rect.fromCenter(
         center: Offset(pose.x, pose.y),
         width: PlayerCharacter.widthMeters,
         height: PlayerCharacter.heightMeters,
       ),
-      paint,
+      body:
+          playerColors[playerId] ??
+          (playerId == localPlayerId
+              ? palette.playerLocal
+              : palette.playerRemote),
+      pose: airborne ? JellyPose.jump : JellyPose.idle,
+      phase: (worldTick % PhysicsConsts.tickRate) / PhysicsConsts.tickRate,
+      blink: worldTick % blinkPeriodTicks < blinkDurationTicks,
+      isLocal: playerId == localPlayerId,
     );
   }
 

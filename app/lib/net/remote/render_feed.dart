@@ -11,6 +11,7 @@ final class PlayerRenderPose {
     required this.x,
     required this.y,
     required this.angle,
+    this.vy = 0,
   });
 
   /// Position X in meters.
@@ -21,6 +22,11 @@ final class PlayerRenderPose {
 
   /// Body rotation in radians.
   final double angle;
+
+  /// Vertical velocity in m/s (local feeds only — jelly pose
+  /// selection; remote snapshots default to 0/idle until netcode
+  /// carries velocities).
+  final double vy;
 }
 
 /// Everything a renderer needs for one frame: the local player id,
@@ -97,11 +103,17 @@ final class LocalRenderFeed implements RenderFeed {
     final ids = playerIds.isEmpty ? [localPlayerId] : playerIds;
     final players = <PlayerId, PlayerRenderPose>{};
     for (final id in ids) {
-      final body = simulation.bodyOf(id);
+      // poseOf reports null for FINAL-mode eliminations (the body
+      // is destroyed) — nothing to render for them.
+      final pose = simulation.poseOf(id);
+      if (pose == null) {
+        continue;
+      }
       players[id] = PlayerRenderPose(
-        x: body.position.x,
-        y: body.position.y,
-        angle: body.angle,
+        x: pose.x,
+        y: pose.y,
+        angle: pose.angle,
+        vy: pose.vy,
       );
     }
     return RemoteRenderState(

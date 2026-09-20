@@ -15,11 +15,14 @@ enum Sfx {
   /// The human crossed the finish line.
   finish('sfx/finish.ogg'),
 
-  /// Victory fanfare (rank 1 on the results screen).
+  /// Victory fanfare (crown ceremony).
   fanfare('sfx/fanfare.ogg'),
 
   /// Defeat sting (quiet).
-  fail('sfx/fail.ogg');
+  fail('sfx/fail.ogg'),
+
+  /// Victory ceremony bed loop (crown podium, guide § 9.4).
+  victoryLoop('sfx/victory_loop.ogg');
 
   const Sfx(this.assetPath);
 

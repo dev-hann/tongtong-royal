@@ -1,5 +1,5 @@
-// § 11.2 case 2 — solo match: intro rule line, countdown into
-// play, three jumps, race still running.
+// § 11.2 case 2 — solo show start: ROUND 1 intro rule line,
+// countdown into play, three jumps, race still running.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
@@ -12,18 +12,22 @@ void main() {
       // Arrange: on Home (own onboarding guard — case independence).
       await helpers.reachHome($);
 
-      // Act: start a solo match. noSettle — the default tap settle
-      // pumps past the 3 s intro countdown (see helpers.reachPlay).
+      // Act: start a solo show. noSettle — the default tap settle
+      // pumps past the 3 s intro countdown (see helpers).
       await $.tap(
         find.text('PLAY SOLO'),
         settlePolicy: SettlePolicy.noSettle,
       );
 
-      // Assert 1: intro shows the rule line (§ 9 anchor).
+      // Assert 1: ROUND 1 intro shows the pill + rule line (§ 9
+      // anchors).
+      await $.waitUntilVisible(
+        find.text('ROUND 1 / 3'),
+        timeout: const Duration(seconds: 30),
+      );
       await $.waitUntilVisible(
         find.text('First to the finish line'),
-        // 30 s: generous for match planning + phase transition.
-        timeout: const Duration(seconds: 30),
+        timeout: const Duration(seconds: 10),
       );
 
       // Assert 2: countdown (3 s, GDD § 5) ends in play — the

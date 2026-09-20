@@ -81,42 +81,52 @@ final class Profile {
   int get hashCode => Object.hash(nickname, colorIndex);
 }
 
-/// Local match statistics (GDD § 8.1), recorded at the results screen.
+/// Local show statistics (GDD v2 § 2 — crown-centered), recorded at
+/// the crown-moments below; the v1 placement counters
+/// (matches/wins/firstPlaces) were repealed with the v1 results
+/// flow. Migration: v1 keys stay untouched in storage and are
+/// ignored on load — counts restart fresh (documented decision,
+/// GDD v2 § 2 repeals the v1 stats system wholesale).
 @immutable
 final class Stats {
   /// Creates a stats record; all counters default to zero.
   const Stats({
-    this.matchesPlayed = 0,
-    this.wins = 0,
-    this.firstPlaces = 0,
+    this.showsPlayed = 0,
+    this.finalsReached = 0,
+    this.crownsWon = 0,
     this.bestRaceMs,
   });
 
-  /// Matches the player finished (results screen appearance).
-  final int matchesPlayed;
+  /// Shows completed (PODIUM or elimination summary appearance,
+  /// GDD v2 § 7.3 — never at start, never on abandonment).
+  final int showsPlayed;
 
-  /// Matches finished at final rank 1.
-  final int wins;
+  /// Times the player STARTED the FINAL round (GDD v2 § 7.3).
+  final int finalsReached;
 
-  /// Same as [wins] (first-place finishes); kept as a separate
-  /// counter per GDD § 8.1 wording.
-  final int firstPlaces;
+  /// Finals won, shared crowns included (GDD v2 § 7.2).
+  final int crownsWon;
 
-  /// Fastest completed-race finish time in milliseconds (GDD § 8.1:
-  /// finishers only; timeout-ranked rounds never set records);
+  /// Fastest completed-race finish time in milliseconds (kept from
+  /// v1; finishers only — timeout-ranked rounds never set records);
   /// null before the first completed race.
   final int? bestRaceMs;
 
   @override
   bool operator ==(Object other) =>
       other is Stats &&
-      other.matchesPlayed == matchesPlayed &&
-      other.wins == wins &&
-      other.firstPlaces == firstPlaces &&
+      other.showsPlayed == showsPlayed &&
+      other.finalsReached == finalsReached &&
+      other.crownsWon == crownsWon &&
       other.bestRaceMs == bestRaceMs;
 
   @override
-  int get hashCode => Object.hash(matchesPlayed, wins, firstPlaces, bestRaceMs);
+  int get hashCode => Object.hash(
+    showsPlayed,
+    finalsReached,
+    crownsWon,
+    bestRaceMs,
+  );
 }
 
 /// Local app settings (GDD § 8.1).
@@ -160,9 +170,9 @@ final class ProfileStore {
   static const String _nicknameKey = 'ttr.profile.nickname';
   static const String _colorIndexKey = 'ttr.profile.colorIndex';
   static const String _onboardedKey = 'ttr.profile.onboarded';
-  static const String _matchesPlayedKey = 'ttr.stats.matchesPlayed';
-  static const String _winsKey = 'ttr.stats.wins';
-  static const String _firstPlacesKey = 'ttr.stats.firstPlaces';
+  static const String _showsPlayedKey = 'ttr.stats.showsPlayed';
+  static const String _finalsReachedKey = 'ttr.stats.finalsReached';
+  static const String _crownsWonKey = 'ttr.stats.crownsWon';
   static const String _bestRaceMsKey = 'ttr.stats.bestRaceMs';
   static const String _soundEnabledKey = 'ttr.settings.soundEnabled';
 
@@ -180,9 +190,9 @@ final class ProfileStore {
       colorIndex: await storage.getInt(_colorIndexKey) ?? 0,
     );
     _stats = Stats(
-      matchesPlayed: await storage.getInt(_matchesPlayedKey) ?? 0,
-      wins: await storage.getInt(_winsKey) ?? 0,
-      firstPlaces: await storage.getInt(_firstPlacesKey) ?? 0,
+      showsPlayed: await storage.getInt(_showsPlayedKey) ?? 0,
+      finalsReached: await storage.getInt(_finalsReachedKey) ?? 0,
+      crownsWon: await storage.getInt(_crownsWonKey) ?? 0,
       bestRaceMs: await storage.getInt(_bestRaceMsKey),
     );
     _settings = Settings(
@@ -219,9 +229,9 @@ final class ProfileStore {
   /// Persists the stats record and refreshes the cache.
   Future<void> saveStats(Stats value) async {
     _stats = value;
-    await storage.setInt(_matchesPlayedKey, value.matchesPlayed);
-    await storage.setInt(_winsKey, value.wins);
-    await storage.setInt(_firstPlacesKey, value.firstPlaces);
+    await storage.setInt(_showsPlayedKey, value.showsPlayed);
+    await storage.setInt(_finalsReachedKey, value.finalsReached);
+    await storage.setInt(_crownsWonKey, value.crownsWon);
     final best = value.bestRaceMs;
     if (best != null) {
       await storage.setInt(_bestRaceMsKey, best);

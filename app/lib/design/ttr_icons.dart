@@ -50,6 +50,15 @@ abstract final class TtrIcons {
     fontPackage: 'phosphor_flutter',
   );
 
+  /// Crown (crown ceremony, guide § 6 podium). Codepoint verified
+  /// against phosphor_flutter 2.1.0 `PhosphorIconsFill.crown`
+  /// (phosphor_icons_fill.dart line 1345) per ux-checklist § 6.
+  static const IconData crown = IconData(
+    0xe614,
+    fontFamily: 'PhosphorFill',
+    fontPackage: 'phosphor_flutter',
+  );
+
   /// Speaker with waves (sound on).
   static const IconData speakerHigh = IconData(
     0xe44a,

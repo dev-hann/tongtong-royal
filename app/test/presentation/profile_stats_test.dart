@@ -27,9 +27,24 @@ void main() {
   testWidgets('renders the four record cards in a row', (tester) async {
     await tester.pumpWidget(wrap(const ProfileStatsRow(stats: Stats())));
 
-    expect(find.text('MATCHES'), findsOneWidget);
-    expect(find.text('WINS'), findsOneWidget);
-    expect(find.text('1ST PLACES'), findsOneWidget);
+    expect(find.text('CROWNS'), findsOneWidget);
+    expect(find.text('FINALS'), findsOneWidget);
+    expect(find.text('SHOWS'), findsOneWidget);
     expect(find.text('BEST TIME'), findsOneWidget);
+  });
+
+  testWidgets('renders the crown stats values (GDD v2 § 2)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        const ProfileStatsRow(
+          stats: Stats(showsPlayed: 3, finalsReached: 1, crownsWon: 1),
+        ),
+      ),
+    );
+
+    expect(find.text('1'), findsNWidgets(2));
+    expect(find.text('3'), findsOneWidget);
   });
 }

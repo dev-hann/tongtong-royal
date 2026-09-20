@@ -1,7 +1,7 @@
 // Shared launch/navigation routines for the standing Patrol suite
 // (docs/03 § 11.2). Every case must run alone (Law § 10.2.6), so
 // the helpers only compose three things: app start, the device-
-// state-proof onboarding guard, and entry to the play screen.
+// state-proof onboarding guard, and entry to a show's first round.
 //
 // Device data persists between runs on the enrolled rigs — whether
 // onboarding appears is NOT controllable from inside a test, so
@@ -16,10 +16,6 @@ import 'package:patrol/patrol.dart';
 
 /// Launches the app, passes the onboarding guard, and asserts Home
 /// is visible (PLAY SOLO — docs/03 § 9 anchor).
-///
-/// The guard: first launch shows SKIP (tap it); an already-onboarded
-/// device never shows it (PatrolTimeoutException is the expected
-/// signal, not an error).
 Future<void> reachHome(PatrolIntegrationTester $) async {
   app.main();
   try {
@@ -40,10 +36,11 @@ Future<void> reachHome(PatrolIntegrationTester $) async {
   );
 }
 
-/// [reachHome] plus: start a solo match and wait until the round is
-/// actually playable (JUMP visible). Covers the intro rule line and
-/// the 3 s countdown (GDD § 5) with one generous budget.
-Future<void> reachPlay(PatrolIntegrationTester $) async {
+/// [reachHome] plus: start a solo show and wait until ROUND 1 is
+/// actually playable (JUMP visible). Covers the intro pill, the R1
+/// rule line and the 3 s countdown (GDD v2 § 5) with one generous
+/// budget.
+Future<void> reachShowPlay(PatrolIntegrationTester $) async {
   await reachHome($);
   // noSettle: patrol's default tap settle (trySettle, up to 10 s of
   // pumps) burns straight through the 3 s intro countdown — the
@@ -52,10 +49,15 @@ Future<void> reachPlay(PatrolIntegrationTester $) async {
     find.text('PLAY SOLO'),
     settlePolicy: SettlePolicy.noSettle,
   );
-  // Intro must show the rule line (§ 9 anchor) before countdown.
+  // Intro shows the ROUND 1 / 3 pill and rule line (§ 9 anchors)
+  // before the countdown runs.
+  await $.waitUntilVisible(
+    find.text('ROUND 1 / 3'),
+    timeout: const Duration(seconds: 30),
+  );
   await $.waitUntilVisible(
     find.text('First to the finish line'),
-    timeout: const Duration(seconds: 30),
+    timeout: const Duration(seconds: 10),
   );
   // 30 s budget for a 3 s countdown: absorbs phase transitions on
   // a device that renders Forge2D at low fps.

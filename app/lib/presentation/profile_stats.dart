@@ -3,15 +3,15 @@ import 'package:app/design/widgets/ttr_staggered_entrance.dart';
 import 'package:app/infra/profile_store.dart';
 import 'package:flutter/material.dart';
 
-/// Stats cards row (matches / wins / 1st places / best time) for
-/// the profile screen's RECORD group: Fredoka numerals, staggered
-/// entrance (guide § 4, § 6). The best-time card shows an em dash
-/// before the first completed race (GDD § 8.1).
+/// Stats cards row (crowns / finals / shows / best time) for the
+/// profile screen's RECORD group (GDD v2 § 2): Fredoka numerals,
+/// staggered entrance (guide § 4, § 6). The best-time card shows an
+/// em dash before the first completed race.
 class ProfileStatsRow extends StatelessWidget {
   /// Creates the row over [stats].
   const ProfileStatsRow({required this.stats, this.bestTimeMs, super.key});
 
-  /// Local match statistics (GDD § 8.1).
+  /// Local show statistics (GDD v2 § 2).
   final Stats stats;
 
   /// Persisted best race time in ms; null when no record exists.
@@ -25,9 +25,9 @@ class ProfileStatsRow extends StatelessWidget {
     return Row(
       children: [
         for (final (index, card) in <(String, String)>[
-          ('MATCHES', '${stats.matchesPlayed}'),
-          ('WINS', '${stats.wins}'),
-          ('1ST PLACES', '${stats.firstPlaces}'),
+          ('CROWNS', '${stats.crownsWon}'),
+          ('FINALS', '${stats.finalsReached}'),
+          ('SHOWS', '${stats.showsPlayed}'),
           ('BEST TIME', bestTime),
         ].indexed)
           Expanded(

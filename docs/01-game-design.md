@@ -56,7 +56,7 @@ LOBBY(Home) → SHOW_INTRO (3 s, ROUND n/3 pill + game banner: name, rule line, 
 PODIUM → LOBBY (crown ceremony + PLAY AGAIN / HOME)
 ```
 
-State machine owned by `shared/domain` (architecture doc § 3). The v1 `ROUND_RESULTS` screen is superseded by `QUALIFY_FLASH`; `toPodium` becomes the reachable show ending.
+State machine owned by `shared/domain` (architecture doc § 3). The v1 `ROUND_RESULTS` screen is superseded by `QUALIFY_FLASH`; `toPodium` becomes the reachable show ending. The **elimination summary** (§ 7.3) is a presentation state reached over the machine's return-to-lobby path — not an extra machine node; stats are governed by the summary state, not the transition name.
 
 ## 6. Difficulty & Seeds
 

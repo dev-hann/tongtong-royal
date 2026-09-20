@@ -18,6 +18,7 @@ Every asset (sprite, sound, font, map art) shipped in the app gets a row here **
 | SFX: finish | app/assets/sfx/finish.ogg | generated (ffmpeg two-tone synthesis, 2026-09-19) | CC0-equivalent (self-generated) | PLACEHOLDER — replace with Kenney CC0 pack before store release | none; must be swapped |
 | SFX: fanfare | app/assets/sfx/fanfare.ogg | generated (ffmpeg arpeggio synthesis, 2026-09-19) | CC0-equivalent (self-generated) | PLACEHOLDER — replace with Kenney CC0 pack before store release | none; must be swapped |
 | SFX: fail | app/assets/sfx/fail.ogg | generated (ffmpeg descending sweep, 2026-09-19) | CC0-equivalent (self-generated) | PLACEHOLDER — replace with Kenney CC0 pack before store release | none; must be swapped |
+| SFX: victory_loop | app/assets/sfx/victory_loop.ogg | generated (ffmpeg chord + tremolo synthesis, 2026-09-20) | CC0-equivalent (self-generated) | PLACEHOLDER — replace with Kenney CC0 pack before store release | none; must be swapped |
 
 Rules:
 - CC0 preferred. CC-BY requires in-app credit (settings → Credits).

@@ -1,5 +1,5 @@
-// § 11.2 case 3 — system back during a race opens the quit
-// dialog; KEEP RUNNING resumes the race.
+// § 11.2 case 3 — system back during a show round opens the quit
+// dialog; KEEP RUNNING resumes the round.
 //
 // Anchor note: the dialog title widget string is 'Quit the race?'
 // (question mark included) — ttr_quit_dialog.dart line 40.
@@ -13,7 +13,7 @@ void main() {
     'quit_dialog_keep_running_resumes_race',
     ($) async {
       // Arrange: in play (guard + PLAY SOLO + countdown included).
-      await helpers.reachPlay($);
+      await helpers.reachShowPlay($);
 
       // Act: system back (native — § 11.1 sanctioned interaction).
       await $.native.pressBack();
