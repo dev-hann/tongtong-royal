@@ -77,7 +77,7 @@ If both finalists are eliminated on the same tick, the crown is **shared** (both
 
 Remaining rounds resolve instantly via **full headless simulation**: the solo runtime runs each remaining round's `RoundSimulation` at fixed dt with the show's seed chain (`mapSeed = f(showSeed, roundIndex)` continues) and derives the outcome from real `QualificationResult`s — deterministic, no statistical shortcuts. The summary screen shows: the player's own verdict for that round, the simulated show outcome (which bot takes the crown, one line), stat deltas, PLAY AGAIN / HOME.
 
-**Stat write-moments** (applies everywhere): `showsPlayed` increments exactly once per show, at PODIUM or the elimination summary — never at start, never on abandonment (§ 7.4). `finalsReached` increments when the player STARTS the FINAL round (any outcome — champion, shared champion, or eliminated in it). `crownsWon` per § 2.
+**Stat write-moments** (applies everywhere): `showsPlayed` increments exactly once per show, at PODIUM or the elimination summary — never at start, never on abandonment (§ 7.4). `finalsReached` increments when the player STARTS the FINAL round (any outcome — champion, shared champion, or eliminated in it; even a later abandonment of that FINAL does not retract it: starting is the recordable event). `crownsWon` per § 2.
 
 ### 7.4 Show abandonment
 
@@ -85,7 +85,7 @@ System back (or the exit control) during any round → confirm dialog (`TtrQuitD
 
 ### 7.5 Backgrounding
 
-The player's body goes idle; the round continues; auto-rejoin within the reconnect grace (network doc § 5.3 applies to future online shows; solo: the sim pauses nothing — bots keep playing). If the idle player is eliminated mid-round (e.g. hammer contact), § 7.3 takes over (elimination summary).
+The player's body goes idle; the round continues; auto-rejoin within the reconnect grace (network doc § 5.3 applies to future online shows; solo: the engine-driven ticker pauses with the app — the world freezes with it, no catch-up simulation; on resume the round continues from the paused tick). If the idle player is eliminated mid-round (e.g. hammer contact), § 7.3 takes over (elimination summary).
 
 ### 7.6 One-player edge
 
