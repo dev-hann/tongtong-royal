@@ -111,7 +111,7 @@ void main() {
       expect(state.moveDir.y.abs(), lessThanOrEqualTo(1));
     });
 
-    test('hammer_dodge_uses_center_drift_steering_and_jump_edge', () {
+    test('hammer_dodge_steers_back_toward_the_center_band', () {
       final controller = ActionInputController();
       const obsFarRight = SteeringObservation(
         tick: 0,
@@ -127,6 +127,19 @@ void main() {
         -1,
         reason: 'hammer policy steers back toward the arena center',
       );
+    });
+
+    test('hammer_dodge_fires_the_jump_edge_on_press', () {
+      final controller = ActionInputController();
+      const obsFarRight = SteeringObservation(
+        tick: 0,
+        selfX: HammerSteering.centerBandMeters + 2,
+        selfY: 1,
+      );
+
+      controller.press();
+      final state = controller.sampleFor(hammerId, obsFarRight);
+
       expect(state.jumpPressed, isTrue);
     });
 

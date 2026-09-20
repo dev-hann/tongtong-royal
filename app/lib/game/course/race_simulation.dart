@@ -17,21 +17,26 @@ part 'race_final.dart';
 /// fixed dt per tick, emits raw domain [RoundEvent]s — no judging.
 ///
 /// Standard: falls respawn at the last checkpoint; completes when
-/// every racer finished. FINAL ([RaceVariant.finalRound],
-/// trap-race.md): no respawn — falls and hammer hits eliminate
-/// (body destroyed, [PlayerEliminated]); completes at the first
-/// finisher, one racer left alive, or the 60 s cap.
+/// every racer finished OR — with a [finishQuota] (GDD § 7.1 round
+/// end: the first instant the quota is met) — the moment the
+/// finisher count reaches the quota; later finishers are irrelevant.
+/// FINAL ([RaceVariant.finalRound], trap-race.md): no respawn —
+/// falls and hammer hits eliminate (body destroyed,
+/// [PlayerEliminated]); completes at the first finisher, one racer
+/// left alive, or the 60 s cap.
 final class RaceSimulation implements CourseEvents, RoundSimulation {
   /// Creates the simulation for [map] in [variant] (default standard).
   RaceSimulation({
     required CourseMap map,
     required Iterable<PlayerId> playerIds,
     RaceVariant variant = RaceVariant.standard,
+    int? finishQuota,
   }) : this.forTesting(
           map: map,
           playerIds: playerIds,
           stuckThresholdSeconds: PhysicsConsts.stuckThresholdSeconds,
           variant: variant,
+          finishQuota: finishQuota,
         );
 
   /// Creates with injectable thresholds (tests shrink them).
@@ -42,7 +47,16 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
     required this.stuckThresholdSeconds,
     this.variant = RaceVariant.standard,
     this.finalTimeoutTicks = defaultFinalTimeoutTicks,
+    this.finishQuota,
   }) {
+    final quota = finishQuota;
+    if (quota != null && quota < 1) {
+      throw ArgumentError.value(
+        quota,
+        'finishQuota',
+        'must be at least one finisher',
+      );
+    }
     _course = CourseBuilder(events: this)
         .build(_world, map, resolvePlayer: _playerIdOfBody);
     final slots = map.effectiveSpawnPoints;
@@ -72,6 +86,13 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
   /// timeouts to the host runtime).
   final int finalTimeoutTicks;
 
+  /// Standard-mode early completion: the round completes the
+  /// instant this many racers finished (GDD § 7.1 — the round's
+  /// quota; later finishers are irrelevant). Null (default): every
+  /// racer must finish. FINAL ignores it (its completion rules are
+  /// stricter already).
+  final int? finishQuota;
+
   final CharacterWorld _world = CharacterWorld();
   final Map<PlayerId, _Racer> _racers = {};
   final Map<Body, PlayerId> _bodyToPlayer = {};
@@ -86,6 +107,7 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
   int _tickCount = 0;
   bool _complete = false;
   int _eliminations = 0;
+  int _finisherCount = 0;
 
   @override
   Stream<RoundEvent> get events => _eventSink.stream;
@@ -113,11 +135,20 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
   /// elimination; standard mode never eliminates).
   bool isAlive(PlayerId playerId) => _racer(playerId).alive;
 
-  /// Standard mode: all racers finished. FINAL: first finisher,
-  /// last survivor, or the 60 s cap.
+  /// Standard mode: every racer finished, or the quota of
+  /// finishers is met. FINAL: first finisher, last survivor, or
+  /// the 60 s cap.
   @override
   bool get isComplete =>
-      isFinalVariant ? _complete : _racers.values.every((r) => r.finished);
+      isFinalVariant
+      ? _complete
+      : _quotaReached || _racers.values.every((r) => r.finished);
+
+  /// Whether the standard-mode finish quota (if any) is met.
+  bool get _quotaReached {
+    final quota = finishQuota;
+    return quota != null && _finisherCount >= quota;
+  }
 
   /// Race progress is measured from the spawn point's x.
   @override
@@ -286,6 +317,7 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
       return;
     }
     racer.finished = true;
+    _finisherCount++;
     _eventSink.add(PlayerFinished(tick: tick, playerId: playerId));
   }
 

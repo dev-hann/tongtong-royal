@@ -13,6 +13,16 @@ void main() {
       expect(sim.map.checkpoints, isNotEmpty);
     });
 
+    test('trap_race_binds_the_round_one_finish_quota', () {
+      final sim = defaultRoundSimulationFactory(
+        'trap_race',
+        7,
+        const ['p1', 'p2', 'p3', 'p4'],
+      ) as RaceSimulation;
+
+      expect(sim.finishQuota, 3, reason: 'R1 quota 3 (GDD § 4 schedule)');
+    });
+
     test('trap_race_final_builds_the_final_variant_simulation', () {
       final sim = defaultRoundSimulationFactory(
         'trap_race_final',
@@ -45,7 +55,7 @@ void main() {
 
       expect(sim, isA<HammerSimulation>());
       expect(sim.progressAnchorX, isNull);
-      expect(sim.poseOf('p1'), isNotNull);
+      expect(sim.poseOf('p1')!.y, greaterThan(0));
     });
 
     test('hammer_dodge_quota_follows_the_show_schedule_round_two', () {

@@ -106,11 +106,11 @@ void main() {
         return (simulation: sim, map: Object());
       },
       botBrainFactory:
-        (gameId,
-            {required isFinal,
-            required mapSeed,
-            required botIds,
-            required map}) => const {},
+          (gameId,
+              {required isFinal,
+              required mapSeed,
+              required botIds,
+              required map}) => const {},
     );
     controller.addListener(() => flow.handle(controller));
     return controller;
@@ -153,12 +153,11 @@ void main() {
     }
   }
 
-  test('crown_show_records_all_write_moments_exactly_once', () async {
+  test('crown_show_records_every_write_moment_exactly_once', () {
     final controller = buildController();
     addTearDown(controller.dispose);
 
     runWholeShow(controller);
-    await Future<void>.delayed(Duration.zero);
 
     expect(controller.phase, ShowPhase.podium);
     expect(store.stats.showsPlayed, 1);
@@ -169,27 +168,67 @@ void main() {
 
     // Replays of the same terminal state never double-write.
     flow.handle(controller);
-    await Future<void>.delayed(Duration.zero);
     expect(store.stats.showsPlayed, 1);
     expect(store.stats.finalsReached, 1);
     expect(store.stats.crownsWon, 1);
   });
 
-  test('lost_final_records_finals_and_show_but_no_crown', () async {
+  test('second_show_through_the_same_flow_records_every_moment_again', () {
+    final controller = buildController();
+    addTearDown(controller.dispose);
+
+    runWholeShow(controller);
+    controller.playAgain();
+    runWholeShow(controller);
+
+    expect(controller.phase, ShowPhase.podium);
+    expect(store.stats.showsPlayed, 2, reason: 'one write per show');
+    expect(store.stats.finalsReached, 2, reason: 'one write per show');
+    expect(store.stats.crownsWon, 2, reason: 'one write per show');
+    expect(store.stats.bestRaceMs, 17);
+    final fanfares =
+        sfx.plays.where((play) => play.$1 == Sfx.fanfare.assetPath).length;
+    final stings =
+        sfx.plays.where((play) => play.$1 == Sfx.finish.assetPath).length;
+    final loops =
+        sfx.plays.where((play) => play.$1 == Sfx.victoryLoop.assetPath).length;
+    expect(fanfares, 4, reason: 'final flash + podium per show');
+    expect(stings, 4, reason: 'one qualify sting per qualified round');
+    expect(loops, 2, reason: 'one victory loop per show');
+  });
+
+  test('lost_final_still_records_finals_reached', () {
     championForFinal = 'bot-1';
     final controller = buildController();
     addTearDown(controller.dispose);
 
     runWholeShow(controller);
-    await Future<void>.delayed(Duration.zero);
+
+    expect(store.stats.finalsReached, 1);
+  });
+
+  test('lost_final_still_records_the_completed_show', () {
+    championForFinal = 'bot-1';
+    final controller = buildController();
+    addTearDown(controller.dispose);
+
+    runWholeShow(controller);
 
     expect(controller.phase, ShowPhase.podium);
     expect(store.stats.showsPlayed, 1);
-    expect(store.stats.finalsReached, 1);
+  });
+
+  test('lost_final_records_no_crown', () {
+    championForFinal = 'bot-1';
+    final controller = buildController();
+    addTearDown(controller.dispose);
+
+    runWholeShow(controller);
+
     expect(store.stats.crownsWon, 0);
   });
 
-  test('eliminated_in_r1_records_show_once_at_summary_never_finals', () async {
+  test('eliminated_in_r1_records_the_show_at_the_summary', () {
     final controller = ShowController(
       config: const ShowConfig(showSeed: 5),
       scheduler: scheduler.call,
@@ -201,34 +240,56 @@ void main() {
         return (simulation: sim, map: Object());
       },
       botBrainFactory:
-        (gameId,
-            {required isFinal,
-            required mapSeed,
-            required botIds,
-            required map}) => const {},
+          (gameId,
+              {required isFinal,
+              required mapSeed,
+              required botIds,
+              required map}) => const {},
     );
     controller.addListener(() => flow.handle(controller));
     addTearDown(controller.dispose);
 
     runWholeShow(controller);
-    await Future<void>.delayed(Duration.zero);
 
-    // GDD v2 § 7.3: the summary IS a show completion; the FINAL was
-    // never started by the human.
+    // GDD v2 § 7.3: the summary IS a show completion.
     expect(controller.summary, isNotNull);
     expect(store.stats.showsPlayed, 1);
+  });
+
+  test('eliminated_in_r1_never_records_finals_reached', () {
+    final controller = ShowController(
+      config: const ShowConfig(showSeed: 5),
+      scheduler: scheduler.call,
+      simulationFactory: (slot, mapSeed, roster) {
+        final sim = switch (slot.roundIndex) {
+          1 => _R1HumanLast(minigameId: slot.gameId, roster: roster),
+          _ => _R2EliminateLastBot(minigameId: slot.gameId, roster: roster),
+        };
+        return (simulation: sim, map: Object());
+      },
+      botBrainFactory:
+          (gameId,
+              {required isFinal,
+              required mapSeed,
+              required botIds,
+              required map}) => const {},
+    );
+    controller.addListener(() => flow.handle(controller));
+    addTearDown(controller.dispose);
+
+    runWholeShow(controller);
+
     expect(store.stats.finalsReached, 0);
     expect(store.stats.crownsWon, 0);
   });
 
-  test('abandoned_show_records_nothing', () async {
+  test('abandoned_show_records_nothing', () {
     final controller = buildController();
     addTearDown(controller.dispose);
 
     controller.startShow();
     scheduler.elapse(showIntroSeconds * 1000);
     controller.abandonShow();
-    await Future<void>.delayed(Duration.zero);
 
     expect(store.stats.showsPlayed, 0);
     expect(store.stats.finalsReached, 0);
@@ -236,21 +297,37 @@ void main() {
     expect(store.stats.bestRaceMs, isNull);
   });
 
-  test('crown_show_cues_finish_sting_then_fanfare_and_victory_loop', () async {
+  test('qualified_r1_cues_the_finish_sting', () {
     final controller = buildController();
     addTearDown(controller.dispose);
 
     runWholeShow(controller);
 
     final paths = [for (final play in sfx.plays) play.$1];
-    // R1 qualified → finish sting; FINAL crown → fanfare; PODIUM
-    // ceremony → fanfare + victory loop (scope § 5 cue table).
     expect(paths, contains(Sfx.finish.assetPath));
-    expect(paths.where((p) => p == Sfx.fanfare.assetPath).length, 2);
+  });
+
+  test('final_crown_cues_the_fanfare', () {
+    final controller = buildController();
+    addTearDown(controller.dispose);
+
+    runWholeShow(controller);
+
+    final paths = [for (final play in sfx.plays) play.$1];
+    expect(paths, contains(Sfx.fanfare.assetPath));
+  });
+
+  test('podium_ceremony_cues_the_victory_loop', () {
+    final controller = buildController();
+    addTearDown(controller.dispose);
+
+    runWholeShow(controller);
+
+    final paths = [for (final play in sfx.plays) play.$1];
     expect(paths, contains(Sfx.victoryLoop.assetPath));
   });
 
-  test('human_elimination_cues_fail_sting', () async {
+  test('human_elimination_cues_the_fail_sting', () {
     final controller = ShowController(
       config: const ShowConfig(showSeed: 5),
       scheduler: scheduler.call,
@@ -261,11 +338,11 @@ void main() {
         return (simulation: sim, map: Object());
       },
       botBrainFactory:
-        (gameId,
-            {required isFinal,
-            required mapSeed,
-            required botIds,
-            required map}) => const {},
+          (gameId,
+              {required isFinal,
+              required mapSeed,
+              required botIds,
+              required map}) => const {},
     );
     controller.addListener(() => flow.handle(controller));
     addTearDown(controller.dispose);

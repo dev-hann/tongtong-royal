@@ -33,8 +33,10 @@ final class PodiumPlayer {
 /// PODIUM phase screen — the crown ceremony (GDD v2 § 5, FOCUSED
 /// archetype): champion pedestal center-tall with the crown and the
 /// screen's single pulse (guide § 4/§ 5); a shared crown (GDD v2
-/// § 7.2) shows the co-champion pair side by side; `PLAY AGAIN`
-/// primary + `HOME` secondary end the show.
+/// § 7.2) shows the co-champion pair side by side; the FINAL's
+/// eliminated players appear as small chips below the pedestal
+/// (guide § 5/§ 6 row); `PLAY AGAIN` primary + `HOME` secondary
+/// end the show.
 ///
 /// Pure renderer: champions arrive pre-judged from the domain
 /// verdict — no ranking logic here.
@@ -42,6 +44,7 @@ class PodiumScreen extends StatelessWidget {
   /// Creates the podium.
   const PodiumScreen({
     required this.champions,
+    this.eliminated = const [],
     this.humanWon = false,
     this.onPlayAgain,
     this.onExitHome,
@@ -51,6 +54,9 @@ class PodiumScreen extends StatelessWidget {
   /// Key of the champion pedestal (tests and integration finds).
   static const Key championKey = Key('podium_champion');
 
+  /// Key of the eliminated chips row (tests and integration finds).
+  static const Key eliminatedRowKey = Key('podium_eliminated');
+
   /// Key of the PLAY AGAIN button (tests and integration finds).
   static const Key playAgainButtonKey = Key('podium_play_again');
 
@@ -59,6 +65,10 @@ class PodiumScreen extends StatelessWidget {
 
   /// Crown winners — exactly one, or the shared pair (GDD v2 § 7.2).
   final List<PodiumPlayer> champions;
+
+  /// Players eliminated in the FINAL (small chips below, guide
+  /// § 5/§ 6 row); empty when the podium has nothing to show.
+  final List<PodiumPlayer> eliminated;
 
   /// Whether the local human holds the crown.
   final bool humanWon;
@@ -135,6 +145,13 @@ class PodiumScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                    if (eliminated.isNotEmpty) ...[
+                      const SizedBox(height: SpacingScale.xl),
+                      _EliminatedRow(
+                        key: eliminatedRowKey,
+                        players: eliminated,
+                      ),
+                    ],
                     const SizedBox(height: SpacingScale.xxxl),
                     TtrButton(
                       key: playAgainButtonKey,
@@ -159,9 +176,52 @@ class PodiumScreen extends StatelessWidget {
   }
 }
 
+/// Small chips row for the FINAL's eliminated players (guide § 5/§ 6
+/// row): tokened mini identity markers below the champion pedestal.
+class _EliminatedRow extends StatelessWidget {
+  const _EliminatedRow({required this.players, super.key});
+
+  final List<PodiumPlayer> players;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: SpacingScale.lg,
+      runSpacing: SpacingScale.sm,
+      children: [
+        for (final player in players)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: SpacingScale.xl,
+                height: SpacingScale.xl,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: player.color,
+                  border: player.isLocal
+                      ? Border.all(color: PlayerPalette.localRing, width: 3)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: SpacingScale.xs),
+              Text(
+                player.nickname,
+                style: TypeScale.bodyLabel.copyWith(
+                  color: ColorPalette.neutral500,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
 /// Champion pedestal: crown glyph, jelly-colored color block, and
-/// the display-name plate (pulsing wrapped by the caller — guide § 4
-/// one-pulse rule).
+/// the display-name plate. Pulse wrapping belongs to the caller
+/// (guide § 4 one-pulse rule) — this widget never pulses itself.
 class _ChampionPedestal extends StatelessWidget {
   const _ChampionPedestal({
     required this.player,
@@ -174,31 +234,29 @@ class _ChampionPedestal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TtrPulse(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            TtrIcons.crown,
-            color: ColorPalette.warning,
-            size: ComponentSizes.heroIcon,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(
+          TtrIcons.crown,
+          color: ColorPalette.warning,
+          size: ComponentSizes.heroIcon,
+        ),
+        const SizedBox(height: SpacingScale.sm),
+        Container(
+          width: shared ? ComponentSizes.homeEntry : ComponentSizes.avatar,
+          height: shared ? ComponentSizes.homeEntry : ComponentSizes.avatar,
+          decoration: BoxDecoration(
+            color: player.color,
+            shape: BoxShape.circle,
+            border: player.isLocal
+                ? Border.all(color: PlayerPalette.localRing, width: 3)
+                : null,
           ),
-          const SizedBox(height: SpacingScale.sm),
-          Container(
-            width: shared ? ComponentSizes.homeEntry : ComponentSizes.avatar,
-            height: shared ? ComponentSizes.homeEntry : ComponentSizes.avatar,
-            decoration: BoxDecoration(
-              color: player.color,
-              shape: BoxShape.circle,
-              border: player.isLocal
-                  ? Border.all(color: PlayerPalette.localRing, width: 3)
-                  : null,
-            ),
-          ),
-          const SizedBox(height: SpacingScale.sm),
-          Text(player.nickname, style: TypeScale.bodyEmphasis),
-        ],
-      ),
+        ),
+        const SizedBox(height: SpacingScale.sm),
+        Text(player.nickname, style: TypeScale.bodyEmphasis),
+      ],
     );
   }
 }

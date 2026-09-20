@@ -17,7 +17,7 @@ void main() {
       expect(a.toJson(), equals(b.toJson()));
     });
 
-    test('different_seed_jitters_hammer_pivots_and_wall_phases', () {
+    test('different_seed_jitters_the_hammer_pivots', () {
       final a = CourseMap.trapRaceFinal(7, 2);
       final b = CourseMap.trapRaceFinal(8, 2);
 
@@ -25,6 +25,12 @@ void main() {
         a.hammers.first.pivot.x,
         isNot(equals(b.hammers.first.pivot.x)),
       );
+    });
+
+    test('different_seed_jitters_the_wall_phases', () {
+      final a = CourseMap.trapRaceFinal(7, 2);
+      final b = CourseMap.trapRaceFinal(8, 2);
+
       expect(
         a.movingWalls.first.phase,
         isNot(equals(b.movingWalls.first.phase)),
@@ -48,7 +54,7 @@ void main() {
 
       expect(restored, equals(standard));
       expect(restored.spawnPoints, isEmpty);
-      expect(restored.movingWalls, isEmpty);
+      expect(restored.movingWalls, hasLength(2));
     });
 
     test('platform_lane_width_is_reduced_60_percent', () {
@@ -134,13 +140,29 @@ void main() {
       );
     });
 
-    test('spawn_slots_spread_distinct_and_on_start_platform', () {
+    test('spawn_slots_spread_distinctly_per_starter_count', () {
       for (final starters in [2, 4]) {
         final map = CourseMap.trapRaceFinal(3, starters);
 
         expect(map.spawnPoints, hasLength(starters));
         final xs = map.spawnPoints.map((p) => p.x).toSet();
         expect(xs, hasLength(starters), reason: '$starters starters');
+        // Spawns must be pairwise separated by at least one player
+        // width so idle bodies never overlap-stack.
+        final sortedXs = xs.toList()..sort();
+        for (var i = 1; i < sortedXs.length; i++) {
+          expect(
+            sortedXs[i] - sortedXs[i - 1],
+            greaterThanOrEqualTo(PlayerCharacter.widthMeters),
+            reason: '$starters starters: adjacent slots',
+          );
+        }
+      }
+    });
+
+    test('spawn_slots_stay_inside_the_start_platform', () {
+      for (final starters in [2, 4]) {
+        final map = CourseMap.trapRaceFinal(3, starters);
         final first = map.platforms.reduce(
           (a, b) => a.center.x < b.center.x ? a : b,
         );
@@ -162,16 +184,6 @@ void main() {
               1e-9,
             ),
             reason: '$starters starters: spawn anchor height',
-          );
-        }
-        // Spawns must be pairwise separated by at least one player
-        // width so idle bodies never overlap-stack.
-        final sortedXs = xs.toList()..sort();
-        for (var i = 1; i < sortedXs.length; i++) {
-          expect(
-            sortedXs[i] - sortedXs[i - 1],
-            greaterThanOrEqualTo(PlayerCharacter.widthMeters),
-            reason: '$starters starters: adjacent slots',
           );
         }
       }

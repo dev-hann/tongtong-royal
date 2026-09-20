@@ -1,4 +1,5 @@
 import 'package:app/design/tokens.dart';
+import 'package:app/design/widgets/ttr_pulse.dart';
 import 'package:app/presentation/podium_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +31,59 @@ void main() {
     expect(find.text('PLAY AGAIN'), findsOneWidget);
     expect(find.text('HOME'), findsOneWidget);
     expect(find.byKey(PodiumScreen.championKey), findsOneWidget);
+  });
+
+  testWidgets('pulses exactly one element for a single champion', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        const PodiumScreen(
+          champions: [
+            PodiumPlayer(
+              playerId: 'solo-player',
+              nickname: 'You',
+              color: PlayerPalette.one,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(
+      find.byType(TtrPulse),
+      findsOneWidget,
+      reason: 'guide § 4: one pulsing element per screen',
+    );
+  });
+
+  testWidgets('pulses exactly one element for a shared crown', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        const PodiumScreen(
+          champions: [
+            PodiumPlayer(
+              playerId: 'solo-player',
+              nickname: 'You',
+              color: PlayerPalette.one,
+            ),
+            PodiumPlayer(
+              playerId: 'bot-2',
+              nickname: 'BOT 2',
+              color: PlayerPalette.three,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(
+      find.byType(TtrPulse),
+      findsOneWidget,
+      reason: 'guide § 4: the co-champion pair pulses as one element',
+    );
   });
 
   testWidgets('shared crown shows the co-champion pair', (tester) async {
@@ -78,6 +132,65 @@ void main() {
     expect(find.text('CROWN'), findsOneWidget);
     expect(find.text('VICTORY'), findsNothing);
   });
+
+  testWidgets('shows eliminated players as small chips below', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        const PodiumScreen(
+          champions: [
+            PodiumPlayer(
+              playerId: 'solo-player',
+              nickname: 'You',
+              color: PlayerPalette.one,
+            ),
+          ],
+          eliminated: [
+            PodiumPlayer(
+              playerId: 'bot-1',
+              nickname: 'BOT 1',
+              color: PlayerPalette.two,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final chips = find.byKey(PodiumScreen.eliminatedRowKey);
+    expect(chips, findsOneWidget);
+    expect(
+      find.descendant(of: chips, matching: find.text('BOT 1')),
+      findsOneWidget,
+    );
+    // The eliminated row sits below the champion pedestal (guide
+    // § 5: eliminated chips small below).
+    expect(
+      tester.getTopLeft(chips).dy,
+      greaterThan(tester.getTopLeft(find.byKey(PodiumScreen.championKey)).dy),
+    );
+  });
+
+  testWidgets('hides the eliminated row when nobody was eliminated', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        const PodiumScreen(
+          champions: [
+            PodiumPlayer(
+              playerId: 'solo-player',
+              nickname: 'You',
+              color: PlayerPalette.one,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.byKey(PodiumScreen.eliminatedRowKey), findsNothing);
+  });
+
 
   testWidgets('PLAY AGAIN fires the rematch callback', (tester) async {
     var rematches = 0;

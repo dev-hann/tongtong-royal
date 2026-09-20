@@ -45,6 +45,9 @@ ShowSimulationBundle defaultShowSimulationFactory(
           simulation: RaceSimulation(
             map: CourseMap.trapRace(mapSeed),
             playerIds: roster,
+            // GDD § 7.1: the round ends the instant the quota of
+            // finishers is met (schedule property, not game logic).
+            finishQuota: slot.quota,
           ),
           map: CourseMap.trapRace(mapSeed),
         ),

@@ -33,7 +33,10 @@ class LobbyPlayer {
   final bool isDisconnected;
 }
 
-/// LOBBY phase screen: 2x2 grid of seat cards, solo + start actions.
+/// LOBBY phase screen: 2x2 grid of seat cards, solo + start
+/// actions. Reserved for the multiplayer rebuild (guide § 6: the
+/// lobby layout stays parked while MVP Home owns entry) — the v1
+/// solo flow no longer routes through it.
 ///
 /// Pure renderer (architecture doc § 10): all values are passed in;
 /// [canStart] is decided elsewhere (domain/host), never here. The

@@ -9,12 +9,12 @@ export 'package:app/game/course/course_specs.dart';
 
 part 'course_map_final.dart';
 part 'course_map_json.dart';
+part 'course_map_standard.dart';
 
 // ---- Trap Race blueprint (map data, not physics tuning; library
 // level so the part files share it) ----
 const double _platformWidth = 6;
 const double _platformHeight = 1;
-const double _platformStep = 9;
 const double _surfaceY = 0;
 const double _killY = -6;
 const double _spawnClearance = 0.01;
@@ -25,7 +25,7 @@ const double _finishHeight = 3;
 const double _finishSensorCenterHeight = 1;
 const double _hammerJitter = 0.5;
 const double _hammerRadius = 2;
-const double _hammerAngularSpeed = 1.5;
+const double _hammerAngularSpeed = 1.2;
 const double _hammerPivotLift = 0.6;
 
 /// Spawn anchor height: half a player plus clearance above the
@@ -51,74 +51,14 @@ final class CourseMap {
     this.movingWalls = const [],
   });
 
-  /// Small but complete Trap Race course (GDD § 4.1): start platform
-  /// with a back wall, three gaps with a checkpoint after each of the
-  /// first three platforms, one seeded rotating hammer over platform
-  /// B, finish sensor on the last platform. [mapSeed] jitters the
-  /// hammer pivot by up to ±0.5 m deterministically.
-  factory CourseMap.trapRace(int mapSeed) {
-    final rng = math.Random(mapSeed);
-    final hammerJitter = (rng.nextDouble() * 2 - 1) * _hammerJitter;
-
-    const platformCenterY = _surfaceY - _platformHeight / 2;
-    final platforms = List<BoxSpec>.generate(4, (i) {
-      return BoxSpec(
-        center: Vector2(i * _platformStep, platformCenterY),
-        width: _platformWidth,
-        height: _platformHeight,
-      );
-    });
-
-    final firstPlatform = platforms.first;
-    return CourseMap(
-      mapSeed: mapSeed,
-      spawnPoint: Vector2(firstPlatform.center.x, _anchorHeight),
-      checkpoints: [
-        for (var i = 1; i <= 3; i++)
-          Vector2(
-            i == 3
-                ? platforms[3].center.x - _platformWidth / 4
-                : platforms[i].center.x,
-            _anchorHeight,
-          ),
-      ],
-      finishLine: BoxSpec(
-        center: Vector2(
-          platforms[3].center.x + _platformWidth / 4,
-          _finishSensorCenterHeight,
-        ),
-        width: _finishWidth,
-        height: _finishHeight,
-      ),
-      killY: _killY,
-      platforms: platforms,
-      walls: [
-        BoxSpec(
-          center: Vector2(
-            firstPlatform.center.x -
-                _platformWidth / 2 -
-                _backWallThickness / 2,
-            _surfaceY + _backWallHeight / 2 - _platformHeight / 2,
-          ),
-          width: _backWallThickness,
-          height: _backWallHeight,
-        ),
-      ],
-      hammers: [
-        HammerSpec(
-          // Pivot sits `_hammerPivotLift` above the height where the
-          // arm tip would graze the surface, so the sweep catches a
-          // standing player's torso.
-          pivot: Vector2(
-            platforms[1].center.x + hammerJitter,
-            _surfaceY + _hammerRadius + _hammerPivotLift,
-          ),
-          radius: _hammerRadius,
-          angularSpeed: _hammerAngularSpeed,
-        ),
-      ],
-    );
-  }
+  /// Standard R1 course (trap-race.md § Level design): the
+  /// five-segment program — runway, gap lane, hammer alley with an
+  /// elevated safe lane, squeeze gates, downhill final stretch.
+  /// Built in `course_map_standard.dart`; [mapSeed] jitters hammer
+  /// pivots (±0.5 m), gap widths (±0.2 m) and wall phases
+  /// deterministically.
+  factory CourseMap.trapRace(int mapSeed) =>
+      CourseMapStandardFactory.build(mapSeed);
 
   /// FINAL variant of Trap Race (`trap_race_final`): segments 2-4
   /// only, lane -60%, gaps 2.5 m, hammers 1.6 rad/s, no

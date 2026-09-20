@@ -332,7 +332,7 @@ void main() {
       expect(sim.progressAnchorX, isNull);
     });
 
-    test('right_input_walks_off_the_rim_and_eliminates', () {
+    test('walking_off_the_rim_eliminates_the_runner', () {
       final sim = HammerSimulation(
         map: _hammerlessMap(),
         playerIds: const ['p1'],

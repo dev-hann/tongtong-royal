@@ -15,9 +15,6 @@ part 'show_controller_commands.dart';
 /// Delayed-callback seam: the controller's only clock. Production
 /// wires a [Timer]; tests drive a fake virtual clock (docs/03 §
 /// 10.2.5).
-/// Delayed-callback seam: the controller's only clock. Production
-/// wires a [Timer]; tests drive a fake virtual clock (docs/03 §
-/// 10.2.5).
 typedef ShowScheduler = void Function(Duration delay, VoidCallback callback);
 
 /// Orchestrates one solo show (human + bot fill, GDD v2 § 1) over a

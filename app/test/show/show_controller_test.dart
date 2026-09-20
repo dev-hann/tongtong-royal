@@ -150,8 +150,10 @@ void main() {
   /// Plays the mounted round to completion through its driver.
   void playMountedRound(ShowController controller) {
     final session = controller.currentRound;
-    expect(session, isNotNull, reason: 'round must be mounted on ROUND_PLAY');
-    while (!session!.driver.isRoundOver) {
+    if (session == null) {
+      fail('round must be mounted on ROUND_PLAY');
+    }
+    while (!session.driver.isRoundOver) {
       session.driver.tick();
     }
   }
@@ -180,7 +182,7 @@ void main() {
     );
   });
 
-  test('happy_path_chains_three_rounds_and_crowns_champion', () {
+  test('happy_path_chains_the_three_show_rounds', () {
     final controller = buildController();
     addTearDown(controller.dispose);
     final phases = <ShowPhase>[controller.phase];
@@ -221,20 +223,6 @@ void main() {
     expect(controller.roundIndex, 3);
     expect(controller.introGameName, showFinalGameName);
 
-    scheduler.elapse(showIntroSeconds * 1000);
-    final finalSession = controller.currentRound!;
-    expect(finalSession.isFinal, isTrue);
-    expect(finalSession.rosterIds, ['solo-player', 'bot-1']);
-    playMountedRound(controller);
-
-    expect(controller.latestVerdict!.isFinal, isTrue);
-    expect(controller.latestVerdict!.champions, ['solo-player']);
-
-    scheduler.elapse(qualifyFlashSeconds * 1000);
-    expect(controller.phase, ShowPhase.podium);
-    expect(controller.champions, ['solo-player']);
-    expect(controller.summary, isNull);
-
     expect(
       phases.skip(1).contains(ShowPhase.lobby),
       isFalse,
@@ -242,8 +230,43 @@ void main() {
     );
   });
 
+  test('happy_path_crowns_the_final_champion_on_the_podium', () {
+    final controller = buildController();
+    addTearDown(controller.dispose);
+
+    controller.startShow();
+    for (var round = 1; round <= 3; round++) {
+      scheduler.elapse(showIntroSeconds * 1000);
+      playMountedRound(controller);
+      scheduler.elapse(qualifyFlashSeconds * 1000);
+    }
+
+    expect(controller.latestVerdict!.isFinal, isTrue);
+    expect(controller.latestVerdict!.champions, ['solo-player']);
+    expect(controller.phase, ShowPhase.podium);
+    expect(controller.champions, ['solo-player']);
+    expect(controller.summary, isNull);
+  });
+
+  test('final_round_mounts_the_last_two_starters', () {
+    final controller = buildController();
+    addTearDown(controller.dispose);
+
+    controller.startShow();
+    for (var round = 1; round <= 2; round++) {
+      scheduler.elapse(showIntroSeconds * 1000);
+      playMountedRound(controller);
+      scheduler.elapse(qualifyFlashSeconds * 1000);
+    }
+    scheduler.elapse(showIntroSeconds * 1000);
+
+    final finalSession = controller.currentRound!;
+    expect(finalSession.isFinal, isTrue);
+    expect(finalSession.rosterIds, ['solo-player', 'bot-1']);
+  });
+
   test(
-    'human_eliminated_in_r1_runs_remaining_rounds_headless_and_summarizes',
+    'human_eliminated_in_r1_summarizes_the_headless_show_outcome',
     () {
     r1Script = 'humanLast';
     championForFinal = 'bot-1';

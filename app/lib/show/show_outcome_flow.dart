@@ -12,9 +12,13 @@ import 'package:tongtong_shared/tongtong_shared.dart';
 /// crown incl. shared, best race time from finisher ticks) and the
 /// ceremony sound cues (qualify flash → finish sting; crown →
 /// fanfare + victory loop; human elimination → fail sting). The
-/// shell calls [handle] on every controller notification; every
-/// guard is per-show-instance inside, so a fresh show simply starts
-/// producing new moments.
+/// shell calls [handle] on every controller notification.
+///
+/// Lifetime: one flow instance serves any number of shows. Every
+/// per-show guard resets on the ROUND 1 intro edge (a fresh show
+/// entering its first intro — `startShow`/`playAgain`); mid-show
+/// round intros keep their guards, so nothing double-writes inside
+/// one show and nothing survives into the next.
 ///
 /// Design stays pure: this flow is wiring, never a rule.
 final class ShowResultsFlow {
@@ -33,15 +37,38 @@ final class ShowResultsFlow {
   bool _ceremonyCued = false;
   int? _lastRaceRound;
   int? _lastCueRound;
+  bool _sawShowIntro = false;
 
   /// Handles one controller notification; acts only on the moments.
   void handle(ShowController show) {
+    _resetForNewShow(show);
     _maybeRecordFinalsReached(show);
     _maybeRecordRace(show);
     _maybeCompleteShow(show);
     _maybeRecordCrown(show);
     _maybeCueVerdict(show);
     _maybeCueCeremony(show);
+  }
+
+  /// New-show edge (GDD v2 § 1): entering the ROUND 1 intro with
+  /// guards armed from a previous show clears them, so the next
+  /// show writes every moment again.
+  void _resetForNewShow(ShowController show) {
+    final inShowIntro =
+        show.phase == ShowPhase.showIntro && show.roundIndex == 1;
+    if (inShowIntro) {
+      if (!_sawShowIntro) {
+        _sawShowIntro = true;
+        _finalsReached = false;
+        _showCompleted = false;
+        _crownRecorded = false;
+        _ceremonyCued = false;
+        _lastRaceRound = null;
+        _lastCueRound = null;
+      }
+    } else {
+      _sawShowIntro = false;
+    }
   }
 
   void _maybeRecordFinalsReached(ShowController show) {

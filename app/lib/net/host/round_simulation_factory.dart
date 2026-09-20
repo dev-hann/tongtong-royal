@@ -25,6 +25,9 @@ RoundSimulation defaultRoundSimulationFactory(
   'trap_race' => RaceSimulation(
     map: CourseMap.trapRace(mapSeed),
     playerIds: roster,
+    // ROUND 1 quota travels with the show schedule (GDD § 4), same
+    // seam as hammer dodge below.
+    finishQuota: ShowSchedule.standard.slotFor(1).quota,
   ),
   'trap_race_final' => RaceSimulation(
     map: CourseMap.trapRaceFinal(mapSeed, roster.length),

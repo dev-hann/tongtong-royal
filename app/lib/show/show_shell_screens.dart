@@ -87,7 +87,9 @@ QualifyFlashEntry _flashEntry(
   );
 }
 
-/// PODIUM: the crown ceremony over the judged champions.
+/// PODIUM: the crown ceremony over the judged champions; the
+/// FINAL's eliminated players show as small chips below (guide
+/// § 5/§ 6 row).
 Widget showPodiumScreen(
   ShowController show, {
   VoidCallback? onPlayAgain,
@@ -95,16 +97,16 @@ Widget showPodiumScreen(
 }) {
   final colors = showSeatColors(show);
   final champions = show.champions ?? const <PlayerId>[];
+  final eliminated = show.latestVerdict?.eliminated ?? const <PlayerId>[];
+  PodiumPlayer toPodiumPlayer(PlayerId id) => PodiumPlayer(
+    playerId: id,
+    nickname: show.seatOf(id).nickname,
+    color: colors[id] ?? PlayerPalette.one,
+    isLocal: id == show.config.humanId,
+  );
   return PodiumScreen(
-    champions: [
-      for (final champion in champions)
-        PodiumPlayer(
-          playerId: champion,
-          nickname: show.seatOf(champion).nickname,
-          color: colors[champion] ?? PlayerPalette.one,
-          isLocal: champion == show.config.humanId,
-        ),
-    ],
+    champions: [for (final champion in champions) toPodiumPlayer(champion)],
+    eliminated: [for (final id in eliminated) toPodiumPlayer(id)],
     humanWon: champions.contains(show.config.humanId),
     onPlayAgain: onPlayAgain,
     onExitHome: onExitHome,

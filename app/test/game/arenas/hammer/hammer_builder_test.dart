@@ -60,7 +60,7 @@ HammerArenaMap _mapWithThickness(double thickness) {
 
 void main() {
   group('HammerArenaBuilder', () {
-    test('builds_tiered_platform_hammers_and_kill_ring', () {
+    test('build_binds_two_hammer_pivots_to_the_shrink_tiers', () {
       final world = CharacterWorld();
       final map = HammerArenaMap.hammerArena(7);
 
@@ -73,20 +73,47 @@ void main() {
       expect(arena.hammerBodies, hasLength(2));
       expect(arena.tierRadii, map.shrink.tierRadii(map.platformRadius));
       expect(arena.activeTierCount, map.shrink.tierCount);
-      // 16 segment boxes per tier + the center slab + two hammer
-      // pivot anchors are the static bodies; the 16-segment kill
-      // ring at the outer bound is sensor-only.
-      var solidSegments = 0;
+    });
+
+    test('build_keeps_only_the_kill_ring_sensorized', () {
+      final world = CharacterWorld();
+      final map = HammerArenaMap.hammerArena(7);
+
+      _RecordedEvents().builder.build(
+        world,
+        map,
+        resolvePlayer: (body) => null,
+      );
+
+      // The 16-segment kill ring at the outer bound is sensor-only;
+      // every other static body (segment boxes per tier + the center
+      // slab + two hammer pivot anchors) is solid.
       var sensorSegments = 0;
       for (final body in world.forgeWorld.bodies) {
-        final sensors = body.fixtures.where((f) => f.isSensor);
-        if (sensors.isNotEmpty) {
+        if (body.fixtures.any((f) => f.isSensor)) {
           sensorSegments++;
-        } else if (body.bodyType == BodyType.static) {
-          solidSegments++;
         }
       }
       expect(sensorSegments, map.platformSegmentCount);
+    });
+
+    test('build_spawns_one_solid_body_per_segment_slab_and_pivot', () {
+      final world = CharacterWorld();
+      final map = HammerArenaMap.hammerArena(7);
+
+      _RecordedEvents().builder.build(
+        world,
+        map,
+        resolvePlayer: (body) => null,
+      );
+
+      var solidSegments = 0;
+      for (final body in world.forgeWorld.bodies) {
+        if (!body.fixtures.any((f) => f.isSensor) &&
+            body.bodyType == BodyType.static) {
+          solidSegments++;
+        }
+      }
       expect(
         solidSegments,
         map.platformSegmentCount * map.shrink.tierCount +
@@ -95,7 +122,7 @@ void main() {
       );
     });
 
-    test('mallet_heads_are_kinematic_start_seeded_and_rotate', () {
+    test('mallet_heads_are_kinematic_bodies_at_their_seeded_angle', () {
       final world = CharacterWorld();
       final map = HammerArenaMap.hammerArena(9);
       final arena = _RecordedEvents().builder.build(
@@ -112,6 +139,16 @@ void main() {
           reason: 'arm $i did not start at its seeded angle',
         );
       }
+    });
+
+    test('mallet_heads_rotate_toward_their_signed_speed', () {
+      final world = CharacterWorld();
+      final map = HammerArenaMap.hammerArena(9);
+      final arena = _RecordedEvents().builder.build(
+        world,
+        map,
+        resolvePlayer: (body) => null,
+      );
 
       for (var t = 0; t < 30; t++) {
         world.step();

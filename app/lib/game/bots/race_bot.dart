@@ -16,8 +16,10 @@ typedef _XRange = ({double minX, double maxX});
 /// detection pattern). Idles once past the finish line.
 final class RaceBot implements BotBrain {
   /// Extracts the map knowledge this brain needs from [map] —
-  /// finish x, wall and hammer-column x-ranges, and the x-ranges
-  /// of every gap between consecutive platforms. The policy is
+  /// finish x, wall and hammer-column x-ranges, the x-ranges of
+  /// every gap between consecutive platforms, and the faces of
+  /// ascending steps (a higher platform ahead needs a jump onto
+  /// it, e.g. the hammer alley's elevated safe lane). The policy is
   /// fully deterministic, so there is no seed to take.
   factory RaceBot.fromCourseMap(CourseMap map) {
     final obstacles = <_XRange>[
@@ -40,6 +42,10 @@ final class RaceBot implements BotBrain {
       final right = sorted[i + 1].center.x - sorted[i + 1].width / 2;
       if (left < right) {
         gaps.add((minX: left, maxX: right));
+      } else if (_risesByStep(sorted[i], sorted[i + 1])) {
+        // Contiguous but higher: the left face of the next platform
+        // is a step the bot must jump onto.
+        obstacles.add((minX: right, maxX: right + stepFaceWidth));
       }
     }
     return RaceBot._(map.finishLine.center.x, obstacles, gaps);
@@ -60,6 +66,21 @@ final class RaceBot implements BotBrain {
   /// is the region reliably blocked at any arm angle; basic bots
   /// simply hop through it.
   static const double hammerZoneFraction = 0.5;
+
+  /// Height difference that counts as an ascending step the bot
+  /// must jump onto, meters. Anything lower is run over.
+  static const double stepUpThreshold = 0.3;
+
+  /// Width of the obstacle column marking an ascending step face,
+  /// meters.
+  static const double stepFaceWidth = 0.5;
+
+  /// Whether [next] stands at least [stepUpThreshold] higher than
+  /// [current] (both boxes are contiguous at call time).
+  static bool _risesByStep(BoxSpec current, BoxSpec next) =>
+      next.center.y + next.height / 2 -
+          (current.center.y + current.height / 2) >=
+      stepUpThreshold;
 
   /// A bot whose speed stays below this fraction of
   /// [PhysicsConsts.moveMaxSpeed] while it inputs movement counts

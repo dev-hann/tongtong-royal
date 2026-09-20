@@ -46,7 +46,7 @@ void _runUntil(
 
 void main() {
   group('RaceSimulation FINAL variant', () {
-    test('fall_eliminates_with_no_respawn_and_body_gone', () {
+    test('fall_eliminates_without_respawn_events', () {
       final sim = _finalSim();
       final events = <RoundEvent>[];
       sim.events.listen(events.add);
@@ -61,10 +61,25 @@ void main() {
       expect(eliminations, hasLength(1));
       expect(eliminations.single.playerId, 'p1');
       expect(events.whereType<PlayerFell>(), isEmpty);
+      expect(sim.isAlive('p2'), isTrue);
+    });
+
+    test('eliminated_body_is_destroyed_after_a_fall', () {
+      final sim = _finalSim();
+      final events = <RoundEvent>[];
+      sim.events.listen(events.add);
+
+      final finishX = sim.map.finishLine.center.x;
+      sim.bodyOf('p2').setTransform(Vector2(finishX - 1.5, 1), 0);
+      _runUntil(sim, {'p1': _run(), 'p2': _idle()}, () => !sim.isAlive('p1'));
+
       expect(() => sim.bodyOf('p1'), throwsStateError);
       expect(sim.poseOf('p1'), isNull);
-      expect(sim.poseOf('p2'), isNotNull);
-      expect(sim.isAlive('p2'), isTrue);
+      expect(
+        sim.poseOf('p2')!.x,
+        closeTo(finishX - 1.5, 0.5),
+        reason: 'p2 stays parked on the finish platform',
+      );
     });
 
     test('hammer_contact_eliminates', () {
@@ -165,25 +180,34 @@ void main() {
       expect(events, isEmpty);
     });
 
-    test('spawn_slots_are_spread_for_two_and_four_starters', () {
+    test('spawn_slots_stay_on_the_start_platform', () {
       for (final count in [2, 4]) {
         final players = [
           for (var i = 1; i <= count; i++) 'p$i',
         ];
         final sim = _finalSim(players: players, starters: count);
 
-        final xs = <double>{};
         for (final id in players) {
-          final pose = sim.poseOf(id);
-          expect(pose, isNotNull, reason: '$count starters: $id pose');
-          xs.add(pose!.x);
+          final pose = sim.poseOf(id)!;
           expect(
             pose.x,
             inInclusiveRange(0, 2.4),
             reason: '$count starters: spawn on the start platform',
           );
         }
+      }
+    });
 
+    test('spawn_slots_are_distinct_per_starter', () {
+      for (final count in [2, 4]) {
+        final players = [
+          for (var i = 1; i <= count; i++) 'p$i',
+        ];
+        final sim = _finalSim(players: players, starters: count);
+
+        final xs = <double>{
+          for (final id in players) sim.poseOf(id)!.x,
+        };
         expect(xs, hasLength(count), reason: '$count starters distinct');
       }
     });

@@ -6,7 +6,7 @@ import '../infra/fake_key_value_storage.dart';
 
 void main() {
   group('recordShowComplete (showsPlayed, GDD v2 § 7.3)', () {
-    test('increments showsPlayed once per call and persists', () async {
+    test('increments_showsPlayed_per_call', () async {
       final storage = FakeKeyValueStorage();
       final store = ProfileStore(storage: storage);
       await store.load();
@@ -16,6 +16,16 @@ void main() {
       await recorder.recordShowComplete();
 
       expect(store.stats.showsPlayed, 2);
+    });
+
+    test('persists_showsPlayed_through_a_reload', () async {
+      final storage = FakeKeyValueStorage();
+      final store = ProfileStore(storage: storage);
+      await store.load();
+      final recorder = StatsRecorder(store: store);
+
+      await recorder.recordShowComplete();
+      await recorder.recordShowComplete();
 
       final reloaded = ProfileStore(storage: storage);
       await reloaded.load();
@@ -24,7 +34,7 @@ void main() {
   });
 
   group('recordFinalReached (finalsReached, GDD v2 § 7.3)', () {
-    test('increments finalsReached and persists', () async {
+    test('increments_finalsReached', () async {
       final storage = FakeKeyValueStorage();
       final store = ProfileStore(storage: storage);
       await store.load();
@@ -33,6 +43,15 @@ void main() {
       await recorder.recordFinalReached();
 
       expect(store.stats.finalsReached, 1);
+    });
+
+    test('persists_finalsReached_through_a_reload', () async {
+      final storage = FakeKeyValueStorage();
+      final store = ProfileStore(storage: storage);
+      await store.load();
+      final recorder = StatsRecorder(store: store);
+
+      await recorder.recordFinalReached();
 
       final reloaded = ProfileStore(storage: storage);
       await reloaded.load();
@@ -41,7 +60,7 @@ void main() {
   });
 
   group('recordCrown (crownsWon incl shared, GDD v2 § 2/§ 7.2)', () {
-    test('increments crownsWon once per crown won', () async {
+    test('increments_crownsWon_per_crown', () async {
       final storage = FakeKeyValueStorage();
       final store = ProfileStore(storage: storage);
       await store.load();
@@ -55,7 +74,7 @@ void main() {
   });
 
   group('recordRace (best record, kept from v1 — finishers only)', () {
-    test('recordRace_returns_true_and_saves_first_finished_time', () async {
+    test('returns_true_for_a_first_finished_time', () async {
       final store = ProfileStore(storage: FakeKeyValueStorage());
       await store.load();
       final recorder = StatsRecorder(store: store);
@@ -63,6 +82,17 @@ void main() {
       final isNewBest = recorder.recordRace(finished: true, elapsedMs: 42000);
 
       expect(isNewBest, isTrue);
+    });
+
+    test('saves_the_first_finished_time_as_the_record', () async {
+      final store = ProfileStore(storage: FakeKeyValueStorage());
+      await store.load();
+
+      StatsRecorder(store: store).recordRace(
+        finished: true,
+        elapsedMs: 42000,
+      );
+
       expect(store.stats.bestRaceMs, 42000);
     });
 

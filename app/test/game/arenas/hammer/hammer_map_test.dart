@@ -72,7 +72,7 @@ void main() {
       expect(map.hammers[1].radius, closeTo(6.9, 1e-9));
       expect(map.hammers[1].angularSpeed, lessThan(0));
       for (final hammer in map.hammers) {
-        expect(hammer.headLength, isNotNull);
+        expect(hammer.headLength, 0.6);
         expect(hammer.pivot.x, 0);
         expect(hammer.pivot.y, 0);
       }
@@ -97,19 +97,24 @@ void main() {
       }
     });
 
-    test('spawn_slots_are_distinct_and_idle_safe_inside_head_bands', () {
+    test('spawn_slots_are_distinct_per_seat', () {
       final map = HammerArenaMap.hammerArena(3);
 
       expect(map.spawnPoints, hasLength(4));
-      final seen = <double>[];
+      final seen = map.spawnPoints.map((p) => p.x).toList();
+      expect(seen.toSet().length, seen.length);
+    });
+
+    test('spawn_slots_sit_idle_safe_inside_the_head_bands', () {
+      final map = HammerArenaMap.hammerArena(3);
+
       // The lowest mallet head band starts at 6.9 - headLength; a
       // spawn (plus a standing player's axis-aligned extent, ~0.85 m
       // diagonal half-extent) must stay inside it so an idle spawn
       // survives every arm pass (idle-safe >= 5 s, game doc § Level
       // design).
-      final safeRadius = 6.9 - (map.hammers[1].headLength ?? 0) - 0.85;
+      final safeRadius = 6.9 - map.hammers[1].headLength! - 0.85;
       for (final spawn in map.spawnPoints) {
-        seen.add(spawn.x);
         expect(
           spawn.length,
           lessThan(safeRadius),
@@ -117,7 +122,6 @@ void main() {
         );
         expect(spawn.y, greaterThan(0), reason: 'spawns sit on the slab');
       }
-      expect(seen.toSet().length, seen.length);
     });
 
     test('center_slab_seals_the_platform_interior', () {

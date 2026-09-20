@@ -55,10 +55,14 @@ void main() {
         resolvePlayer: (body) => null,
       );
 
-      expect(course.hammerBodies, hasLength(1));
+      expect(
+        course.hammerBodies,
+        hasLength(2),
+        reason: 'standard course carries the two alley hammers',
+      );
     });
 
-    test('hammer_body_is_kinematic_and_rotates_over_time', () {
+    test('hammer_bodies_are_kinematic', () {
       final world = CharacterWorld();
       final builder = CourseBuilder(events: _RecordedEvents());
       final course = builder.build(
@@ -66,9 +70,21 @@ void main() {
         CourseMap.trapRace(7),
         resolvePlayer: (body) => null,
       );
-      final hammer = course.hammerBodies.single;
 
-      expect(hammer.bodyType, BodyType.kinematic);
+      for (final hammer in course.hammerBodies) {
+        expect(hammer.bodyType, BodyType.kinematic);
+      }
+    });
+
+    test('hammer_body_rotates_over_time', () {
+      final world = CharacterWorld();
+      final builder = CourseBuilder(events: _RecordedEvents());
+      final course = builder.build(
+        world,
+        CourseMap.trapRace(7),
+        resolvePlayer: (body) => null,
+      );
+      final hammer = course.hammerBodies.first;
 
       for (var i = 0; i < 30; i++) {
         world.step();
@@ -98,7 +114,18 @@ void main() {
       );
     });
 
-    test('moving_walls_are_kinematic_and_follow_their_sinusoid', () {
+    test('moving_wall_body_is_kinematic', () {
+      final world = CharacterWorld();
+      final builder = CourseBuilder(events: _RecordedEvents());
+      final map = CourseMap.trapRaceFinal(7, 2);
+
+      builder.build(world, map, resolvePlayer: (body) => null);
+
+      final wallBody = _wallBodyAt(world, map.movingWalls.first.center.x);
+      expect(wallBody!.bodyType, BodyType.kinematic);
+    });
+
+    test('moving_wall_body_follows_its_sinusoid', () {
       final world = CharacterWorld();
       final builder = CourseBuilder(events: _RecordedEvents());
       final map = CourseMap.trapRaceFinal(7, 2);
@@ -107,13 +134,11 @@ void main() {
 
       final wallSpec = map.movingWalls.first;
       final wallBody = _wallBodyAt(world, wallSpec.center.x);
-      expect(wallBody, isNotNull, reason: 'wall body built at its x');
-      expect(wallBody!.bodyType, BodyType.kinematic);
       final quarterPeriodTicks =
           (wallSpec.period * PhysicsConsts.tickRate / 4).round();
 
       course.advanceWalls(0);
-      final yAtZero = wallBody.position.y;
+      final yAtZero = wallBody!.position.y;
       course.advanceWalls(quarterPeriodTicks);
       final yAtQuarter = wallBody.position.y;
 
@@ -145,10 +170,10 @@ void main() {
 
       final course = builder.build(world, map, resolvePlayer: (body) => 'p1');
 
-      // Freeze the hammer pointing straight down (tip grazing the
-      // surface) and drop a player into its column at pivot.x.
-      final hammer = course.hammerBodies.single;
-      final spec = map.hammers.single;
+      // Freeze the first hammer pointing straight down (tip grazing
+      // the surface) and drop a player into its column at pivot.x.
+      final hammer = course.hammerBodies.first;
+      final spec = map.hammers.first;
       hammer.angularVelocity = 0;
       hammer.setTransform(hammer.position, -math.pi / 2);
       world
