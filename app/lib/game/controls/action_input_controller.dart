@@ -14,6 +14,9 @@ enum GameVerb {
 /// Minigame id for Trap Race (shared domain `TrapRace.id`).
 const String trapRaceId = 'trap_race';
 
+/// Minigame id for Hammer Dodge (shared domain `HammerDodge.id`).
+const String hammerDodgeId = 'hammer_dodge';
+
 /// One-button input controller (GDD § 3): owns the physical button
 /// state (press/release edges) and combines it with the game's
 /// auto-steering policy into the same [PlayerInputState] the
@@ -25,10 +28,14 @@ const String trapRaceId = 'trap_race';
 /// button widgets drive this through [press]/[release].
 final class ActionInputController {
   /// Creates a controller. [policies] overrides or extends the
-  /// built-in per-game steering (the race default is stateless; a
-  /// future map-bound policy would register here).
+  /// built-in per-game steering (the defaults are stateless; a
+  /// map-bound policy would register here).
   ActionInputController({Map<String, SteeringPolicy> policies = const {}})
-    : _policies = {trapRaceId: const RaceSteering(), ...policies};
+    : _policies = {
+      trapRaceId: const RaceSteering(),
+      hammerDodgeId: const HammerSteering(),
+      ...policies,
+    };
 
   final Map<String, SteeringPolicy> _policies;
   bool _pressed = false;
@@ -39,6 +46,7 @@ final class ActionInputController {
   static GameVerb verbFor(String gameId) {
     switch (gameId) {
       case trapRaceId:
+      case hammerDodgeId:
         return GameVerb.jump;
       default:
         throw ArgumentError.value(gameId, 'gameId', 'unknown minigame id');

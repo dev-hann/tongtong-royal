@@ -23,10 +23,10 @@ Standard course (R1), in segments:
 1. **Runway** (~12 m flat): safe start, verb affordance.
 2. **Gap lane** (~20 m): 2 pit gaps (widths 1.5 m / 2 m) — jump-timed, fall → checkpoint respawn.
 3. **Hammer alley** (~18 m): 2 rotating hammers sweeping the lane (speed 1.2 rad/s, phase-offset), one elevated safe lane requiring a jump onto a 1 m platform.
-4. **Squeeze gates** (~14 m): 2 moving walls (sinusoidal, amplitude 1.5 m) forcing stop-start rhythm (auto-run makes timing windows the challenge).
+4. **Squeeze gates** (~14 m): 2 moving walls (sinusoidal, amplitude 1.5 m, 3 s period — period pinned 2026-09-19, previously unspecified) forcing stop-start rhythm (auto-run makes timing windows the challenge).
 5. **Final stretch + finish sensor** (~10 m downhill): celebration runway.
 
-FINAL variant (`trap_race_final`): segments 2–4 only, lane width reduced 60%, gaps widened to 2.5 m, hammer speed 1.6 rad/s, no checkpoints.
+FINAL variant (`trap_race_final`): segments 2–4 only (NO elevated safe lane — the 2D side-view makes elevation unsafe; design ruling 2026-09-19), platform width 6 → 2.4 m, gaps 2.5 m, hammer speed 1.6 rad/s, no checkpoints.
 
 ## Map data schema
 

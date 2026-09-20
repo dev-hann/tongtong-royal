@@ -38,3 +38,34 @@ RoundResult resolveRound(MiniGame game, RoundEvents events, RoundData data) {
       throw ArgumentError.value(game.id, 'game', 'no resolve input binding');
   }
 }
+
+/// v2 qualification glue (architecture doc § 3, GDD v2): resolves
+/// one finished round's qualification verdict through the game's
+/// `resolveQualification`, packing the same typed inputs as
+/// [resolveRound]. The quota, FINAL flag and roster travel on
+/// [RoundEvents]; the future show runtime supplies them. v1
+/// placements keep flowing through [resolveRound] unchanged.
+QualificationResult resolveQualificationRound(
+  MiniGame game,
+  RoundEvents events,
+  RoundData data,
+) {
+  switch (game) {
+    case final TrapRace race:
+      return race.resolveQualification(
+        events,
+        TrapRaceInput(roster: data.roster, samples: data.progressSamples),
+      );
+    case final HammerDodge hammer:
+      return hammer.resolveQualification(
+        events,
+        HammerDodgeInput(roster: data.roster),
+      );
+    default:
+      throw ArgumentError.value(
+        game.id,
+        'game',
+        'no qualification resolve binding',
+      );
+  }
+}

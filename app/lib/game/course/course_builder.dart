@@ -17,6 +17,11 @@ abstract interface class CourseEvents {
 
   /// A player crossed the finish line at simulation tick [tick].
   void onPlayerFinished(int tick, PlayerId playerId);
+
+  /// A player touched a rotating hammer arm. Knockback-only in R1
+  /// (standard); elimination-class in the FINAL variant, where the
+  /// simulation decides (trap-race.md § Edge cases).
+  void onPlayerHitByHammer(PlayerId playerId);
 }
 
 /// Kind of a course sensor fixture.
@@ -108,8 +113,18 @@ final class CourseBuilder {
       tag: const _SensorTag(_SensorKind.finish, -1),
     );
     final hammers = [for (final spec in map.hammers) _buildHammer(world, spec)];
+    final movingWalls = [
+      for (final spec in map.movingWalls)
+        (_buildMovingWall(world, spec), spec),
+    ];
 
-    return BuiltCourse._(world, events, resolvePlayer, hammers);
+    return BuiltCourse._(
+      world,
+      events,
+      resolvePlayer,
+      hammers,
+      movingWalls,
+    );
   }
 
   static Vector2 _killVolumeCenter(CourseMap map) {
@@ -149,10 +164,16 @@ final class CourseBuilder {
     final pivot = world.forgeWorld.createBody(
       BodyDef(position: spec.pivot.clone()),
     );
+    // The arm origin sits on the pivot and the fixture extends a
+    // full radius along the local +x axis, so the scripted angular
+    // velocity sweeps the arm around the pivot like a clock hand and
+    // the tip reaches `pivot.y - radius` (map data lifts the pivot
+    // so the tip grazes the running surface).
     final arm = world.forgeWorld.createBody(
       BodyDef(
         type: BodyType.kinematic,
-        position: Vector2(spec.pivot.x + spec.radius / 2, spec.pivot.y),
+        position: spec.pivot.clone(),
+        angle: spec.initialAngle,
         // Forge2D joint motors cannot drive kinematic bodies (their
         // inverse inertia is zero), so the arm rotates via its set
         // angular velocity; the motor below still records the spec
@@ -161,7 +182,12 @@ final class CourseBuilder {
       ),
     );
     final shape = PolygonShape()
-      ..setAsBoxXY(spec.radius / 2, spec.armThickness / 2);
+      ..setAsBox(
+        spec.radius / 2,
+        spec.armThickness / 2,
+        Vector2(spec.radius / 2, 0),
+        0,
+      );
     arm.createFixture(
       FixtureDef(
         shape,
@@ -178,36 +204,82 @@ final class CourseBuilder {
     world.forgeWorld.createJoint(RevoluteJoint(jointDef));
     return arm;
   }
+
+  /// Kinematic squeeze-gate wall: position is scripted per tick by
+  /// [BuiltCourse.advanceWalls] from the spec's sinusoid (a joint
+  /// motor cannot express oscillation, and setTransform keeps the
+  /// wall exactly on its curve at the fixed timestep).
+  static Body _buildMovingWall(CharacterWorld world, MovingWallSpec spec) {
+    final body = world.forgeWorld.createBody(
+      BodyDef(
+        type: BodyType.kinematic,
+        position: Vector2(spec.center.x, spec.centerYAt(0)),
+      ),
+    );
+    final shape = PolygonShape()
+      ..setAsBoxXY(spec.width / 2, spec.height / 2);
+    body.createFixture(
+      FixtureDef(
+        shape,
+        friction: PhysicsConsts.playerGroundFriction,
+        restitution: PhysicsConsts.restitutionGround,
+      ),
+    );
+    return body;
+  }
 }
 
-/// Live handle to a built course: hammer bodies (for renderers) and
-/// contact polling that routes sensor touches into [CourseEvents].
+/// Live handle to a built course: hammer bodies (for renderers),
+/// scripted squeeze-gate walls, and contact polling that routes
+/// sensor touches into [CourseEvents].
 final class BuiltCourse {
   BuiltCourse._(
     this._world,
     this._events,
     this._resolvePlayer,
     this.hammerBodies,
+    this._movingWalls,
   );
 
   final CharacterWorld _world;
   final CourseEvents _events;
   final PlayerId? Function(Body body) _resolvePlayer;
+  final List<(Body, MovingWallSpec)> _movingWalls;
 
   /// Kinematic hammer arm bodies, in map order.
   final List<Body> hammerBodies;
 
+  /// Scripts every squeeze-gate wall to its curve position for
+  /// [tick]. Call once per tick before the world step.
+  void advanceWalls(int tick) {
+    final seconds = tick * PhysicsConsts.fixedDt;
+    for (final (body, spec) in _movingWalls) {
+      body.setTransform(
+        Vector2(spec.center.x, spec.centerYAt(seconds)),
+        0,
+      );
+    }
+  }
+
   /// Dispatches every currently-touching player-vs-sensor contact to
-  /// the builder's [CourseEvents] sink. Call once per tick after the
-  /// world step. [tick] is the current simulation tick, stamped on
-  /// finish events.
+  /// the builder's [CourseEvents] sink, plus player-vs-hammer-arm
+  /// touches to [CourseEvents.onPlayerHitByHammer]. Call once per
+  /// tick after the world step. [tick] is the current simulation
+  /// tick, stamped on finish events.
   void pollSensors(int tick) {
-    for (final contact in _world.forgeWorld.contactManager.contacts) {
+    // Copy: a FINAL-mode hammer-hit elimination destroys the player
+    // body, which mutates the contact list mid-iteration.
+    final contacts =
+        _world.forgeWorld.contactManager.contacts.toList(growable: false);
+    final hammers = hammerBodies.toSet();
+    for (final contact in contacts) {
       if (!contact.isTouching()) {
         continue;
       }
       _dispatch(contact.fixtureA, contact.fixtureB, tick);
       _dispatch(contact.fixtureB, contact.fixtureA, tick);
+      _dispatchHammer(contact.bodyA, contact.fixtureB, hammers);
+      _dispatchHammer(contact.bodyB, contact.fixtureA, hammers);
     }
   }
 
@@ -231,5 +303,20 @@ final class BuiltCourse {
       case _SensorKind.finish:
         _events.onPlayerFinished(tick, playerId);
     }
+  }
+
+  void _dispatchHammer(
+    Body hammerCandidate,
+    Fixture other,
+    Set<Body> hammers,
+  ) {
+    if (!hammers.contains(hammerCandidate)) {
+      return;
+    }
+    final playerId = _resolvePlayer(other.body);
+    if (playerId == null) {
+      return;
+    }
+    _events.onPlayerHitByHammer(playerId);
   }
 }

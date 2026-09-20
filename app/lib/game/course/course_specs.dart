@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:forge2d/forge2d.dart';
 
@@ -86,6 +88,7 @@ final class HammerSpec {
     this.initialAngle = defaultInitialAngle,
     this.armThickness = defaultArmThickness,
     this.maxMotorTorque = defaultMaxMotorTorque,
+    this.headLength,
   });
 
   /// Parses the object produced by [toJson].
@@ -108,6 +111,9 @@ final class HammerSpec {
       initialAngle: _asDouble(json['initialAngle'], 'initialAngle'),
       armThickness: _asDouble(json['armThickness'], 'armThickness'),
       maxMotorTorque: _asDouble(json['maxMotorTorque'], 'maxMotorTorque'),
+      headLength: json['headLength'] == null
+          ? null
+          : _asDouble(json['headLength'], 'headLength'),
     );
   }
 
@@ -139,6 +145,13 @@ final class HammerSpec {
   /// Motor torque of the revolute joint, newton-meters.
   final double maxMotorTorque;
 
+  /// When set, the arm is a banded mallet head spanning
+  /// `[radius - headLength, radius]` instead of a full bar
+  /// `[0, radius]` — survival-arena arms sweep a radius band
+  /// (hammer-dodge.md § Level design), race hammers block a full
+  /// column. Serialized as `null` when absent.
+  final double? headLength;
+
   /// JSON: all fields, with the defaulted ones included.
   Map<String, Object?> toJson() => <String, Object?>{
     'pivot': [pivot.x, pivot.y],
@@ -147,6 +160,7 @@ final class HammerSpec {
     'initialAngle': initialAngle,
     'armThickness': armThickness,
     'maxMotorTorque': maxMotorTorque,
+    'headLength': headLength,
   };
 
   static double _asDouble(Object? value, String field) {
@@ -165,14 +179,111 @@ final class HammerSpec {
       other.angularSpeed == angularSpeed &&
       other.initialAngle == initialAngle &&
       other.armThickness == armThickness &&
-      other.maxMotorTorque == maxMotorTorque;
+      other.maxMotorTorque == maxMotorTorque &&
+      other.headLength == headLength;
 
   @override
   int get hashCode =>
-      Object.hash(pivot.x, pivot.y, radius, angularSpeed, initialAngle);
+      Object.hash(pivot.x, pivot.y, radius, angularSpeed, initialAngle,
+          headLength);
 
   @override
   String toString() =>
       'HammerSpec(pivot: $pivot, radius: $radius, '
       'angularSpeed: $angularSpeed)';
+}
+
+/// One sinusoidally oscillating wall (squeeze gates, trap-race.md §
+/// Level design): a kinematic box whose center y follows
+/// `base + amplitude * sin(2*pi*t/period + phase)`.
+@immutable
+final class MovingWallSpec {
+  /// Creates a wall spec.
+  const MovingWallSpec({
+    required this.center,
+    required this.width,
+    required this.height,
+    required this.amplitude,
+    required this.period,
+    this.phase = 0,
+  });
+
+  /// Parses the object produced by [toJson]. Throws [FormatException]
+  /// on malformed data.
+  factory MovingWallSpec.fromJson(Map<String, Object?> json) {
+    final center = json['center'];
+    if (center is! List || center.length != 2) {
+      throw const FormatException('MovingWallSpec.center must be [x, y]');
+    }
+    return MovingWallSpec(
+      center: Vector2(
+        (center[0] as num).toDouble(),
+        (center[1] as num).toDouble(),
+      ),
+      width: _asDouble(json['width'], 'width'),
+      height: _asDouble(json['height'], 'height'),
+      amplitude: _asDouble(json['amplitude'], 'amplitude'),
+      period: _asDouble(json['period'], 'period'),
+      phase: _asDouble(json['phase'], 'phase'),
+    );
+  }
+
+  /// Wall center at oscillation midpoint (x, base y), meters.
+  final Vector2 center;
+
+  /// Wall width (x extent), meters.
+  final double width;
+
+  /// Wall height (y extent), meters.
+  final double height;
+
+  /// Oscillation amplitude, meters.
+  final double amplitude;
+
+  /// Oscillation period, seconds.
+  final double period;
+
+  /// Oscillation phase offset, radians.
+  final double phase;
+
+  /// Wall center y at [seconds] elapsed time.
+  double centerYAt(double seconds) =>
+      center.y + amplitude * math.sin(2 * math.pi * seconds / period + phase);
+
+  /// JSON: every field; the center serializes as `[x, y]`.
+  Map<String, Object?> toJson() => <String, Object?>{
+    'center': [center.x, center.y],
+    'width': width,
+    'height': height,
+    'amplitude': amplitude,
+    'period': period,
+    'phase': phase,
+  };
+
+  static double _asDouble(Object? value, String field) {
+    if (value is! num) {
+      throw FormatException('MovingWallSpec.$field must be a number');
+    }
+    return value.toDouble();
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is MovingWallSpec &&
+      other.center.x == center.x &&
+      other.center.y == center.y &&
+      other.width == width &&
+      other.height == height &&
+      other.amplitude == amplitude &&
+      other.period == period &&
+      other.phase == phase;
+
+  @override
+  int get hashCode =>
+      Object.hash(center.x, center.y, width, height, amplitude, period, phase);
+
+  @override
+  String toString() =>
+      'MovingWallSpec(center: $center, amplitude: $amplitude, '
+      'period: $period)';
 }

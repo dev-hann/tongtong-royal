@@ -3,12 +3,12 @@ import 'package:app/game/controls/steering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const raceId = 'trap_race';
-const removedHammerId = 'hammer_dodge';
+const hammerId = 'hammer_dodge';
 const removedHillId = 'king_of_the_hill';
 
 void main() {
   group('ActionInputController verb wiring', () {
-    test('race: press fires a jump edge exactly once per press', () {
+    test('press_fires_jump_edge_exactly_once_per_press', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(tick: 0, selfX: 0, selfY: 0);
 
@@ -27,7 +27,7 @@ void main() {
       expect(controller.sampleFor(raceId, obs).jumpPressed, isFalse);
     });
 
-    test('press while already pressed does not queue a second edge', () {
+    test('press_while_already_pressed_queues_no_second_edge', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(tick: 0, selfX: 0, selfY: 0);
 
@@ -38,60 +38,57 @@ void main() {
       expect(controller.sampleFor(raceId, obs).jumpPressed, isFalse);
     });
 
-    test('release without press is inert', () {
+    test('release_without_press_is_inert', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(tick: 0, selfX: 0, selfY: 0);
 
       controller.release();
+
       expect(controller.sampleFor(raceId, obs).jumpPressed, isFalse);
     });
 
-    test('unknown game id throws ArgumentError', () {
+    test('unknown_game_id_throws_argument_error', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(tick: 0, selfX: 0, selfY: 0);
+
       expect(
         () => controller.sampleFor('unknown-game', obs),
         throwsArgumentError,
       );
     });
 
-    test('removed king_of_the_hill id has no policy and throws', () {
+    test('removed_king_of_the_hill_id_has_no_policy_and_throws', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(tick: 0, selfX: 0, selfY: 0);
+
       expect(
         () => controller.sampleFor(removedHillId, obs),
-        throwsArgumentError,
-      );
-    });
-
-    test('removed hammer_dodge id has no policy and throws', () {
-      final controller = ActionInputController();
-      const obs = SteeringObservation(tick: 0, selfX: 0, selfY: 0);
-      expect(
-        () => controller.sampleFor(removedHammerId, obs),
         throwsArgumentError,
       );
     });
   });
 
   group('ActionInputController composition', () {
-    test('combines auto-steer move with the button edge (race)', () {
+    test('combines_auto_steer_move_with_button_edge_race', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(tick: 0, selfX: 5, selfY: 2);
 
       controller.press();
       final state = controller.sampleFor(raceId, obs);
+
       expect(state.moveDir.x, 1);
       expect(state.jumpPressed, isTrue);
     });
 
-    test('NaN observation yields a sanitized move vector', () {
+    test('nan_observation_yields_sanitized_move_vector', () {
       final controller = ActionInputController();
       const nan = double.nan;
+
       final state = controller.sampleFor(
         raceId,
         const SteeringObservation(tick: 0, selfX: nan, selfY: nan),
       );
+
       expect(
         state.moveDir.x,
         1,
@@ -99,7 +96,7 @@ void main() {
       );
     });
 
-    test('outputs stay within the unit box', () {
+    test('outputs_stay_within_the_unit_box', () {
       final controller = ActionInputController();
       const obs = SteeringObservation(
         tick: 0,
@@ -107,36 +104,68 @@ void main() {
         selfY: 1000000000,
         selfVx: -1,
       );
+
       final state = controller.sampleFor(raceId, obs);
+
       expect(state.moveDir.x.abs(), lessThanOrEqualTo(1));
       expect(state.moveDir.y.abs(), lessThanOrEqualTo(1));
+    });
+
+    test('hammer_dodge_uses_center_drift_steering_and_jump_edge', () {
+      final controller = ActionInputController();
+      const obsFarRight = SteeringObservation(
+        tick: 0,
+        selfX: HammerSteering.centerBandMeters + 2,
+        selfY: 1,
+      );
+
+      controller.press();
+      final state = controller.sampleFor(hammerId, obsFarRight);
+
+      expect(
+        state.moveDir.x,
+        -1,
+        reason: 'hammer policy steers back toward the arena center',
+      );
+      expect(state.jumpPressed, isTrue);
+    });
+
+    test('hammer_dodge_inside_center_band_idles_move', () {
+      final controller = ActionInputController();
+      const obsCentered = SteeringObservation(
+        tick: 0,
+        selfX: 0,
+        selfY: 1,
+      );
+
+      final state = controller.sampleFor(hammerId, obsCentered);
+
+      expect(state.moveDir.x, 0);
+      expect(state.jumpPressed, isFalse);
     });
   });
 
   group('GameVerb lookup', () {
-    test('race uses jump', () {
+    test('race_uses_jump', () {
       expect(ActionInputController.verbFor(raceId), GameVerb.jump);
     });
 
-    test('unknown id throws', () {
+    test('hammer_dodge_uses_jump', () {
+      expect(ActionInputController.verbFor(hammerId), GameVerb.jump);
+    });
+
+    test('unknown_id_throws', () {
       expect(() => ActionInputController.verbFor('nope'), throwsArgumentError);
     });
 
-    test('removed king_of_the_hill id throws like any unknown id', () {
+    test('removed_king_of_the_hill_id_throws_like_any_unknown_id', () {
       expect(
         () => ActionInputController.verbFor(removedHillId),
         throwsArgumentError,
       );
     });
 
-    test('removed hammer_dodge id throws like any unknown id', () {
-      expect(
-        () => ActionInputController.verbFor(removedHammerId),
-        throwsArgumentError,
-      );
-    });
-
-    test('dash verb stays in the vocabulary for future games', () {
+    test('dash_verb_stays_in_the_vocabulary_for_future_games', () {
       expect(GameVerb.values, containsAll([GameVerb.jump, GameVerb.dash]));
     });
   });

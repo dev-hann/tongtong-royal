@@ -3,81 +3,74 @@ import 'dart:async';
 import 'package:app/game/character_world.dart';
 import 'package:app/game/course/course_builder.dart';
 import 'package:app/game/course/course_map.dart';
+import 'package:app/game/course/racer_guards.dart';
 import 'package:app/game/player_character.dart';
 import 'package:app/game/round_simulation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:forge2d/forge2d.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
-/// Stuck-detection displacement threshold, meters.
+part 'race_final.dart';
+
+/// Round runner for a race course (architecture doc § 2): owns the
+/// [CharacterWorld], the built course and the players, advances one
+/// fixed dt per tick, emits raw domain [RoundEvent]s — no judging.
 ///
-/// Input-magnitude-derived measurement floor, not gameplay tuning:
-/// with an active move input a player covers `moveMaxSpeed` (6 m/s),
-/// while contact-solver jitter stays around 1e-2 m per tick. 0.25 m
-/// per threshold window separates "pushing but blocked" (stuck) from
-/// "making progress" for any sustained locomotion attempt, without
-/// depending on the threshold duration (architecture doc § 5).
-const double stuckDisplacementEpsilonMeters = 0.25;
-
-/// Per-player race state. Thin wrapper: physics lives on
-/// [PlayerCharacter], rules live nowhere (events only).
-final class _Racer {
-  _Racer(this.id, this.character, Vector2 spawnAnchor)
-    : stuckReference = spawnAnchor.clone();
-
-  final PlayerId id;
-  final PlayerCharacter character;
-
-  /// Index into the respawn point list (0 = spawn).
-  int respawnIndex = 0;
-  bool finished = false;
-  bool moveInputActive = false;
-  Vector2 stuckReference;
-  double stuckElapsedSeconds = 0;
-}
-
-/// Round runner for a race course: owns the [CharacterWorld], the
-/// built course and the players, advances the simulation one fixed
-/// dt per tick and emits raw domain [RoundEvent]s (finish/fall).
-/// No points, ranks, or judging here (architecture doc § 2).
+/// Standard: falls respawn at the last checkpoint; completes when
+/// every racer finished. FINAL ([RaceVariant.finalRound],
+/// trap-race.md): no respawn — falls and hammer hits eliminate
+/// (body destroyed, [PlayerEliminated]); completes at the first
+/// finisher, one racer left alive, or the 60 s cap.
 final class RaceSimulation implements CourseEvents, RoundSimulation {
-  /// Creates the simulation for [map] and spawns every player in
-  /// [playerIds] at the map's spawn point.
+  /// Creates the simulation for [map] in [variant] (default standard).
   RaceSimulation({
     required CourseMap map,
     required Iterable<PlayerId> playerIds,
+    RaceVariant variant = RaceVariant.standard,
   }) : this.forTesting(
-         map: map,
-         playerIds: playerIds,
-         stuckThresholdSeconds: PhysicsConsts.stuckThresholdSeconds,
-       );
+          map: map,
+          playerIds: playerIds,
+          stuckThresholdSeconds: PhysicsConsts.stuckThresholdSeconds,
+          variant: variant,
+        );
 
-  /// Same as the default constructor, with an injectable stuck
-  /// threshold (tests shrink it instead of waiting 5 s of ticks).
+  /// Creates with injectable thresholds (tests shrink them).
   @visibleForTesting
   RaceSimulation.forTesting({
     required this.map,
     required Iterable<PlayerId> playerIds,
     required this.stuckThresholdSeconds,
+    this.variant = RaceVariant.standard,
+    this.finalTimeoutTicks = defaultFinalTimeoutTicks,
   }) {
     _course = CourseBuilder(events: this)
         .build(_world, map, resolvePlayer: _playerIdOfBody);
+    final slots = map.effectiveSpawnPoints;
+    var slot = 0;
     for (final id in playerIds) {
-      final racer = _Racer(
-        id,
-        _world.spawnPlayer(position: map.spawnPoint),
-        map.spawnPoint,
-      );
+      final spawn = slots[slot % slots.length];
+      final racer = _Racer(id, _world.spawnPlayer(position: spawn), spawn);
       _racers[id] = racer;
       _bodyToPlayer[racer.character.body] = id;
+      slot++;
     }
   }
+
+  /// FINAL round cap in ticks (trap-race.md § Qualification: 60 s).
+  static const int defaultFinalTimeoutTicks = 60 * PhysicsConsts.tickRate;
 
   /// The course data driving this simulation.
   final CourseMap map;
 
   /// Stuck threshold in seconds for this simulation.
   final double stuckThresholdSeconds;
+
+  /// Which variant this simulation runs.
+  final RaceVariant variant;
+
+  /// FINAL-mode internal timeout in ticks (standard mode leaves
+  /// timeouts to the host runtime).
+  final int finalTimeoutTicks;
 
   final CharacterWorld _world = CharacterWorld();
   final Map<PlayerId, _Racer> _racers = {};
@@ -91,44 +84,62 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
       StreamController<RoundEvent>.broadcast(sync: true);
 
   int _tickCount = 0;
+  bool _complete = false;
+  int _eliminations = 0;
 
-  /// Raw round events in emission order (synchronous broadcast:
-  /// listeners observe each tick's events before the next one).
   @override
   Stream<RoundEvent> get events => _eventSink.stream;
 
   /// Current simulation tick (one per world step).
   int get currentTick => _tickCount;
 
-  /// The underlying Forge2D body of [playerId] (renderers, tests).
-  Body bodyOf(PlayerId playerId) => _racer(playerId).character.body;
+  /// Whether this simulation runs the FINAL variant.
+  bool get isFinalVariant => variant == RaceVariant.finalRound;
+
+  /// Racer body (renderers, tests). Throws [StateError] after a
+  /// FINAL elimination — the body is destroyed, not moved.
+  Body bodyOf(PlayerId playerId) {
+    final racer = _racer(playerId);
+    if (!racer.alive) {
+      throw StateError('player $playerId is eliminated');
+    }
+    return racer.character.body;
+  }
 
   /// Whether [playerId] already crossed the finish.
   bool hasFinished(PlayerId playerId) => _racer(playerId).finished;
 
-  /// All racers finished — the race archetype's own completion
-  /// signal (timeout completion stays with the host runtime).
+  /// Whether [playerId] is still racing (false after a FINAL
+  /// elimination; standard mode never eliminates).
+  bool isAlive(PlayerId playerId) => _racer(playerId).alive;
+
+  /// Standard mode: all racers finished. FINAL: first finisher,
+  /// last survivor, or the 60 s cap.
   @override
-  bool get isComplete => _racers.values.every((racer) => racer.finished);
+  bool get isComplete =>
+      isFinalVariant ? _complete : _racers.values.every((r) => r.finished);
 
   /// Race progress is measured from the spawn point's x.
   @override
   double? get progressAnchorX => map.spawnPoint.x;
 
-  /// Snapshot pose of [playerId] (never eliminated mid-round).
+  /// Snapshot pose of [playerId]; null for FINAL-mode eliminations.
   @override
-  PlayerPose poseOf(PlayerId playerId) {
-    final body = bodyOf(playerId);
+  PlayerPose? poseOf(PlayerId playerId) {
+    final racer = _racer(playerId);
+    if (!racer.alive) {
+      return null;
+    }
+    final b = racer.character.body;
     return (
-      x: body.position.x,
-      y: body.position.y,
-      angle: body.angle,
-      vx: body.linearVelocity.x,
-      vy: body.linearVelocity.y,
+      x: b.position.x,
+      y: b.position.y,
+      angle: b.angle,
+      vx: b.linearVelocity.x,
+      vy: b.linearVelocity.y,
     );
   }
 
-  /// Releases the event stream.
   @override
   void dispose() => _eventSink.close();
 
@@ -138,43 +149,41 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
     tickInputs({playerId: input});
   }
 
-  /// Applies one input per player and advances the world a single
-  /// fixed dt — the host's batched per-tick entry point. Players
-  /// without an entry this tick idle (no input).
+  /// Applies one input per player and advances one fixed dt (the
+  /// host's batched entry point). Missing entries idle; a completed
+  /// FINAL freezes the simulation.
   @override
   void tickInputs(Map<PlayerId, PlayerInputState> inputs) {
+    if (isComplete) {
+      return;
+    }
+    _course.advanceWalls(_tickCount);
     for (final racer in _racers.values) {
       final input = inputs[racer.id];
-      if (input == null || racer.finished) {
+      if (input == null || racer.finished || !racer.alive) {
         racer.moveInputActive = false;
         continue;
       }
       racer.moveInputActive = input.moveDir.length2 > 0;
-      _applyInput(racer.character, input);
+      applyPlayerInput(racer.character, input);
     }
     _world.step();
     _tickCount++;
     _course.pollSensors(_tickCount);
     _postStepGuards();
-  }
-
-  static void _applyInput(PlayerCharacter character, PlayerInputState i) {
-    character.applyMove(i.moveDir);
-    if (i.jumpPressed) {
-      character.jump();
-    }
-    if (i.dashPressed) {
-      character.dash(i.moveDir);
-    }
+    if (isFinalVariant) _maybeCompleteFinal();
   }
 
   void _postStepGuards() {
     for (final racer in _racers.values) {
+      if (!racer.alive) {
+        continue;
+      }
       if (racer.character.needsRespawn) {
-        // Explosion guard (architecture doc § 5): respawn and log via
-        // the event stream is not applicable — there is no explosion
-        // domain event, and PlayerFell means a fall zone.
-        _respawn(racer);
+        // Explosion guard (architecture doc § 5): silent recovery,
+        // no domain event; FINAL has no checkpoints so it recovers
+        // at the spawn slot.
+        _respawn(racer, atSpawn: isFinalVariant);
         continue;
       }
       if (!racer.finished && racer.character.body.position.y < map.killY) {
@@ -185,39 +194,34 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
   }
 
   void _updateStuck(_Racer racer) {
-    final body = racer.character.body;
-    if (!racer.moveInputActive || racer.finished) {
-      racer
-        ..stuckReference = body.position.clone()
-        ..stuckElapsedSeconds = 0;
+    if (!racer.alive) {
       return;
     }
-    final displacement = (body.position - racer.stuckReference).length;
-    if (displacement > stuckDisplacementEpsilonMeters) {
-      racer
-        ..stuckReference = body.position.clone()
-        ..stuckElapsedSeconds = 0;
-      return;
-    }
-    racer.stuckElapsedSeconds += PhysicsConsts.fixedDt;
-    if (racer.stuckElapsedSeconds >= stuckThresholdSeconds) {
-      // Stuck respawn (architecture doc § 5): same mechanics as a
-      // fall respawn, but not a fall — no PlayerFell event.
-      _respawn(racer);
+    racer.stuck.observe(
+      inputActive: racer.moveInputActive && !racer.finished,
+      position: racer.character.body.position,
+      thresholdSeconds: stuckThresholdSeconds,
+    );
+    if (racer.stuck.triggeredAt(stuckThresholdSeconds)) {
+      // Stuck recovery (architecture doc § 5): not a fall, no
+      // event; FINAL recovers at the spawn slot (physics recovery,
+      // not a game respawn: the racer keeps racing).
+      _respawn(racer, atSpawn: isFinalVariant);
     }
   }
 
   void _handleFall(_Racer racer) {
+    if (isFinalVariant) return _eliminate(racer);
     _eventSink.add(PlayerFell(tick: _tickCount, playerId: racer.id));
     _respawn(racer);
   }
 
-  void _respawn(_Racer racer) {
-    final point = _respawnPoints[racer.respawnIndex];
+  void _respawn(_Racer racer, {bool atSpawn = false}) {
+    final point = atSpawn
+        ? racer.spawnAnchor
+        : _respawnPoints[racer.respawnIndex];
     final character = racer.character;
-    racer
-      ..stuckReference = point.clone()
-      ..stuckElapsedSeconds = 0;
+    racer.stuck.reset(point);
     character
       ..needsRespawn = false
       ..grounded = false
@@ -226,15 +230,36 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
       ..body.angularVelocity = 0;
   }
 
+  void _eliminate(_Racer racer) {
+    if (!racer.alive) {
+      return;
+    }
+    racer
+      ..alive = false
+      ..moveInputActive = false;
+    _eliminations++;
+    _bodyToPlayer.remove(racer.character.body);
+    _world.players.remove(racer.character);
+    _world.forgeWorld.destroyBody(racer.character.body);
+    _eventSink.add(PlayerEliminated(tick: _tickCount, playerId: racer.id));
+  }
+
+  /// FINAL completion (trap-race.md): first finisher, one racer
+  /// left alive (needs an elimination first), or the cap. Same-tick
+  /// wipes complete too — shared-crown is domain-side (GDD § 7.2).
+  void _maybeCompleteFinal() {
+    final aliveCount = _racers.values.where((r) => r.alive).length;
+    if (_racers.values.any((r) => r.finished) ||
+        (_eliminations > 0 && aliveCount <= 1) ||
+        _tickCount >= finalTimeoutTicks) {
+      _complete = true;
+    }
+  }
+
   PlayerId? _playerIdOfBody(Body body) => _bodyToPlayer[body];
 
-  _Racer _racer(PlayerId playerId) {
-    final racer = _racers[playerId];
-    if (racer == null) {
-      throw ArgumentError.value(playerId, 'playerId', 'unknown player');
-    }
-    return racer;
-  }
+  _Racer _racer(PlayerId playerId) => _racers[playerId] ??
+      (throw ArgumentError.value(playerId, 'playerId', 'unknown player'));
 
   @override
   void onPlayerFell(PlayerId playerId) => _handleFall(_racer(playerId));
@@ -262,5 +287,11 @@ final class RaceSimulation implements CourseEvents, RoundSimulation {
     }
     racer.finished = true;
     _eventSink.add(PlayerFinished(tick: tick, playerId: playerId));
+  }
+
+  @override
+  void onPlayerHitByHammer(PlayerId playerId) {
+    // Knockback-only in R1; elimination in the FINAL variant.
+    if (isFinalVariant) _eliminate(_racer(playerId));
   }
 }

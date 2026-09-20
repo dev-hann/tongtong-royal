@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 
+import 'package:app/game/arenas/hammer/hammer_map.dart';
 import 'package:app/game/bots/bot_brain.dart';
 import 'package:app/game/bots/race_bot.dart';
+import 'package:app/game/bots/survival_bot.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:tongtong_shared/tongtong_shared.dart';
 
@@ -14,6 +16,9 @@ typedef BotIdentity = ({PlayerId id, String nickname});
 final class BotFactory {
   /// Minigame id for Trap Race (shared domain `TrapRace.id`).
   static const String trapRaceId = 'trap_race';
+
+  /// Minigame id for Hammer Dodge (shared domain `HammerDodge.id`).
+  static const String hammerDodgeId = 'hammer_dodge';
 
   /// Size of the bot identity pool: `bot-1`..`bot-3` (GDD § 9.1).
   static const int maxBots = 3;
@@ -42,6 +47,15 @@ final class BotFactory {
           );
         }
         return RaceBot.fromCourseMap(map);
+      case hammerDodgeId:
+        if (map is! HammerArenaMap) {
+          throw ArgumentError.value(
+            map,
+            'map',
+            'hammer_dodge requires a HammerArenaMap',
+          );
+        }
+        return SurvivalBot.fromArenaMap(map, seed: seed);
       default:
         throw ArgumentError.value(id, 'id', 'unknown minigame id');
     }

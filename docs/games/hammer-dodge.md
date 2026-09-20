@@ -3,6 +3,8 @@
 The show's survival archetype: ROUND 2 (3 players, quota: last 2 alive). Fall Guys benchmark: "Tip Toe Fallout / Block Party" energy — shrinking ground, accelerating sweepers.
 
 > Implementation note: this game shipped in v1 and was deleted in the 2026-09-19 scope reset. Revive from git history (resolver, arena, builder, survival bot, steering — last present before commit `a6b1d81`) and re-fit to this spec; do not re-derive from scratch.
+>
+> v2 re-fit rulings (2026-09-19): the platform is a stepped disc — five 16-segment tiers at radii 7 → 4.5 m plus a center slab — whose outer tiers DROP as the rim shrinks (the art spec's "segments drop"); the mallet arms are banded heads (head length 0.6 m at the 6.9/7.1 m tip radii), so the standable steps between the bands are safe ground and the spawn slab (top at 3.875 m radius-step) is idle-safe by construction. Hammer contact = elimination is head-contact only (a head fixture touching a player body).
 
 ## Identity
 

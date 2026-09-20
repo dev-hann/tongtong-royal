@@ -1,3 +1,5 @@
+import 'package:app/game/arenas/hammer/hammer_map.dart';
+import 'package:app/game/arenas/hammer/hammer_simulation.dart';
 import 'package:app/game/course/course_map.dart';
 import 'package:app/game/course/race_simulation.dart';
 import 'package:app/game/round_simulation.dart';
@@ -23,6 +25,18 @@ RoundSimulation defaultRoundSimulationFactory(
   'trap_race' => RaceSimulation(
     map: CourseMap.trapRace(mapSeed),
     playerIds: roster,
+  ),
+  'trap_race_final' => RaceSimulation(
+    map: CourseMap.trapRaceFinal(mapSeed, roster.length),
+    playerIds: roster,
+    variant: RaceVariant.finalRound,
+  ),
+  'hammer_dodge' => HammerSimulation(
+    map: HammerArenaMap.hammerArena(mapSeed),
+    playerIds: roster,
+    // ROUND 2 quota travels with the show schedule (GDD § 4), not
+    // the game: read it from the standard schedule's slot.
+    quota: ShowSchedule.standard.slotFor(2).quota,
   ),
   _ => throw ArgumentError.value(
     minigameId,

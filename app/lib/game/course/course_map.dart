@@ -7,6 +7,32 @@ import 'package:forge2d/forge2d.dart';
 
 export 'package:app/game/course/course_specs.dart';
 
+part 'course_map_final.dart';
+part 'course_map_json.dart';
+
+// ---- Trap Race blueprint (map data, not physics tuning; library
+// level so the part files share it) ----
+const double _platformWidth = 6;
+const double _platformHeight = 1;
+const double _platformStep = 9;
+const double _surfaceY = 0;
+const double _killY = -6;
+const double _spawnClearance = 0.01;
+const double _backWallThickness = 0.3;
+const double _backWallHeight = 3;
+const double _finishWidth = 0.6;
+const double _finishHeight = 3;
+const double _finishSensorCenterHeight = 1;
+const double _hammerJitter = 0.5;
+const double _hammerRadius = 2;
+const double _hammerAngularSpeed = 1.5;
+const double _hammerPivotLift = 0.6;
+
+/// Spawn anchor height: half a player plus clearance above the
+/// surface.
+double get _anchorHeight =>
+    PlayerCharacter.heightMeters / 2 + _spawnClearance;
+
 /// Data-only description of one course variant (architecture doc § 3:
 /// map data is data, derived from the round seed).
 @immutable
@@ -21,6 +47,8 @@ final class CourseMap {
     required this.platforms,
     required this.walls,
     required this.hammers,
+    this.spawnPoints = const [],
+    this.movingWalls = const [],
   });
 
   /// Small but complete Trap Race course (GDD § 4.1): start platform
@@ -92,81 +120,17 @@ final class CourseMap {
     );
   }
 
+  /// FINAL variant of Trap Race (`trap_race_final`): segments 2-4
+  /// only, lane -60%, gaps 2.5 m, hammers 1.6 rad/s, no
+  /// checkpoints, [starters] spawn slots (2-4). Built in
+  /// `course_map_final.dart`.
+  factory CourseMap.trapRaceFinal(int mapSeed, [int starters = 4]) =>
+      CourseMapFinalFactory.build(mapSeed, starters);
+
   /// Parses the object produced by [toJson]. Throws [FormatException]
-  /// on malformed data.
-  factory CourseMap.fromJson(Map<String, Object?> json) {
-    Object? field(String name) {
-      final value = json[name];
-      if (value == null) {
-        throw FormatException('CourseMap.$name is missing');
-      }
-      return value;
-    }
-
-    Vector2 point(Object? value, String name) {
-      if (value is! List || value.length != 2) {
-        throw FormatException('CourseMap.$name must be [x, y]');
-      }
-      return Vector2(
-        (value[0] as num).toDouble(),
-        (value[1] as num).toDouble(),
-      );
-    }
-
-    List<T> list<T>(Object? value, String name, T Function(Object?) parse) {
-      if (value is! List) {
-        throw FormatException('CourseMap.$name must be a list');
-      }
-      return [for (final item in value) parse(item)];
-    }
-
-    return CourseMap(
-      mapSeed: field('mapSeed')! as int,
-      spawnPoint: point(field('spawnPoint'), 'spawnPoint'),
-      checkpoints: list<Vector2>(
-        field('checkpoints'),
-        'checkpoints',
-        (item) => point(item, 'checkpoints'),
-      ),
-      finishLine: BoxSpec.fromJson(_asObject(field('finishLine'))),
-      killY: (field('killY')! as num).toDouble(),
-      platforms: list(
-        field('platforms'),
-        'platforms',
-        (item) => BoxSpec.fromJson(_asObject(item)),
-      ),
-      walls: list(
-        field('walls'),
-        'walls',
-        (item) => BoxSpec.fromJson(_asObject(item)),
-      ),
-      hammers: list(
-        field('hammers'),
-        'hammers',
-        (item) => HammerSpec.fromJson(_asObject(item)),
-      ),
-    );
-  }
-
-  // ---- Trap Race blueprint (map data, not physics tuning) ----
-  static const double _platformWidth = 6;
-  static const double _platformHeight = 1;
-  static const double _platformStep = 9;
-  static const double _surfaceY = 0;
-  static const double _killY = -6;
-  static const double _spawnClearance = 0.01;
-  static const double _backWallThickness = 0.3;
-  static const double _backWallHeight = 3;
-  static const double _finishWidth = 0.6;
-  static const double _finishHeight = 3;
-  static const double _finishSensorCenterHeight = 1;
-  static const double _hammerJitter = 0.5;
-  static const double _hammerRadius = 2;
-  static const double _hammerAngularSpeed = 1.5;
-  static const double _hammerPivotLift = 0.6;
-
-  static double get _anchorHeight =>
-      PlayerCharacter.heightMeters / 2 + _spawnClearance;
+  /// on malformed data. Lives in `course_map_json.dart`.
+  factory CourseMap.fromJson(Map<String, Object?> json) =>
+      CourseMapJson.fromJson(json);
 
   /// Seed this variant was derived from.
   final int mapSeed;
@@ -195,6 +159,19 @@ final class CourseMap {
   /// Rotating hammer specs.
   final List<HammerSpec> hammers;
 
+  /// Per-slot spawn points for variant fields that spread starters
+  /// (FINAL, 2-4 starters). Empty on variants that stack every
+  /// starter on [spawnPoint]; [effectiveSpawnPoints] normalizes.
+  final List<Vector2> spawnPoints;
+
+  /// Sinusoidally oscillating squeeze-gate walls.
+  final List<MovingWallSpec> movingWalls;
+
+  /// Spawn slots in order: [spawnPoints] when the variant spreads
+  /// them, otherwise a single [spawnPoint] slot.
+  List<Vector2> get effectiveSpawnPoints =>
+      spawnPoints.isEmpty ? [spawnPoint] : spawnPoints;
+
   /// JSON: every field; points serialize as `[x, y]` lists.
   Map<String, Object?> toJson() => <String, Object?>{
     'mapSeed': mapSeed,
@@ -207,14 +184,11 @@ final class CourseMap {
     'platforms': [for (final p in platforms) p.toJson()],
     'walls': [for (final w in walls) w.toJson()],
     'hammers': [for (final h in hammers) h.toJson()],
+    'spawnPoints': [
+      for (final s in spawnPoints) [s.x, s.y],
+    ],
+    'movingWalls': [for (final w in movingWalls) w.toJson()],
   };
-
-  static Map<String, Object?> _asObject(Object? value) {
-    if (value is! Map) {
-      throw const FormatException('expected a JSON object');
-    }
-    return value.map((k, v) => MapEntry(k as String, v));
-  }
 
   @override
   bool operator ==(Object other) {
@@ -229,7 +203,9 @@ final class CourseMap {
     return _listEq(checkpoints, other.checkpoints, _pointEq) &&
         _listEq(platforms, other.platforms, (a, b) => a == b) &&
         _listEq(walls, other.walls, (a, b) => a == b) &&
-        _listEq(hammers, other.hammers, (a, b) => a == b);
+        _listEq(hammers, other.hammers, (a, b) => a == b) &&
+        _listEq(spawnPoints, other.spawnPoints, _pointEq) &&
+        _listEq(movingWalls, other.movingWalls, (a, b) => a == b);
   }
 
   static bool _pointEq(Vector2 a, Vector2 b) => a.x == b.x && a.y == b.y;
@@ -257,6 +233,8 @@ final class CourseMap {
     ...platforms,
     ...walls,
     ...hammers,
+    for (final s in spawnPoints) ...[s.x, s.y],
+    ...movingWalls,
   ]);
 
   @override
