@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Gates + APK + GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Resolve dependencies (workspace root)
+        run: |
+          if [ -f pubspec.yaml ]; then
+            dart pub get
+          fi
+
+      - name: Quality gates (analyze + tests)
+        run: |
+          set -e
+          for pkg in shared server app; do
+            if [ -f "$pkg/pubspec.yaml" ]; then
+              if grep -q "sdk: flutter" "$pkg/pubspec.yaml"; then
+                (cd "$pkg" && flutter analyze --fatal-infos && flutter test)
+              else
+                (cd "$pkg" && dart analyze --fatal-infos && dart test)
+              fi
+            fi
+          done
+
+      - name: Build release APK
+        run: flutter build apk --release
+        working-directory: app
+
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            app/build/app/outputs/flutter-apk/app-release.apk
