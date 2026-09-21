@@ -2,7 +2,7 @@ name: app
 description: TongTong Royal Flutter client (Flame + Forge2D).
 publish_to: none
 resolution: workspace
-version: 0.1.0
+version: 0.2.0
 
 environment:
   sdk: ^3.13.0
