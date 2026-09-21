@@ -124,6 +124,12 @@ void main() {
   testWidgets('credits row pushes the credits screen', (tester) async {
     await pumpScreen(tester);
 
+    // The UPDATE group may push credits below the fold — reveal it.
+    await tester.scrollUntilVisible(
+      find.byKey(SettingsScreen.creditsRowKey),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.byKey(SettingsScreen.creditsRowKey));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -163,7 +169,9 @@ void main() {
       expect(find.byIcon(TtrIcons.speakerHigh), findsOneWidget);
       expect(find.byIcon(TtrIcons.bookOpen), findsOneWidget);
       expect(find.byIcon(TtrIcons.downloadSimple), findsOneWidget);
-      expect(find.byIcon(TtrIcons.caretRight), findsOneWidget);
+      // Two carets by design: credits-row trailing + the update
+      // re-check affordance (guide § 5 recheck label).
+      expect(find.byIcon(TtrIcons.caretRight), findsNWidgets(2));
     },
   );
 

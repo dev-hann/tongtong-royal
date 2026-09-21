@@ -1,4 +1,4 @@
-import 'dart:async' show Completer;
+import 'dart:async' show Completer, StreamController;
 import 'dart:convert' show jsonEncode, utf8;
 import 'dart:io' show SocketException;
 
@@ -17,6 +17,15 @@ final class FakeUpdateHttpClient implements UpdateHttpClient {
                 status: status,
                 contentLength: utf8.encode(body).length,
                 body: Stream<List<int>>.value(utf8.encode(body)),
+              ));
+
+  FakeUpdateHttpClient.bodyBytes(List<int> bytes, {int status = 200})
+    : handler =
+          ((Uri url, {Map<String, String>? headers}) async =>
+              UpdateHttpResponse(
+                status: status,
+                contentLength: bytes.length,
+                body: Stream<List<int>>.value(bytes),
               ));
 
   final Future<UpdateHttpResponse> Function(
@@ -511,4 +520,63 @@ void main() {
       );
     });
   });
+
+  test('downloadApk_times_out_when_body_stream_stalls', () async {
+    // W1 regression: fetch resolves but the body never emits a chunk.
+    final controller = StreamController<List<int>>();
+    // close() resolves only after a listener drains — keep it
+    // unawaited teardown, never part of the stall setup.
+    addTearDown(controller.close);
+    final service = UpdateService(
+      client: _StalledBodyClient(controller.stream),
+      timeout: const Duration(milliseconds: 30),
+    );
+
+    await expectLater(
+      service.downloadApk(Uri.parse('https://example.com/a.apk'),
+          sink: (_) {}),
+      throwsA(
+        isA<UpdateException>().having(
+          (e) => e.reason,
+          'reason',
+          UpdateFailureReason.timeout,
+        ),
+      ),
+    );
+  });
+
+  test('checkLatest_reports_badResponse_for_malformed_utf8', () async {
+    // N1 regression: raw FormatException must not escape the service.
+    final service = UpdateService(
+      client: FakeUpdateHttpClient.bodyBytes([0xFF, 0xFE, 0x00]),
+    );
+
+    await expectLater(
+      service.checkLatest(),
+      throwsA(
+        isA<UpdateException>().having(
+          (e) => e.reason,
+          'reason',
+          UpdateFailureReason.badResponse,
+        ),
+      ),
+    );
+  });
+}
+
+/// Serves a fetch response whose body never emits a chunk (stalls).
+class _StalledBodyClient implements UpdateHttpClient {
+  _StalledBodyClient(this._stream);
+
+  final Stream<List<int>> _stream;
+
+  @override
+  Future<UpdateHttpResponse> fetch(
+    Uri url, {
+    Map<String, String>? headers,
+  }) async => UpdateHttpResponse(
+    status: 200,
+    body: _stream,
+    contentLength: 1024,
+  );
 }

@@ -52,9 +52,13 @@ class SettingsUpdateRow extends StatefulWidget {
 }
 
 class _SettingsUpdateRowState extends State<SettingsUpdateRow> {
-  /// Inline checking spinner edge (guide § 6 row state, compact
-  /// trailing control — component geometry, not flow spacing).
-  static const double _spinnerEdge = 16;
+  /// Inline checking spinner edge — equals SpacingScale.lg (row
+  /// geometry tokened; the spacing scale doubles as small-component
+  /// sizing here by design).
+  static const double _spinnerEdge = SpacingScale.lg;
+
+  /// Spinner stroke — component-local geometry (no stroke token
+  /// exists; ttr_switch private-constant precedent).
   static const double _spinnerStroke = 2;
 
   _UpdatePhase _phase = _UpdatePhase.checking;
@@ -133,6 +137,12 @@ class _SettingsUpdateRowState extends State<SettingsUpdateRow> {
           }
         },
       );
+      if (!mounted) {
+        // User left Settings mid-download: keep the cached APK, do
+        // NOT pop the system install dialog over an unrelated
+        // screen — re-entering Settings re-offers the action.
+        return;
+      }
       await widget.service.install(path);
       if (mounted) {
         // The system dialog may still be cancelled — the action
@@ -196,8 +206,9 @@ class _SettingsUpdateRowState extends State<SettingsUpdateRow> {
     return switch (_phase) {
       _UpdatePhase.checking => 'Checking for updates…',
       _UpdatePhase.upToDate => 'You are on the latest version',
-      _UpdatePhase.available => 'NEW VERSION ${release?.tag} — '
-          '${release?.notes}',
+      _UpdatePhase.available => (release?.notes ?? '').trim().isEmpty
+          ? 'NEW VERSION ${release?.tag}'
+          : 'NEW VERSION ${release?.tag} — ${release?.notes}',
       _UpdatePhase.downloading => 'Downloading ${release?.tag}…',
       _UpdatePhase.error => _errorLine,
     };
@@ -213,11 +224,51 @@ class _SettingsUpdateRowState extends State<SettingsUpdateRow> {
           color: ColorPalette.primary,
         ),
       ),
-      _UpdatePhase.upToDate => Text(
-        'UP TO DATE',
+      _UpdatePhase.upToDate => _RecheckLabel(
+        label: 'UP TO DATE',
         style: TypeScale.bodyLabel.copyWith(color: ColorPalette.success),
+        onRecheck: _check,
+      ),
+      _UpdatePhase.available => _RecheckLabel(
+        label: 'NEW VERSION',
+        style: TypeScale.bodyLabel.copyWith(color: ColorPalette.primary),
+        onRecheck: _check,
       ),
       _ => null,
     };
+  }
+}
+
+/// Trailing state label that doubles as the manual re-check control
+/// (GDD § 8.1 "manual re-check" — every non-error state offers it).
+class _RecheckLabel extends StatelessWidget {
+  const _RecheckLabel({
+    required this.label,
+    required this.style,
+    required this.onRecheck,
+  });
+
+  final String label;
+  final TextStyle style;
+  final VoidCallback onRecheck;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onRecheck,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: style),
+          const SizedBox(width: SpacingScale.xs),
+          const Icon(
+            TtrIcons.caretRight,
+            size: SpacingScale.lg,
+            color: ColorPalette.neutral500,
+          ),
+        ],
+      ),
+    );
   }
 }

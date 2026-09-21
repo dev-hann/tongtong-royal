@@ -271,4 +271,56 @@ void main() {
     expect(find.text('CHECK FOR UPDATES'), findsOneWidget,
         reason: 'failed install must not dead-end (ux-checklist row)');
   });
+  testWidgets('up_to_date_trailing_taps_recheck', (tester) async {
+    service.checkPlan = Completer<ReleaseInfo>()
+      ..complete(_release('v$appVersion'));
+    await pumpRow(tester);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('UP TO DATE'));
+    await tester.pumpAndSettle();
+
+    expect(service.checkCalls, 2);
+  });
+
+  testWidgets('available_without_notes_omits_dash', (tester) async {
+    final bare = ReleaseInfo(
+      tag: 'v99.0.0',
+      notes: '  ',
+      apkUrl: Uri.parse('https://example.com/app.apk'),
+    );
+    service.checkPlan = Completer<ReleaseInfo>()..complete(bare);
+    await pumpRow(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('NEW VERSION v99.0.0'), findsOneWidget);
+    expect(find.textContaining(' — '), findsNothing);
+  });
+
+  testWidgets('leaving_settings_mid_download_skips_install', (
+    tester,
+  ) async {
+    final gate = Completer<String>();
+    service.checkPlan = Completer<ReleaseInfo>()
+      ..complete(_release('v99.0.0'));
+    await pumpRow(
+      tester,
+      driver: (_, {onProgress}) => gate.future,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('DOWNLOAD UPDATE'));
+    await tester.pump();
+
+    // Navigate away mid-download (row disposed).
+    await tester.pumpWidget(const SizedBox.shrink());
+    gate.complete('/cache/updates/app.apk');
+    await tester.pumpAndSettle();
+
+    expect(
+      service.installCalls,
+      0,
+      reason: 'no system dialog over other screens',
+    );
+  });
 }

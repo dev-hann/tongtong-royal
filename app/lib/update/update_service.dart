@@ -138,7 +138,16 @@ class UpdateService {
     final total = response.contentLength;
     var received = 0;
     try {
-      await for (final chunk in response.body) {
+      // Stream-level stall guard: if no chunk arrives within the
+      // timeout window the stream emits a TimeoutException (the
+      // fetch-level timeout alone cannot see mid-body stalls).
+      final guarded = response.body.timeout(
+        timeout,
+        onTimeout: (sink) {
+          sink.addError(TimeoutException('body stalled', timeout));
+        },
+      );
+      await for (final chunk in guarded) {
         sink(chunk);
         received += chunk.length;
         if (total != null && total > 0 && onProgress != null) {
@@ -221,17 +230,25 @@ class UpdateService {
   }
 
   Future<String> _readBody(UpdateHttpResponse response, String step) {
-    final collecting = response.body
+    // fold -> decode -> classify: malformed bytes must not leak raw
+    // FormatException past the service boundary (typed-errors
+    // contract); the timeout catches a stalled (open) stream.
+    return response.body
         .fold<List<int>>(<int>[], (acc, chunk) => acc..addAll(chunk))
-        .then(utf8.decode);
-    // Fold + decode failures are classified in the caller's parse
-    // guard; the timeout here catches a stalled (open) stream.
-    return collecting.timeout(timeout).catchError((Object error) {
-      throw UpdateException(
-        UpdateFailureReason.timeout,
-        '$step body stalled after $timeout',
-      );
-    }, test: (error) => error is TimeoutException);
+        .then((bytes) => utf8.decode(bytes))
+        .catchError((Object error) {
+          throw UpdateException(
+            UpdateFailureReason.badResponse,
+            '$step body is not valid UTF-8: $error',
+          );
+        }, test: (error) => error is FormatException)
+        .timeout(timeout)
+        .catchError((Object error) {
+          throw UpdateException(
+            UpdateFailureReason.timeout,
+            '$step body stalled after $timeout',
+          );
+        }, test: (error) => error is TimeoutException);
   }
 
   ReleaseInfo _parseRelease(String text) {

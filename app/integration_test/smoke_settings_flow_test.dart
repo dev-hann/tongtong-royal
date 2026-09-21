@@ -27,7 +27,7 @@ void main() {
 
     // Assert 1b: self-update row exists (GDD § 8.1). Outcome depends
     // on live network + the device's current version — assert the
-    // ROW, never a GitHub-derived state (docs/03 § 9 note).
+    // ROW, never a GitHub-derived state (docs/03 § 11.1 network-dependent-UI rule).
     await $.waitUntilVisible(
       find.text('UPDATE'),
       timeout: const Duration(seconds: 10),
