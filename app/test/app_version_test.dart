@@ -10,7 +10,7 @@ void main() {
     // Release discipline: both change in the same commit.
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final match = RegExp(
-      '^version:\\s*(\\S+)',
+      r'^version:\s*(\S+)',
       multiLine: true,
     ).firstMatch(pubspec);
     expect(match, isNotNull, reason: 'pubspec.yaml has no version line');
