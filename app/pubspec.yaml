@@ -43,6 +43,10 @@ dependencies:
   flutter:
     sdk: flutter
   forge2d: ^0.13.0
+  # Self-update: GitHub Releases API + APK download (GDD § 8.1).
+  http: ^1.2.0
+  # Self-update APK cache location (production writer in infra/).
+  path_provider: ^2.1.0
   phosphor_flutter: ^2.1.0
   shared_preferences: ^2.3.0
   tongtong_shared:

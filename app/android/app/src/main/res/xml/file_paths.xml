@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Self-update APK share scope (GDD § 8.1): only the cache/updates
+     subtree is exposed to the system package installer. Mirrors the
+     writer path in app/lib/infra/apk_store.dart — keep in sync. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path
+        name="update"
+        path="updates/"/>
+</paths>

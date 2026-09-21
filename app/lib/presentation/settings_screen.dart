@@ -10,19 +10,31 @@ import 'package:app/design/widgets/ttr_settings_row.dart';
 import 'package:app/design/widgets/ttr_switch.dart';
 import 'package:app/infra/sound_service.dart';
 import 'package:app/presentation/credits_screen.dart';
+import 'package:app/presentation/settings_update_row.dart';
 import 'package:app/profile/profile_controller.dart';
+import 'package:app/update/update_service.dart';
 import 'package:flutter/material.dart';
 
 /// Settings screen (GDD § 8.1, guide § 6 FORM): fixed `TtrPageHeader`
-/// over card groups — GENERAL (sound toggle, active = primary) and
-/// ABOUT (credits row) — with the version footer pinned below the
-/// scroll. All state lives in [controller]; this widget only renders
-/// and forwards taps.
-class SettingsScreen extends StatelessWidget {
+/// over card groups — GENERAL (sound toggle, active = primary),
+/// UPDATE (self-update row) and ABOUT (credits row) — with the
+/// version footer pinned below the scroll. All state lives in
+/// [controller]; this widget only renders and forwards taps.
+///
+/// Owns a default [UpdateService] when none is injected (tests pass
+/// fakes — production gets the real GitHub-backed service).
+class SettingsScreen extends StatefulWidget {
   /// Creates the settings screen.
   /// Creates the settings screen. [sound] (optional) plays the UI
   /// tap cue on toggle — the design widgets stay audio-free.
-  const SettingsScreen({required this.controller, this.sound, super.key});
+  /// [updateService] (optional) backs the self-update row; tests
+  /// inject fakes, production uses a real [UpdateService].
+  const SettingsScreen({
+    required this.controller,
+    this.sound,
+    this.updateService,
+    super.key,
+  });
 
   /// Key of the sound toggle (tests).
   static const Key soundToggleKey = Key('settings_sound_toggle');
@@ -30,14 +42,38 @@ class SettingsScreen extends StatelessWidget {
   /// Key of the credits row (tests).
   static const Key creditsRowKey = Key('settings_credits_row');
 
+  /// Key of the self-update row (tests, Patrol).
+  static const Key updateRowKey = Key('settings_update_row');
+
   /// Owns the persisted settings state.
   final ProfileController controller;
 
   /// Sound cue hook (null in tests without audio wiring).
   final SoundService? sound;
 
+  /// Self-update backend (null: a real service is created lazily).
+  final UpdateService? updateService;
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  UpdateService? _ownedUpdateService;
+
+  UpdateService get _updateService =>
+      widget.updateService ??
+      (_ownedUpdateService ??= UpdateService());
+
+  @override
+  void dispose() {
+    _ownedUpdateService?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     return TtrPageShell(
       child: ListenableBuilder(
         listenable: controller,
@@ -60,10 +96,10 @@ class SettingsScreen extends StatelessWidget {
                           title: 'Sound',
                           subtitle: 'Sound effects and music',
                           trailing: TtrSwitch(
-                            key: soundToggleKey,
+                            key: SettingsScreen.soundToggleKey,
                             value: controller.soundEnabled,
                             onChanged: (value) {
-                              sound?.play(Sfx.uiTap);
+                              widget.sound?.play(Sfx.uiTap);
                               // Local-only persistence; UI flipped.
                               unawaited(
                                 controller.setSoundEnabled(value: value),
@@ -75,11 +111,22 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: SpacingScale.xl),
                     TtrCardGroup(
-                      label: 'ABOUT',
+                      label: 'UPDATE',
                       staggerIndex: 1,
                       children: [
+                        SettingsUpdateRow(
+                          key: SettingsScreen.updateRowKey,
+                          service: _updateService,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: SpacingScale.xl),
+                    TtrCardGroup(
+                      label: 'ABOUT',
+                      staggerIndex: 2,
+                      children: [
                         TtrSettingsRow(
-                          key: creditsRowKey,
+                          key: SettingsScreen.creditsRowKey,
                           leading: TtrIcons.bookOpen,
                           title: 'Credits',
                           subtitle: 'Fonts and asset attribution',

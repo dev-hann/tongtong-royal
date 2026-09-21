@@ -65,4 +65,14 @@ abstract final class TtrIcons {
     fontFamily: 'PhosphorFill',
     fontPackage: 'phosphor_flutter',
   );
+
+  /// Tray download arrow (self-update row, GDD § 8.1). Codepoint
+  /// verified against phosphor_flutter 2.1.0
+  /// `PhosphorIconsFill.downloadSimple`
+  /// (phosphor_icons_fill.dart line 1546).
+  static const IconData downloadSimple = IconData(
+    0xe20c,
+    fontFamily: 'PhosphorFill',
+    fontPackage: 'phosphor_flutter',
+  );
 }

@@ -25,6 +25,18 @@ void main() {
       timeout: const Duration(seconds: 10),
     );
 
+    // Assert 1b: self-update row exists (GDD § 8.1). Outcome depends
+    // on live network + the device's current version — assert the
+    // ROW, never a GitHub-derived state (docs/03 § 9 note).
+    await $.waitUntilVisible(
+      find.text('UPDATE'),
+      timeout: const Duration(seconds: 10),
+    );
+    await $.waitUntilVisible(
+      find.byKey(SettingsScreen.updateRowKey),
+      timeout: const Duration(seconds: 10),
+    );
+
     // Act 2 + Assert 2: tap the toggle and read the flip off the
     // widget's public `value` (token visuals carry no text; the
     // initial state is persisted device data, so only the FLIP is

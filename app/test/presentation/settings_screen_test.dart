@@ -9,27 +9,66 @@ import 'package:app/infra/profile_store.dart';
 import 'package:app/presentation/credits_screen.dart';
 import 'package:app/presentation/settings_screen.dart';
 import 'package:app/profile/profile_controller.dart';
+import 'package:app/update/update_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../infra/fake_key_value_storage.dart';
 
+/// Up-to-date [UpdateService] fake for the surrounding-screen
+/// tests (the row's own behaviors live in
+/// `settings_update_row_test.dart`). No network (docs/03 § 10.2.9).
+final class UpToDateUpdateService extends UpdateService {
+  UpToDateUpdateService() : super(client: _UnusedHttpClient());
+
+  int checkCalls = 0;
+
+  @override
+  Future<ReleaseInfo> checkLatest() async {
+    checkCalls++;
+    return ReleaseInfo(
+      tag: 'v$appVersion',
+      notes: 'current',
+      apkUrl: Uri.parse('https://example.com/app.apk'),
+    );
+  }
+}
+
+final class _UnusedHttpClient implements UpdateHttpClient {
+  @override
+  Future<UpdateHttpResponse> fetch(
+    Uri url, {
+    Map<String, String>? headers,
+  }) => Future<UpdateHttpResponse>.error(
+    StateError('up-to-date service fake never fetches'),
+  );
+}
+
 void main() {
   late FakeKeyValueStorage storage;
   late ProfileController controller;
+  late UpToDateUpdateService updateService;
 
   Future<void> pumpScreen(WidgetTester tester) async {
     controller = ProfileController(store: ProfileStore(storage: storage));
     await controller.load();
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: SettingsScreen(controller: controller)),
+        home: Scaffold(
+          body: SettingsScreen(
+            controller: controller,
+            updateService: updateService,
+          ),
+        ),
       ),
     );
     await tester.pump();
   }
 
-  setUp(() => storage = FakeKeyValueStorage());
+  setUp(() {
+    storage = FakeKeyValueStorage();
+    updateService = UpToDateUpdateService();
+  });
 
   testWidgets('top-left back affordance pops the route', (tester) async {
     final profileController = ProfileController(
@@ -41,7 +80,10 @@ void main() {
     final navigator = tester.state<NavigatorState>(find.byType(Navigator))
       ..push(
         MaterialPageRoute<void>(
-          builder: (_) => SettingsScreen(controller: profileController),
+          builder: (_) => SettingsScreen(
+            controller: profileController,
+            updateService: UpToDateUpdateService(),
+          ),
         ),
       );
     await tester.pump();
@@ -100,14 +142,15 @@ void main() {
     expect(find.text('v$appVersion'), findsOneWidget);
   });
 
-  testWidgets('form law: fixed header over two card sections', (
+  testWidgets('form law: fixed header over three card sections', (
     tester,
   ) async {
     await pumpScreen(tester);
 
     expect(find.byType(TtrPageHeader), findsOneWidget);
-    expect(find.byType(TtrCardGroup), findsNWidgets(2));
+    expect(find.byType(TtrCardGroup), findsNWidgets(3));
     expect(find.text('GENERAL'), findsOneWidget);
+    expect(find.text('UPDATE'), findsOneWidget);
     expect(find.text('ABOUT'), findsOneWidget);
   });
 
@@ -116,10 +159,29 @@ void main() {
     (tester) async {
       await pumpScreen(tester);
 
-      expect(find.byType(TtrSettingsRow), findsNWidgets(2));
+      expect(find.byType(TtrSettingsRow), findsNWidgets(3));
       expect(find.byIcon(TtrIcons.speakerHigh), findsOneWidget);
       expect(find.byIcon(TtrIcons.bookOpen), findsOneWidget);
+      expect(find.byIcon(TtrIcons.downloadSimple), findsOneWidget);
       expect(find.byIcon(TtrIcons.caretRight), findsOneWidget);
     },
   );
+
+  testWidgets('settings entry triggers the auto update check once', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    await tester.pump();
+
+    expect(updateService.checkCalls, 1,
+        reason: 'entry auto-query fires exactly once (ux-checklist row)');
+  });
+
+  testWidgets('auto check settles on the UP TO DATE row', (tester) async {
+    await pumpScreen(tester);
+    await tester.pump();
+
+    expect(find.byKey(SettingsScreen.updateRowKey), findsOneWidget);
+    expect(find.text('UP TO DATE'), findsOneWidget);
+  });
 }
