@@ -97,7 +97,7 @@ Solo show always starts with bot fill to 4 seats (§ 9). If every bot is elimina
 
 - Solo shows vs 3 bots, 3-round structure, qualification + crown, podium ceremony.
 - Crown stats (`crownsWon` / `finalsReached` / `showsPlayed`) + best-race-time side record.
-- Local profile/settings/onboarding as shipped (v1 meta shell unchanged).
+- Local profile/settings/onboarding as shipped (v1 meta shell unchanged), plus **self-update** in settings: queries GitHub Releases on entry (public unauthenticated API — no identifiers, nothing collected), manual re-check, APK download with progress, install via the Android system confirm dialog.
 - **Multiplayer infra preserved but not user-facing** (server, protocol, host/remote code) — do not delete, do not wire.
 
 ### 8.2 Backlog (explicitly out)
