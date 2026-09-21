@@ -1,3 +1,4 @@
+<!-- © 2026 hann. All rights reserved. -->
 # TongTong Royal (통통로얄)
 
 A Fall Guys-style show for mobile: qualification rounds 4→3→2→1, one button, one crown — you vs 3 bots. (Online-show infrastructure is built and preserved — see docs/08-roadmap.md.)
