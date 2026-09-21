@@ -18,7 +18,7 @@ Checklist document. Nothing ships until its boxes are ticked. Legal requirements
 | Item | Requirement |
 |------|-------------|
 | Privacy policy URL | Mandatory for both stores. Host on GitHub Pages from this repo (`docs/legal/privacy.md` → published page) |
-| Data collected | Enumerate honestly: crash reports (if Sentry enabled), ads (Google AdMob identifiers). MVP goal: collect nothing |
+| Data collected | Enumerate honestly: crash reports (if Sentry enabled), ads (Google AdMob identifiers). MVP goal: collect nothing — the self-update check contacts `api.github.com` unauthenticated (no identifiers sent, nothing stored); releases are publicly downloadable since the 2026-09-21 public-repo decision |
 | Ads | If `google_mobile_ads` ships: policy must disclose advertising ID usage; include AdMob's own policy links |
 | Accounts | None (invite codes, no login). Keep it that way for MVP — every account feature multiplies privacy surface |
 | Age gate | Stores' "designed for children" declaration: declare accurately; casual physics game ≠ child-directed unless marketed so. If declared child-directed: stricter ad limits apply — avoid the declaration by marketing to general audiences |

@@ -41,6 +41,7 @@ Usability criteria for every user-facing change. Joins the compliance review gat
 
 - [ ] Every async action with visible latency shows progress or a disabled-while-working control.
 - [ ] Errors surface as `TtrToast` or dialog text — never silently swallowed (AGENTS § 6.5).
+- [ ] **Self-update**: settings-entry query never blocks the screen; download shows progress; installation goes through the ANDROID system confirm dialog (the app never silently installs); offline/404 degrade to an UP TO DATE-or-error row, never a dead end.
 - [ ] Stats/persistence side effects fire exactly once per user-visible event (e.g. results recorded once).
 
 ## 6. Typography on Device (recurrence rules)

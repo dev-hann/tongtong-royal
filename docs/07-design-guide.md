@@ -101,7 +101,7 @@ Screens:
 - **Elimination summary** (exempt archetype): the human is out — own verdict, simulated show outcome (which bot wins the crown, one line), stat deltas, PLAY AGAIN primary + HOME secondary.
 - **Podium — crown ceremony** (FOCUSED): champion center-tall, crown + single pulse, co-champion pair when shared; `PLAY AGAIN` primary + `HOME` secondary.
 - **Profile** (FORM): `[IDENTITY]` avatar + nickname field + SAVE / `[COLOR]` palette grid / `[RECORD]` stats cards.
-- **Settings** (FORM): `[GENERAL]` sound toggle / `[ABOUT]` credits row; version footer bottom-pinned.
+- **Settings** (FORM): `[GENERAL]` sound toggle / `[UPDATE]` self-update row (auto-query on entry, states per § 5 update-row row) / `[ABOUT]` credits row; version footer bottom-pinned.
 - **Credits** (FORM): attribution rows in cards, body type.
 
 ## 7. Fonts & Licensing
